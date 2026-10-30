@@ -281,10 +281,10 @@ and never ships a change that breaks something else.
 
 ## 20. 1.3.8 - on GitHub: sync bot and Claude plugin
 - The home repo (product-factory) is a Claude Code marketplace (`.claude-plugin/marketplace.json`, name talenteam)
-  with one plugin, agent-core, built into `plugin/` by `scripts/build_plugin.py` (paths into the core become
+  with one plugin, product-factory (agent-core before 1.4.0), built into `plugin/` by `scripts/build_plugin.py` (paths into the core become
   `${CLAUDE_PLUGIN_ROOT}/`); install.py rebuilds it when it installs into the home repo. In a repo without the core,
   the plugin's SessionStart hook hands Claude the core block of AGENTS.md.
-- Repos that carry the core switch the plugin off (`enabledPlugins: {"agent-core@talenteam": false}`, written by
+- Repos that carry the core switch the plugin off (`enabledPlugins: {"product-factory@talenteam": false}`, written by
   `--write-settings`, checked by `--check`), so no hook runs twice.
 - `.github/workflows/core-sync.yml` runs `.github/core-sync/sync.py` on each push to main that changes the core:
   per repo in `targets.json` it installs the core, runs both checks and pushes one commit to dev, or opens a pull
@@ -298,3 +298,10 @@ and never ships a change that breaks something else.
   checks it; it joins G1, every design expert reads it at S5, and its approved rows are extra MUSTs at the audit.
 - Task mode: `.claude/project.json` `deploy` holds the deploy facts; when missing, any task (quick fixes too) asks
   the developer once and records the answer. `spec.md` gets `## Non-functional` for the needs a change touches.
+
+## 22. 1.4.0 - the plugin is called product-factory
+- The plugin is `product-factory` (it was `agent-core`), by TalenTeam Product & Engineering, in the `talenteam`
+  marketplace of the public repo `zakvantalenteam/product-factory`. Its agents show as `product-factory:<name>` and
+  its skills as `/product-factory:<name>`.
+- install.py writes `"product-factory@talenteam": false` in repos that carry the core and removes the old
+  `agent-core@talenteam` entry. Plugin users switch `enabledPlugins` to the new id.

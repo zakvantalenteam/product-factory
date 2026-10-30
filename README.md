@@ -9,7 +9,7 @@ new version, and Claude users get it as a plugin.
 | Path | What |
 |---|---|
 | `core/` | The agent core source: agents, skills, hooks, scripts, reference, templates. `core/core-plan.md` is its design and change log. |
-| `plugin/` | The Claude Code plugin `agent-core`, built from `core/` by `core/scripts/build_plugin.py`. Do not edit by hand. |
+| `plugin/` | The Claude Code plugin `product-factory`, built from `core/` by `core/scripts/build_plugin.py`. Do not edit by hand. |
 | `.claude-plugin/marketplace.json` | Makes this repo a Claude Code plugin marketplace (`talenteam`). |
 | `.github/workflows/core-sync.yml`, `.github/core-sync/` | The sync bot that installs the core into each product repo. |
 | `.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md` | The core installed for this repo itself. |
@@ -33,11 +33,12 @@ core switch the plugin off in their own settings, so nothing runs twice. To give
 
 The repo `zakvantalenteam/product-factory` is public, so no GitHub access or sign-in is needed.
 
-1. Add the marketplace and the plugin. Either type in Claude Code (terminal, desktop app or IDE):
+1. Add the marketplace and the plugin. In the Claude desktop app, use the settings keys below. In a terminal
+   `claude` session you can instead type:
 
    ```
    /plugin marketplace add https://github.com/zakvantalenteam/product-factory.git
-   /plugin install agent-core@talenteam
+   /plugin install product-factory@talenteam
    ```
 
    then `/plugin` > Marketplaces > talenteam > Enable auto-update. Or add these two keys to your user settings
@@ -47,11 +48,23 @@ The repo `zakvantalenteam/product-factory` is public, so no GitHub access or sig
    "extraKnownMarketplaces": {
      "talenteam": {"source": {"source": "git", "url": "https://github.com/zakvantalenteam/product-factory.git"}, "autoUpdate": true}
    },
-   "enabledPlugins": {"agent-core@talenteam": true}
+   "enabledPlugins": {"product-factory@talenteam": true}
    ```
 
-2. Start a new session in a repo that does not carry the core. `/agents` lists `agent-core:explorer` and the
-   others, and the skills show as `/agent-core:sdlc` and so on.
+   If adding the marketplace fails with a network error on Windows, and
+   `git ls-remote https://github.com/zakvantalenteam/product-factory.git HEAD` says "unable to get local issuer
+   certificate", the company network checks HTTPS traffic with a certificate that Windows trusts but Git's own list
+   does not. Let Git use the Windows certificate store, then add the marketplace again:
+
+   ```bash
+   git config --global http.sslBackend schannel
+   ```
+
+   Installed it before 1.4.0 as `agent-core@talenteam`? Uninstall that one and install `product-factory@talenteam`
+   (in settings: replace the key in `enabledPlugins`).
+
+2. Start a new session in a repo that does not carry the core. `/agents` lists `product-factory:explorer` and the
+   others, and the skills show as `/product-factory:sdlc` and so on.
 3. Updates: a new version reaches you within about 10 minutes of starting a session; `/reload-plugins` applies it.
    Nothing changes until the version in `core/VERSION` is raised.
 

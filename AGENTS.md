@@ -10,7 +10,7 @@ own repo (the core is installed there by `base-builder`) or from here with `--ro
 | Path | What |
 |---|---|
 | `core/` | the agent core source (plugin layout): agents, skills, hooks, scripts, reference, templates; `core/core-plan.md` is its design, `core/migration/` the notes for moving other repos onto it |
-| `plugin/` | the Claude Code plugin `agent-core`, built from `core/` by `core/scripts/build_plugin.py` (never edited by hand); `.claude-plugin/marketplace.json` makes this repo the `talenteam` marketplace |
+| `plugin/` | the Claude Code plugin `product-factory` (by TalenTeam Product & Engineering), built from `core/` by `core/scripts/build_plugin.py` (never edited by hand); `.claude-plugin/marketplace.json` makes this repo the `talenteam` marketplace |
 | `.github/` | the sync bot: `workflows/core-sync.yml` and `core-sync/` (script, target repos, AWS role policies); on a push to `main` it installs the core into each product repo |
 | `.claude/` | the core installed for this repo (`install.py`), plus `project.json` (work folder `work`, products under `D:/products`, read-only `D:/skillos`) |
 | `work/<slug>/` | one folder per product or task: every document, question and decision, and its live status |

@@ -17,7 +17,7 @@ It also: writes a starter .claude/project.json, .claude/smoke.md and .claude/rev
 (between <!-- core:start --> and <!-- core:end -->) and creates CLAUDE.md (@AGENTS.md) when missing; adds the work
 folder to .gitignore; shows the core hook entries for .claude/settings.json and the live-status entry for
 .claude/launch.json, and writes them with --write-settings (old copies of the core hooks are replaced, and the
-agent-core plugin is switched off in the repo, which carries the core itself, so no hook runs twice); then runs
+product-factory plugin is switched off in the repo, which carries the core itself, so no hook runs twice); then runs
 cursor_sync.py in the repo. Installing into the core's home repo (the folder above core/ with
 .claude-plugin/marketplace.json) also rebuilds the plugin there (build_plugin.py).
 
@@ -38,7 +38,8 @@ sys.dont_write_bytecode = True
 CORE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 INSTALLED = os.path.basename(CORE) == "core" and os.path.basename(os.path.dirname(CORE)) == ".claude"
 SKIP_NAMES = {"__pycache__", "core-plan.md", ".claude-plugin", "hooks.json", "session_start.py", "build_plugin.py"}
-PLUGIN_ID = "agent-core@talenteam"  # plugin@marketplace, as in the home repo's .claude-plugin/marketplace.json
+PLUGIN_ID = "product-factory@talenteam"  # plugin@marketplace, as in the home repo's .claude-plugin/marketplace.json
+OLD_PLUGIN_IDS = ("agent-core@talenteam",)  # the plugin's name before 1.4.0: its settings entry is removed
 BLOCK_START, BLOCK_END = "<!-- core:start -->", "<!-- core:end -->"
 # hook scripts the core replaces: entries running these are old copies and are swapped for the core ones
 OLD_HOOKS = re.compile(r"(guard|flow_check|rules_check|flow_guard|intake_guard|factory_tracker)\.py|live_status\.py\" hook"
@@ -150,7 +151,10 @@ def merged_settings(current):
         if a not in allow:
             allow.append(a)
     s.setdefault("env", {}).update({k: v for k, v in want.get("env", {}).items() if k not in s["env"]})
-    s.setdefault("enabledPlugins", {})[PLUGIN_ID] = False  # the repo carries the core: the plugin would repeat it
+    plugins = s.setdefault("enabledPlugins", {})
+    for old in OLD_PLUGIN_IDS:
+        plugins.pop(old, None)
+    plugins[PLUGIN_ID] = False  # the repo carries the core: the plugin would repeat it
     return s
 
 

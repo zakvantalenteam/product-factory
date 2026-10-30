@@ -18,8 +18,9 @@ try:
         block = f.read().replace(".claude/core/", ROOT + "/")
     with open(os.path.join(ROOT, "VERSION"), encoding="utf-8") as f:
         version = f.read().strip()
-    note = ("The agent core %s runs here as the Claude Code plugin agent-core. Its agents are agent-core:<name> (for "
-            "example agent-core:explorer), its skills /agent-core:<name>, its scripts and reference under %s. Project "
+    note = ("The agent core %s runs here as the Claude Code plugin product-factory. Its agents are "
+            "product-factory:<name> (for example product-factory:explorer), its skills /product-factory:<name>, its "
+            "scripts and reference under %s. Project "
             "files (.claude/project.json, the work folder) are made in this repo when the flow needs them. To give the "
             "whole team the core in this repo (Cursor too), run: python %s/scripts/install.py . --write-settings"
             % (version, ROOT, ROOT))

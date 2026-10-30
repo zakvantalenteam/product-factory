@@ -111,6 +111,6 @@
     ]
   },
   "enabledPlugins": {
-    "agent-core@talenteam": false
+    "product-factory@talenteam": false
   }
 }

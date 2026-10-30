@@ -1,4 +1,4 @@
-"""Build the Claude Code plugin agent-core from the core source, for the marketplace in the core's home repo.
+"""Build the Claude Code plugin product-factory from the core source, for the marketplace in the core's home repo.
 
   python core/scripts/build_plugin.py [--check]
 

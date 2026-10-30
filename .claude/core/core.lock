@@ -23,7 +23,7 @@
   ".claude/agents/story-sizer.md": "740828585ba272fb",
   ".claude/agents/ux-designer.md": "08fda85bd826751e",
   ".claude/agents/verifier.md": "1dd2d22e6574eed7",
-  ".claude/core/VERSION": "7635ad71ecd62fea",
+  ".claude/core/VERSION": "78b591400c56b7b6",
   ".claude/core/hooks/flow_check.py": "f72398a29c8650b6",
   ".claude/core/hooks/guard.py": "9cae8ef9390278ca",
   ".claude/core/hooks/rules_check.py": "675a34146155e2ef",
@@ -50,13 +50,13 @@
   ".claude/core/scripts/cursor_sync.py": "75ce074950d4592c",
   ".claude/core/scripts/handoff_check.py": "9fcea253252ce7a2",
   ".claude/core/scripts/impact.py": "8516348559ffdf22",
-  ".claude/core/scripts/install.py": "13aee4c15c4273df",
+  ".claude/core/scripts/install.py": "bd8835089717dfe2",
   ".claude/core/scripts/live_status.html": "2a0755b2801185d6",
   ".claude/core/scripts/live_status.py": "12342d4470ad7819",
   ".claude/core/scripts/md_to_html.py": "3703404ebc37334e",
   ".claude/core/scripts/project.py": "c41d55803eb5a098",
   ".claude/core/scripts/scope_check.py": "69ebc13ea3738429",
-  ".claude/core/scripts/simulate.html": "2cb4d9974fc8f028",
+  ".claude/core/scripts/simulate.html": "587eef7bb06cddc1",
   ".claude/core/scripts/simulate.py": "5f8ff3a6a0ae61c3",
   ".claude/core/scripts/timing.py": "299f5ef0deaeff57",
   ".claude/core/templates/AGENTS-core.md": "15508493aed890fc",
@@ -75,5 +75,5 @@
   ".claude/skills/sdlc/SKILL.md": "d9f08a9d372f2301",
   ".claude/skills/verify-push/SKILL.md": "fd8fc629262e4643"
  },
- "version": "1.3.9"
+ "version": "1.4.0"
 }

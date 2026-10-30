@@ -207,7 +207,7 @@ def main():
         sys.exit(check_version())
     with open(a.targets, encoding="utf-8") as f:
         cfg = json.load(f)
-    a.bot = cfg.get("bot") or {"name": "agent-core bot", "email": "agent-core-bot@users.noreply.github.com"}
+    a.bot = cfg.get("bot") or {"name": "product-factory bot", "email": "product-factory-bot@users.noreply.github.com"}
     targets = [t for t in cfg["targets"] if not a.only or t["name"].lower() == a.only.lower()]
     if not targets:
         sys.exit("no target named %r" % a.only)
