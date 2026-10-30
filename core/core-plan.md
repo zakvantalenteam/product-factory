@@ -306,3 +306,8 @@ and never ships a change that breaks something else.
   its skills as `/product-factory:<name>`.
 - install.py writes `"product-factory@talenteam": false` in repos that carry the core and removes the old
   `agent-core@talenteam` entry. Plugin users switch `enabledPlugins` to the new id.
+
+## 23. 1.4.1 - every screen goes to ux-designer; the live page is the only tracker
+- sdlc: a new or changed screen, however small, gets `ux-designer` at Design (mode `variants`); the main session
+  never designs a screen itself. The prototype skill says the same inside a flow.
+- The core block of AGENTS.md: the live page is the only tracker; no other tracker page or artifact.

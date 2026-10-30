@@ -51,7 +51,7 @@ The usual task is: you at Build, `code-reviewer` at Review (one pass), you at Te
 | A new approach, or a change across layers | `solution-architect` (Design) |
 | Table or entity changes (D2) | `data-architect` (Design) |
 | New roles, permissions, personal data or outside access (D4) | `security-architect` (Design); a small permission change: `solution-architect` |
-| A new or changed screen | `ux-designer` (Design; Review `ux-designer (ui)` only for a large screen change); you run the `prototype` skill |
+| A new or changed screen, however small (a demo or a single file too) | `ux-designer` (Design, mode `variants`: it builds the prototype by the `prototype` skill's rules; you show it and ask for the pick; Review `ux-designer (ui)` only for a large screen change). Never design a screen yourself |
 | An outside system (sync, API client, SSO, files) | `integration-engineer` (Design) |
 | Deploy, environment or pipeline changes | `devops-engineer` (Design) |
 | A domain the repo lists in `experts` (SuccessFactors, AI, ...) | that domain expert (Design; Review `<expert> (<domain>)` only when most of the change is in that domain) |

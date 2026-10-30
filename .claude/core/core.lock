@@ -23,7 +23,7 @@
   ".claude/agents/story-sizer.md": "740828585ba272fb",
   ".claude/agents/ux-designer.md": "08fda85bd826751e",
   ".claude/agents/verifier.md": "1dd2d22e6574eed7",
-  ".claude/core/VERSION": "78b591400c56b7b6",
+  ".claude/core/VERSION": "7d072b48526b0239",
   ".claude/core/hooks/flow_check.py": "f72398a29c8650b6",
   ".claude/core/hooks/guard.py": "9cae8ef9390278ca",
   ".claude/core/hooks/rules_check.py": "675a34146155e2ef",
@@ -56,10 +56,10 @@
   ".claude/core/scripts/md_to_html.py": "3703404ebc37334e",
   ".claude/core/scripts/project.py": "c41d55803eb5a098",
   ".claude/core/scripts/scope_check.py": "69ebc13ea3738429",
-  ".claude/core/scripts/simulate.html": "587eef7bb06cddc1",
+  ".claude/core/scripts/simulate.html": "fee210e1eea41259",
   ".claude/core/scripts/simulate.py": "5f8ff3a6a0ae61c3",
   ".claude/core/scripts/timing.py": "299f5ef0deaeff57",
-  ".claude/core/templates/AGENTS-core.md": "15508493aed890fc",
+  ".claude/core/templates/AGENTS-core.md": "ca620f8819d4b26f",
   ".claude/core/templates/experts/ai.md": "93e22e857c60bd34",
   ".claude/core/templates/experts/n8n.md": "1c682942ec5b86e7",
   ".claude/core/templates/experts/sf.md": "da00c6bd6c24d701",
@@ -71,9 +71,9 @@
   ".claude/skills/dev-handoff/SKILL.md": "3e228945e6f886f0",
   ".claude/skills/factory/SKILL.md": "deb5bc40b0e6f102",
   ".claude/skills/live-check/SKILL.md": "f73a35f59f440bf1",
-  ".claude/skills/prototype/SKILL.md": "eb4876ff661a751d",
-  ".claude/skills/sdlc/SKILL.md": "d9f08a9d372f2301",
+  ".claude/skills/prototype/SKILL.md": "8c98aefc709b22da",
+  ".claude/skills/sdlc/SKILL.md": "c08a8b02c09a1e12",
   ".claude/skills/verify-push/SKILL.md": "fd8fc629262e4643"
  },
- "version": "1.4.0"
+ "version": "1.4.1"
 }

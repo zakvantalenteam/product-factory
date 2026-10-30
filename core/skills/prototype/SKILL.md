@@ -6,6 +6,8 @@ description: Build a clickable single-file HTML prototype with 2-4 lettered desi
 
 Repo notes first: the `## Live check and verify notes` section of AGENTS.md, when the repo has one (theme, component library and the UI gate); it wins over the defaults below.
 
+In the sdlc and factory flows the `ux-designer` agent builds the prototype (mode `variants`) by these rules; the main session briefs it, shows the file and asks for the pick (step 6). Build it yourself only when no flow runs.
+
 1. Restate the target in one line: which surface (page, widget, dialog, admin screen, embedded frame) and where it sits.
 2. Study the real thing first: the current template and CSS, the theme variables named in AGENTS.md or `.claude/rules/`, real labels and real data shapes. Use real-looking data, never lorem ipsum.
 3. One self-contained HTML file, `<work>/<id>/prototype.html` (product mode: `P-prototype.html`) (inline CSS and JS, no CDN, works offline) with a variant switcher A / B / C (/ D) at real size, a narrow-width toggle (~360 px) and a short-frame toggle where it matters.
