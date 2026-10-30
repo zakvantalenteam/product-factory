@@ -1,0 +1,18 @@
+{
+  "id": "G3",
+  "kind": "confirm",
+  "gate": "G3",
+  "title": "Approve the DeskBook design? Code starts after this.",
+  "detail": "Final review passed: every must-fix is closed. MVP is 40 stories, 147 points, 45 API operations. Two small leftovers are fixed during build: one heading count in the architecture doc and one open product-owner check on Q114 (the number 3).",
+  "options": [
+    {"id": "approve", "label": "Approve design", "detail": "Opens code writes; S1 base build and S6 build start", "recommended": true},
+    {"id": "hold", "label": "Hold", "detail": "Tell the team what to change first"}
+  ],
+  "links": [
+    {"label": "Design review", "href": "05-design-review.md"},
+    {"label": "Architecture", "href": "05-architecture.md"},
+    {"label": "API", "href": "05-openapi.yaml"},
+    {"label": "Stories", "href": "04-stories.md"},
+    {"label": "Decisions", "href": "decisions.md"}
+  ]
+}

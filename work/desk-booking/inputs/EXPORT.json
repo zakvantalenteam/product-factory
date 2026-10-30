@@ -1,0 +1,14 @@
+{
+  "id": "EXPORT",
+  "kind": "choice",
+  "title": "The occupancy Excel export is its own story (ST-RP-4, 5 points, now R1). Where does it go?",
+  "detail": "Your G3 answer 2 said the MVP keeps the occupancy table and its Excel export, but the 142-point MVP leaves the export out.",
+  "options": [
+    {"id": "A", "label": "Export in the MVP", "detail": "MVP 147 points; Facilities can download the table from day one", "recommended": true},
+    {"id": "B", "label": "Export stays in R1", "detail": "MVP 142 points; Facilities sees the table on screen only"}
+  ],
+  "links": [
+    {"label": "Stories", "href": "04-stories.md"},
+    {"label": "Design review", "href": "05-design-review.md"}
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "PYTHONUTF8": "1",
+    "PYTHONIOENCODING": "utf-8"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git ls-tree*)",
+      "Bash(git ls-files*)",
+      "Bash(git grep*)",
+      "Bash(ls*)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(python scripts/*)",
+      "Bash(python .claude/hooks/*)",
+      "Bash(python .claude/core/scripts/*)",
+      "Bash(python -I .claude/core/scripts/*)"
+    ],
+    "deny": [
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git stash*)",
+      "Bash(git reset*)",
+      "Bash(git checkout*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Read|Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/hooks/guard.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/scripts/live_status.py hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/hooks/rules_check.py",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell|Grep|Glob|Agent|Task|Skill|WebFetch|WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/scripts/live_status.py hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/scripts/live_status.py hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/hooks/flow_check.py prompt",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda *a:os._exit(0);d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit(0);sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/hooks/flow_check.py stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "agent-core@talenteam": false
+  }
+}

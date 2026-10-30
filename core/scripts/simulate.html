@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flow simulator</title>
+<script>window.__SIM__={"port":8766,"name":""};</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("sim:theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+<style>
+:root{--bg:#f8f8fc;--card:#fff;--line:#e6e8f0;--text:#1e2230;--muted:#5b6274;--faint:#8a90a0;
+--spec:#7c6cf0;--design:#139c87;--build:#3b7ddd;--review:#cf8417;--test:#3c974a;--verify:#1790b5;--release:#c9558b;--wrap:#6b7480;
+--intake:#6d72c9;--base:#5f7a8c;--requirements:var(--spec);--product:#a35fc4;--prototype:var(--design);--stories:#a9861c;--audit:var(--verify);
+--you:#c27812;--fail:#c43d48;--cur:var(--build);--plan:#6d72c9;--triage:#5f7a8c;--do:var(--build);--check:var(--test);--end:var(--wrap)}
+:root{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111318;--card:#181b22;--line:#2a2e39;--text:#e8eaf0;--muted:#a9afbd;--faint:#7e8596;
+--spec:#a99ff8;--design:#4ccab5;--build:#7eaaf0;--review:#eeb25c;--test:#7cc68a;--verify:#5fc3e0;--release:#e78db6;--wrap:#a5acb8;--you:#f1b752;--fail:#f28c95;
+--intake:#a3a8f0;--base:#9fb4c2;--product:#d09be8;--stories:#e2c165;--plan:#a3a8f0;--triage:#9fb4c2}
+:root[data-theme="system"]{color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root[data-theme="system"]{--bg:#111318;--card:#181b22;--line:#2a2e39;--text:#e8eaf0;--muted:#a9afbd;--faint:#7e8596;
+--spec:#a99ff8;--design:#4ccab5;--build:#7eaaf0;--review:#eeb25c;--test:#7cc68a;--verify:#5fc3e0;--release:#e78db6;--wrap:#a5acb8;--you:#f1b752;--fail:#f28c95;
+--intake:#a3a8f0;--base:#9fb4c2;--product:#d09be8;--stories:#e2c165;--plan:#a3a8f0;--triage:#9fb4c2}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,select{font:inherit;color:inherit}
+:focus{outline:none}:focus-visible{outline:2px solid var(--cur);outline-offset:2px;border-radius:4px}
+code,.mono{font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+.sub{color:var(--faint);font-size:12px}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.pill{font-size:11px;padding:1px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;display:inline-block}
+.btn{border:1px solid transparent;background:var(--cur);color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer}
+.btn.ghost{background:transparent;border-color:color-mix(in srgb,currentColor 35%,transparent);color:inherit}
+.btn.sm{padding:2px 9px;font-size:12px}
+.btn.you{background:var(--you)}
+.btn:disabled{opacity:.45;cursor:default}
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.top h1{font-size:16px;font-weight:500;margin:0}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{background:transparent;border:0;padding:3px 10px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:color-mix(in srgb,var(--cur) 12%,var(--card));color:var(--text)}
+.tg{display:inline-flex;gap:5px;align-items:center;color:var(--muted);cursor:pointer;font-size:12px}
+.tg input{accent-color:var(--cur);margin:0}
+.tg.off{opacity:.45;cursor:default}
+/* request bar */
+.ask{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:12px 0}
+.ask q{font-size:14px;font-weight:500;quotes:"\201C" "\201D"}
+.lane{--lc:var(--cur);font-size:11px;padding:1px 9px;border-radius:999px;color:color-mix(in srgb,var(--lc) 80%,var(--text));background:color-mix(in srgb,var(--lc) 11%,var(--card));border:1px solid color-mix(in srgb,var(--lc) 28%,var(--line))}
+.risk-low{--lc:var(--test)}.risk-medium{--lc:var(--review)}.risk-high{--lc:var(--fail)}
+/* agent chips and model badges */
+.ag{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:1px 4px 1px 9px;background:var(--card);white-space:nowrap;font-size:12px}
+.ag.on{border-color:color-mix(in srgb,var(--cur) 50%,var(--line));background:color-mix(in srgb,var(--cur) 8%,var(--card))}
+.ag.done{opacity:.7}
+.m{font-style:normal;font-size:10px;padding:0 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.m-haiku{color:var(--test);border-color:color-mix(in srgb,var(--test) 35%,var(--line))}
+.m-sonnet{color:var(--build);border-color:color-mix(in srgb,var(--build) 35%,var(--line))}
+.m-opus{color:var(--product);border-color:color-mix(in srgb,var(--product) 40%,var(--line))}
+.m-you{color:var(--you);border-color:color-mix(in srgb,var(--you) 40%,var(--line))}
+.fc{display:inline-block;font:11px/1.6 ui-monospace,Consolas,monospace;border:1px dashed var(--line);border-radius:5px;padding:0 6px;margin:2px 3px 2px 0;color:var(--muted)}
+.fc.new{border-style:solid;color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted)}
+pre{margin:6px 0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--text) 4%,var(--card));border:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}
+/* step detail */
+.st-h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.st-h b{font-size:14px;font-weight:500}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sc,var(--cur));margin-right:2px}
+.say{font-size:13.5px;margin:4px 0 8px}
+.gatebox{border:1px solid color-mix(in srgb,var(--you) 40%,var(--card));background:color-mix(in srgb,var(--you) 7%,var(--card));border-radius:10px;padding:10px 12px;margin:8px 0}
+.gatebox .q{font-weight:500}
+.qa{margin-top:6px;padding:6px 8px;border-left:2px solid var(--you);background:var(--card);border-radius:0 6px 6px 0}
+.fail{border-color:color-mix(in srgb,var(--fail) 45%,var(--card));background:color-mix(in srgb,var(--fail) 7%,var(--card))}
+.blk{border:1px solid color-mix(in srgb,var(--fail) 40%,var(--card));background:color-mix(in srgb,var(--fail) 6%,var(--card));border-radius:10px;padding:8px 12px;margin:8px 0}
+.okbox{border:1px solid color-mix(in srgb,var(--test) 40%,var(--card));background:color-mix(in srgb,var(--test) 6%,var(--card));border-radius:10px;padding:8px 12px;margin:8px 0}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.nav .sp{flex:1}
+.why h3,.side h3{font-size:12px;font-weight:500;color:var(--muted);margin:0 0 6px;text-transform:none}
+.side>*+*{margin-top:10px}
+/* clock */
+.clk .row{display:grid;grid-template-columns:70px 1fr 74px;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+.bar{position:relative;height:10px;border-radius:5px;background:color-mix(in srgb,var(--text) 5%,var(--card))}
+.bar .b{position:absolute;inset:0 auto 0 0;border:1px dashed var(--faint);border-radius:5px}
+.bar .e{position:absolute;inset:1px auto 1px 0;border-radius:4px;background:color-mix(in srgb,var(--sc) 30%,var(--card))}
+.bar .p{position:absolute;inset:1px auto 1px 0;border-radius:4px;background:var(--sc)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--faint);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:8px;border-radius:3px;margin-right:4px;vertical-align:0}
+/* variant A: stepper */
+.va{display:grid;grid-template-columns:230px minmax(0,1fr) 300px;gap:12px;align-items:start}
+.steps{list-style:none;margin:0;padding:6px;max-height:72vh;overflow:auto}
+.steps li{display:flex;gap:7px;align-items:flex-start;padding:4px 6px;border-radius:6px;color:var(--faint);font-size:12px}
+.steps li.done{color:var(--muted)}
+.steps li.cur{color:var(--text);background:color-mix(in srgb,var(--cur) 9%,var(--card))}
+.steps li .n{flex:none;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:10px;border:1px solid var(--line);margin-top:1px}
+.steps li.done .n{background:var(--sc,var(--test));border-color:transparent;color:#fff}
+.steps li.cur .n{border-color:var(--sc,var(--cur));color:var(--sc,var(--cur))}
+.steps li.bad .n{background:var(--fail)}
+/* variant B: board */
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(118px,1fr);gap:8px;overflow-x:auto;padding-bottom:4px}
+.col{background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:250px;display:flex;flex-direction:column}
+.col.cur{border-color:color-mix(in srgb,var(--sc) 55%,var(--line));box-shadow:inset 0 3px 0 var(--sc)}
+.col.skip{opacity:.5}
+.col .ch{padding:7px 9px;border-bottom:1px solid var(--line);font-size:12px}
+.col .ch b{font-weight:500;display:block}
+.col .cb{padding:7px;display:flex;flex-direction:column;gap:5px;flex:1}
+.col .ag{align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.col .ag.on{animation:slide .45s ease-out}
+.col .gatemini{border:1px solid color-mix(in srgb,var(--you) 45%,var(--card));background:color-mix(in srgb,var(--you) 9%,var(--card));border-radius:7px;padding:5px 7px;font-size:11.5px;animation:glow 2.6s ease-in-out infinite}
+.col .gatemini.ok{animation:none;border-color:color-mix(in srgb,var(--test) 40%,var(--card));background:color-mix(in srgb,var(--test) 7%,var(--card))}
+.col .mustmini{border:1px solid color-mix(in srgb,var(--fail) 45%,var(--card));border-radius:7px;padding:5px 7px;font-size:11.5px;color:var(--fail)}
+.vb .lower{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;margin-top:12px;align-items:start}
+.feed{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;font-size:12px}
+.feed li{padding:3px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+.feed li b{font-weight:500;color:var(--text)}
+@keyframes slide{from{transform:translateX(-14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px color-mix(in srgb,var(--you) 18%,transparent)}}
+.copy{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.copy code{padding:2px 7px;border:1px solid var(--line);border-radius:6px;background:color-mix(in srgb,var(--text) 4%,var(--card));overflow-wrap:anywhere}
+a{color:var(--cur)}
+.ag.hl{outline:2px solid var(--you);outline-offset:1px}
+.vr{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:12px;align-items:start}
+.vr h3{font-size:12px;font-weight:500;color:var(--muted);margin:12px 0 6px}
+.vr h3:first-child{margin-top:0}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+.agc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 9px;cursor:pointer}
+.agc .nm{display:flex;gap:6px;align-items:center;font-weight:500}
+.agc.sel{border-color:color-mix(in srgb,var(--you) 60%,var(--line));background:color-mix(in srgb,var(--you) 8%,var(--card))}
+.agc.none{opacity:.55}
+.kv th{width:96px;white-space:nowrap}
+.kv td,.kv th{border-bottom:1px solid var(--line)}
+.sc-chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:1px 9px;font-size:12px;cursor:pointer}
+.sc-chip b{font-weight:500}
+.hlbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin:-4px 0 10px}
+@media (max-width:1000px){.vr{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+@media (max-width:1000px){.va{grid-template-columns:1fr}.vb .lower{grid-template-columns:1fr}.steps{max-height:none;display:flex;flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1>How the agent flow works</h1><div class="sub" id="subt">Pick a request and step through what the agents do. Nothing here touches your code.</div></div>
+    <div class="ctl">
+      <label class="sub" for="pick">Request</label>
+      <select id="pick"></select>
+      <span class="seg" role="group" aria-label="View"><button id="wFlow" aria-pressed="true" title="Step through one request">Flow</button><button id="wAg" aria-pressed="false" title="Every agent: what it does, when it joins, what it reads and writes">Agents</button></span>
+      <span class="seg" role="group" aria-label="Layout" id="abseg"><button id="vA" aria-pressed="true" title="A: a stepper with a why panel">A stepper</button><button id="vB" aria-pressed="false" title="B: a pipeline board with agents moving across stages">B board</button></span>
+      <button class="btn ghost sm" id="thm" title="Light, dark or follow the computer">Theme: light</button>
+    </div>
+  </div>
+  <div class="ctl" style="margin-top:10px" role="group" aria-label="What if" id="whatif">
+    <span class="sub">What if:</span>
+    <label class="tg" id="tg-bug"><input type="checkbox" id="t-bug"> a bug slips into Build</label>
+    <label class="tg" id="tg-unp"><input type="checkbox" id="t-unp"> an agent edits a file nobody planned</label>
+    <label class="tg" id="tg-app"><input type="checkbox" id="t-app"> the app is running</label>
+  </div>
+  <div class="ask" id="askrow"><q id="askq"></q><span id="askchips" class="chips" style="margin:0"></span></div>
+  <div class="hlbar" id="hlbar" hidden></div>
+
+  <!-- variant A: stepper with a why panel -->
+  <div id="VA" class="va">
+    <div class="card" style="padding:4px"><ol class="steps" id="a-steps"></ol></div>
+    <div><div class="card" id="a-main"></div></div>
+    <div class="side" id="a-side"></div>
+  </div>
+
+  <!-- variant B: pipeline board -->
+  <div id="VB" class="vb" hidden>
+    <div class="board" id="b-board"></div>
+    <div class="lower">
+      <div class="card" id="b-main"></div>
+      <div class="side" id="b-side"></div>
+    </div>
+  </div>
+  <div class="card" id="livebox" style="margin-top:12px" hidden>
+    <div class="st-h"><b>Live tracker</b><span class="sub" id="livehint"></span></div>
+    <iframe id="liveframe" title="Live tracker" style="width:100%;height:760px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></iframe>
+  </div>
+  <!-- roster: every agent -->
+  <div id="VR" class="vr" hidden>
+    <div class="card" id="r-list"></div>
+    <div class="side" id="r-side"></div>
+  </div>
+  <p class="sub" style="margin-top:14px">Built from the agent core's own flow (sdlc and factory skills). Times are estimates for the new flow against a measured old run; the impact maps and numbers in the scenarios are made-up samples.</p>
+</div>
+
+<script type="application/json" id="sim-data">
+{
+"version": "1.3.9",
+"baseline": {"from": "review-next16", "kind": "measured", "min": {"spec": 45, "design": 14, "build": 47, "review": 29}},
+"models": {"main session": "You"},
+"bug": {"finding": "MUST JV1: the new code reads a joined row's title without a null check; a favourite whose item was deleted gives a 500 (review.md, path:line).", "fix": "Null-check the joined row and skip it; add a test with a deleted item.", "lesson": "- <date> <task>: a value from a joined row that can be deleted is null-checked before use (src/main/java/**)", "min": 8},
+"unplanned": {"file": "src/main/java/com/acme/common/StringUtil.java", "say": "While building, the agent also tidied a shared helper that no plan lists.", "why": "Every changed file must be planned (scope_check.py). An unplanned file is a MUST: drop it, or accept it with a reason (scope_check.py add <id> <path> --why ...). The stop hook sends the turn back once while one is left."},
+"appUp": "The app is running: the guard blocks Maven build goals (they would stop or break it), so the checks use the classes your IDE already built.",
+"budgets": {"low": {"spec": 5, "design": 10, "build": 30, "review": 10, "test": 10, "verify": 10, "release": 10, "wrap": 5}, "medium": {"spec": 15, "design": 20, "build": 45, "review": 20, "test": 15, "verify": 15, "release": 15, "wrap": 5}, "high": {"spec": 30, "design": 40, "build": 90, "review": 30, "test": 30, "verify": 20, "release": 20, "wrap": 10}},
+"defaultModel": "Opus",
+"agents": {
+ "main session": {"team": "Lead", "model": "You", "turns": 0, "stages": ["build", "verify", "wrap"], "does": "The session you talk to. It triages, sets the risk from the evidence, picks the team, briefs each agent, builds in task mode, runs the checks and opens the gates. It never commits.", "joins": "Always.", "skipped": "Never.", "reads": "your request, context.md, the lessons for its area, every agent's output file", "writes": "triage.md, the code (task mode), the live page", "hands": "you, at each gate and at the end", "web": false},
+ "explorer": {"team": "Helpers", "model": "Opus", "turns": 25, "stages": [], "does": "Read-only search. On a task it writes the context pack: the impact map (every caller, endpoint, screen and outside node as path:line), key code, the rules that apply and the risk signals.", "joins": "First on every task, before the risk is set; any big search behind a question.", "skipped": "A change in one or two files with no callers outside them (the main session writes a 5-line context itself).", "reads": "the code (Grep before Read), impact.py, AGENTS.md rules", "writes": "context.md", "hands": "the main session (risk and team); every later agent reads the pack instead of exploring again", "web": false, "calls": 20},
+ "spec-analyst": {"team": "Product", "model": "Opus", "turns": 50, "stages": ["spec"], "does": "Makes sure the request is understood before anyone designs: the brief with each gap and a recommended answer, the spec with kind of work, team and decisions. In product mode the request review, spec and gap sheet.", "joins": "A task with real gaps or many areas; every product (S0, S2).", "skipped": "The goal is clear and has no gaps.", "reads": "context.md, the lessons for its area, decisions.md, questions.md", "writes": "brief.md, spec.md (task); 01-prd-review.md, 02-spec.md, 02-nfr.md, 02-gaps.md (product)", "hands": "you at the spec gate, then the designers", "web": false, "calls": 35},
+ "bug-investigator": {"team": "Quality", "model": "Opus", "turns": 50, "stages": ["spec"], "does": "Proves a bug's root cause at path:line before anyone fixes it: expected against actual, ranked causes with evidence, the smallest fix, the same pattern elsewhere and a regression test that fails now.", "joins": "A bug whose cause is not obvious (Spec).", "skipped": "The cause is obvious: a quick fix or a plain task.", "reads": "context.md, the lessons for its area, logs and steps you give", "writes": "brief.md, spec.md", "hands": "you at the gate, then Build; it never fixes code", "web": false, "calls": 35},
+ "product-critic": {"team": "Product", "model": "Opus", "turns": 50, "stages": [], "does": "Asks whether it will make a good, clear product: value, journeys, overlapping features, confusing ideas, missing must-haves, scope creep. Verdict: Good, Good with fixes or Rethink.", "joins": "Product mode S3; a large new feature in task mode.", "skipped": "Ordinary changes to an existing product.", "reads": "context.md, the lessons for its area, the spec and gap sheet", "writes": "03-product-review.md", "hands": "you at G1, then ux-designer", "web": false, "calls": 35},
+ "story-sizer": {"team": "Product", "model": "Opus", "turns": 30, "stages": [], "does": "Turns the approved spec into epics and stories with Given/When/Then, points with confidence, the MVP slice and a first release plan.", "joins": "Product mode S4; a task with several stories.", "skipped": "A task that is one story.", "reads": "context.md, the lessons for its area, the sizing standard, the approved option", "writes": "04-stories.md, 04-backlog.csv", "hands": "you at G2, then the design stage", "web": false, "calls": 20},
+ "ux-designer": {"team": "Design", "model": "Opus", "turns": 50, "stages": ["design"], "does": "Journeys and screens, 2-3 product options or 2-4 lettered variants at real size with all states, the UI build spec, and a UI review of a diff.", "joins": "A new screen, card, dialog or redesign (Design); product S3, SP and S5.", "skipped": "No new screen: the same UI with a small change.", "reads": "context.md, the lessons for its area, the theme tokens and components", "writes": "ui.md, prototype.html, review-ui.md (task); 03-journeys.md, P-prototype.html, 05-ui.md (product)", "hands": "you (the variant you pick is the D5 card), then Build", "web": false, "calls": 35},
+ "solution-architect": {"team": "Architecture", "model": "Opus", "turns": 50, "stages": ["design"], "does": "Designs how it will be built: the file-by-file plan, the design-patterns check and the D3, D4 and D6 cards; in product mode the architecture, ADRs and the OpenAPI contract.", "joins": "New code across layers, a new endpoint or a new approach; product S5.", "skipped": "One layer and no new approach.", "reads": "context.md, the lessons for its area, the approved brief", "writes": "design.md, decisions/D3-*.md, D6 (task); 05-architecture.md, 05-openapi.yaml (product)", "hands": "you at the design gate, then Build", "web": false, "calls": 35},
+ "data-architect": {"team": "Architecture", "model": "Opus", "turns": 50, "stages": ["design"], "does": "Writes the D2 data-model card, plain words first: columns, existing rows, migration, deploy order, rollback, size and query speed. In product mode the data model built for growth.", "joins": "Any table or column change (D2); product S5.", "skipped": "No data model change.", "reads": "context.md, the lessons for its area, the entities and queries in the pack", "writes": "decisions/D2-data-model.md (task); 05-data-model.md (product)", "hands": "you at the gate; the guard holds entity edits until D2 is approved", "web": false, "calls": 35},
+ "security-architect": {"team": "Architecture", "model": "Opus", "turns": 50, "stages": ["design"], "does": "Designs access and privacy: roles, the access matrix, tenant isolation, threat model, secrets, personal data and retention; the D4 card.", "joins": "Roles, permissions, personal data or outside access change; product S5.", "skipped": "The same role check as the code around it.", "reads": "context.md, the lessons for its area, the access checks in the pack", "writes": "decisions/D4-access.md (task); 05-security.md (product)", "hands": "you at the gate; the guard holds access edits until D4 is approved", "web": false, "calls": 35},
+ "base-builder": {"team": "Engineering", "model": "Opus", "turns": 60, "stages": [], "does": "Builds a new product's base project from the core base spec (shell, jobs, audit history, theme, demo flow) until the base checker says 100 %, then installs the core there.", "joins": "Every new product, S1.", "skipped": "Changes to an existing product.", "reads": "the base spec and manifest", "writes": "10-base-check.md and the product root", "hands": "devops-engineer (does it deploy?), then requirements", "web": false, "calls": 20},
+ "backend-developer": {"team": "Engineering", "model": "Opus", "turns": 60, "stages": [], "does": "Builds one story's backend exactly as designed (API operations, data model, access matrix) with unit and API tests per acceptance criterion.", "joins": "Product mode S6, one story at a time, after G3.", "skipped": "Task mode: the main session builds.", "reads": "context.md, the lessons for its area, the story, 05-openapi.yaml, 05-data-model.md", "writes": "product code, 06-build-log.md", "hands": "code-reviewer and qa-engineer", "web": false, "calls": 20},
+ "frontend-developer": {"team": "Engineering", "model": "Opus", "turns": 60, "stages": [], "does": "Builds one story's screens from the approved prototype and the API contract: generated types, theme tokens, all states, keyboard and screen-reader support, component tests.", "joins": "Product mode S6, in parallel with backend-developer once the contract is fixed.", "skipped": "Task mode: the main session builds.", "reads": "context.md, the lessons for its area, the story, the prototype, 05-ui.md", "writes": "product code, 06-build-log.md", "hands": "code-reviewer and qa-engineer", "web": false, "calls": 20},
+ "integration-engineer": {"team": "Engineering", "model": "Opus", "turns": 30, "stages": ["design"], "does": "Every connection to an outside system: contract, field mapping, full and delta sync, idempotency, retries and backoff, rate limits, what users see when it is down, monitoring.", "joins": "A change that calls or syncs an outside system (Design); product S5 and S6.", "skipped": "No outside system involved.", "reads": "context.md, the lessons for its area, the outside system's documentation", "writes": "a section of design.md (task); 05-integrations.md (product)", "hands": "Build (the main session or the developers), then code-reviewer", "web": false, "calls": 20},
+ "devops-engineer": {"team": "Operations", "model": "Opus", "turns": 30, "stages": ["design"], "does": "Environments, build and deploy files, service bindings, pipeline, health checks, logging, secrets through bindings, deploy and rollback runbook. Never deploys.", "joins": "Product S0 (where and how it will run, 00-infra.md), S1 (the base deploys), S5, S6 and S9; a task that changes build or deploy files (D6).", "skipped": "No build, deploy or environment change.", "reads": "context.md, the lessons for its area, the build and deploy files", "writes": "a section of design.md (task); 00-infra.md, 05-ops.md, 09-deploy-plan.md (product)", "hands": "release-manager", "web": false, "calls": 20},
+ "performance-engineer": {"team": "Quality", "model": "Opus", "turns": 50, "stages": ["spec"], "does": "Makes something slow fast without changing what it returns: scenario and budget, the baseline the main session measures, where the time goes, ranked fixes, before and after tests.", "joins": "Something is slow (Spec); product S5 budgets and S7 hot paths.", "skipped": "Speed is not part of the change.", "reads": "context.md, the lessons for its area, timings and captures you give", "writes": "perf.md (task); 05-performance.md, 07-performance.md (product)", "hands": "the designers and Build", "web": false, "calls": 35},
+ "code-reviewer": {"team": "Quality", "model": "Opus", "turns": 50, "stages": ["review"], "does": "Reviews the diff against the spec, the approved design and cards, the hard rules and the review checklists; MUST and SHOULD findings with path:line, proof and the fix, each re-checked.", "joins": "Every code change (Review); product S7.", "skipped": "Nothing changed in code (an answer, setup work).", "reads": "context.md, the lessons for its area, the diff, the checklists", "writes": "review.md (task); 07-code-review.md (product)", "hands": "PASS: Test and Verify. FAIL: back to Build, and a line in lessons.md", "web": false, "calls": 35},
+ "qa-engineer": {"team": "Quality", "model": "Opus", "turns": 30, "stages": ["design", "test"], "does": "Locks today's outputs with characterization tests before Build, turns criteria into tests, writes and runs them without stopping your app, reports per criterion and per impact-map line.", "joins": "Medium and high risk (characterize at Design); new tests (Test); product S6 and S7.", "skipped": "Low risk where the existing tests are enough.", "reads": "context.md, the lessons for its area, the criteria, the impact map", "writes": "safety.md, test.md (task); 07-test-report.md (product)", "hands": "Review and Verify", "web": false, "calls": 20},
+ "verifier": {"team": "Quality", "model": "Opus", "turns": 30, "stages": ["verify"], "does": "Read-only check that a change meets its criteria (PASS or FAIL per criterion, with evidence), or that the design documents and the built product agree.", "joins": "Many criteria, a pushed change; product S5 and S7.", "skipped": "Few criteria: the main session verifies.", "reads": "context.md, the lessons for its area, the criteria, the diff", "writes": "verify.md", "hands": "you", "web": false, "calls": 20},
+ "audit-expert": {"team": "Audit", "model": "Opus", "turns": 50, "stages": [], "does": "Independent go-live audit: every MUST of the Definition of Done marked PASS, FAIL or NOT VERIFIED with evidence; everything else to a LATER list.", "joins": "Product S8; a task only when you ask.", "skipped": "Ordinary task work.", "reads": "context.md, the lessons for its area, the Definition of Done, every approved document", "writes": "08-audit.md (product); audit.md (task)", "hands": "release-manager and you", "web": false, "calls": 35},
+ "release-manager": {"team": "Operations", "model": "Opus", "turns": 30, "stages": ["release"], "does": "Checks that finished work can ship: scope, stage results, migrations, config keys, restart and deploy notes, handoffs, rollback triggers; the go or no-go. Guides only when asked.", "joins": "Product S9; a task with a release stage (size L or a deploy).", "skipped": "A change that ships with the next normal deploy.", "reads": "context.md, the lessons for its area, every stage result", "writes": "release.md (task); 09-release.md (product)", "hands": "you at the go-live gate", "web": false, "calls": 20},
+ "sf-expert": {"team": "Domain experts", "model": "Opus", "turns": 50, "stages": ["spec", "design", "review"], "does": "SAP SuccessFactors adviser: which module, entity and fields, what SuccessFactors already does, effective dating, ids, permissions, paging, delta, auth and failure modes; facts checked on api.sap.com.", "joins": "A change that reads or writes SuccessFactors data (fit at Spec, fields at Design, a review pass).", "skipped": "No SuccessFactors data involved.", "reads": "context.md, the lessons for its area, the SuccessFactors reference, .claude/experts/sf.md", "writes": "sf.md, review-sf.md (task); 02-sf-fit.md, 05-sf-fields.md (product)", "hands": "the designers and Build", "web": true, "calls": 35},
+ "ai-engineer": {"team": "Domain experts", "model": "Opus", "turns": 50, "stages": ["design", "review"], "does": "Every LLM feature: a baseline first, then model per step, code or LLM per step, prompts, tools, tokens and cost, caching, latency, evals with thresholds, guardrails; numbers, never adjectives.", "joins": "A change to AI behaviour, a prompt, a model, tokens, cost or answer quality (Design, a review pass).", "skipped": "No AI in the path.", "reads": "context.md, the lessons for its area, the AI reference, .claude/experts/ai.md", "writes": "ai.md, review-ai.md (task); 05-ai.md (product)", "hands": "Build, and a handoff to whoever owns the pipeline", "web": true, "calls": 35},
+ "n8n-expert": {"team": "Domain experts", "model": "Opus", "turns": 50, "stages": ["design", "review"], "does": "n8n workflow engineer: today's flow node by node, where LLM and tool calls run in series, a node plan with an eval case per change, the rollout and the handoff for the workflow owner.", "joins": "A change that touches an n8n workflow, a node, a prompt held in n8n, routing, or the payload and callbacks between the app and n8n (Design; a review pass when most of the change is n8n).", "skipped": "No n8n workflow involved.", "reads": "context.md, the lessons for its area, the n8n reference, .claude/experts/n8n.md", "writes": "n8n.md, review-n8n.md (task); 05-n8n.md (product)", "hands": "Build, or the workflow owner (handoff)", "web": true, "calls": 35}
+},
+"scenarios": [
+{"id": "question",
+ "label": "A question",
+ "group": "No task",
+ "mode": "none",
+ "ask": "How does the guard know the app is running?",
+ "lane": "Answer",
+ "laneWhy": "It is a question. Nothing changes, so there is no task, no agent team and no gate.",
+ "steps": [
+  {"t": "triage", "why": "sdlc 1 Triage: questions, \"discuss\" and \"explain\" go to the Answer lane. The agent picks the lane itself; it never asks you which one."},
+  {"t": "note", "stage": "do", "title": "Answer from the code", "agents": ["main session"], "say": "The main session reads the guard and answers, citing the lines it used: it calls the app's health address; 502-504 mean still starting.", "why": "Answers cite path:line so you can check them. A big search would go to explorer, to keep the main context small."},
+  {"t": "end", "say": "Answered in the chat. No work folder and nothing on the live page.", "why": "Only real work gets a task, so questions stay fast and cheap."}]},
+{"id": "quick",
+ "label": "A quick fix",
+ "group": "No task",
+ "mode": "none",
+ "ask": "Fix the typo 'Recieved' in a status label.",
+ "lane": "Quick fix",
+ "laneWhy": "One line in one file, clear, and nothing to decide (no table, permission, contract, config or other owner's file).",
+ "steps": [
+  {"t": "triage", "why": "sdlc 1: a quick fix is up to ~30 lines in up to 3 files with nothing to decide (quick_fix in project.json). Anything that needs a decision card is a task, however small."},
+  {"t": "note", "stage": "do", "title": "Edit", "agents": ["main session"], "say": "The main session fixes the one label line.", "files": ["src/main/resources/messages.properties"], "why": "No agents: briefing one would cost more than the fix. The rules check hook runs after every edit anyway."},
+  {"t": "check", "stage": "check", "name": "Checks", "say": "It checks the diff against the hard rules and runs the existing tests for that area.", "cmds": ["git diff", "<commands.test> for the labels"], "why": "Small does not mean unchecked."},
+  {"t": "check", "stage": "check", "name": "Record it", "say": "It records the fix in one line; the stop hook then accepts the turn's edits because they stay within the quick-fix limits.", "cmds": ["python .claude/core/scripts/live_status.py quick \"Fixed typo in approvals label\""], "why": "The stop hook sends a turn back once if it changed files with no task and no quick-fix record."},
+  {"t": "end", "say": "Done: one line in quick-fixes.md, no task on the live page. Had it grown past the limits, it would have stopped and started a task.", "why": "sdlc 1: if a quick fix grows past the limits, stop and start a task."}]},
+{"id": "setup",
+ "label": "Setup work",
+ "group": "No task",
+ "mode": "none",
+ "ask": "Add a rule: every new SQL file starts with a header comment.",
+ "lane": "Setup work",
+ "laneWhy": "It changes only the AI setup (.claude/rules), not the product.",
+ "steps": [
+  {"t": "triage", "why": "sdlc 1: changes only to .claude/, .cursor/, AGENTS.md or CLAUDE.md are setup work: done directly, no task, no agents, no gates."},
+  {"t": "note", "stage": "do", "title": "Edit the rule", "agents": ["main session"], "say": "The main session adds the rule to the repo's database rule file.", "files": [".claude/rules/backend-db.md"], "why": "Core files (.claude/core) are never edited in a repo; they change only in the core source and arrive with install.py."},
+  {"t": "check", "stage": "check", "name": "Cursor parity", "say": "It regenerates the Cursor copies and checks that Claude and Cursor read the same setup.", "cmds": ["python .claude/core/scripts/cursor_sync.py", "python .claude/core/scripts/cursor_sync.py --check"], "result": "ok", "why": "Every setup change must keep working for Cursor in the same change; the stop hook checks it."},
+  {"t": "end", "say": "Done. Both tools follow the new rule; nothing on the live page.", "why": "Tests for setup scripts live in the session scratchpad, not in the repo."}]},
+{"id": "low",
+ "label": "Low-risk task",
+ "group": "Task",
+ "mode": "task",
+ "size": "S",
+ "ask": "Use the theme colour on the four buttons of the settings page instead of a fixed blue.",
+ "lane": "Task",
+ "laneWhy": "Four files is past the quick-fix limit of three, so it becomes a task, a small one.",
+ "risk": "low",
+ "riskWhy": ["4 style and template files, no callers outside them (context.md)", "no contract, data or permission change"],
+ "context": {"impact": [["style", "settings buttons", "src/main/resources/static/css/settings.css:12", "fixed #1a73e8"], ["template", "settings page", "src/main/resources/templates/settings.html:40", "includes settings.css"], ["template", "settings dialog", "src/main/resources/templates/settings-dialog.html:8", "includes settings.css"]], "rules": ["colours come from the theme, never fixed hex", "focus ring for keyboard only"], "signals": ["no Java callers", "two templates include the file"]},
+ "team": [{"stage": "build", "agent": "main session", "why": "you build"}, {"stage": "review", "agent": "code-reviewer", "why": "any code change: one review pass"}, {"stage": "test", "agent": "main session", "why": "existing tests only"}, {"stage": "verify", "agent": "main session", "why": "look at the page"}, {"stage": "wrap", "agent": "main session", "why": "commit message"}],
+ "notNeeded": [{"agent": "spec-analyst", "why": "the goal is clear, no gaps"}, {"agent": "solution-architect", "why": "no new approach, one layer"}, {"agent": "ux-designer", "why": "no new screen; same buttons, new colour"}, {"agent": "qa-engineer", "why": "risk low: no characterization tests; existing tests are enough"}],
+ "steps": [
+  {"t": "triage", "why": "sdlc 1: every change that is not a question, setup work, a quick fix or a new product is a task. Deploy facts come from project.json `deploy`, asked once per repo when missing."},
+  {"t": "context", "min": 2, "why": "sdlc 2.4: explorer writes the context pack first, so every later agent reads it instead of exploring again."},
+  {"t": "risk", "why": "sdlc 2.5: risk comes from the pack's evidence, not from size. Low: one or two areas, no callers outside, no contract, data or permission change."},
+  {"t": "team", "why": "sdlc 3: agents join by need, not by size. The usual task is you at Build, one code-reviewer pass, you at Test, Verify and Wrap-up."},
+  {"t": "note", "stage": "plan", "title": "No gate", "agents": ["main session"], "say": "Low risk has no gate: the agent says in 3 lines what it understood and goes on. It writes triage.md with the planned files.", "files": ["triage.md"], "why": "sdlc 7: gates only for something to decide. Low risk: none, unless a decision card or a prototype needs one."},
+  {"t": "check", "stage": "build", "name": "Before Build", "say": "The safety net records where things stand: which files exist, that it compiles, and the full unit suite's counts.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "compile: left to your IDE (the guard blocks Maven while the app runs)", "mvn -o -q surefire:test   (runs on the classes already built)"], "result": "412 pass, 0 fail", "why": "sdlc 5: at every risk level, compile and the full suite run before and after Build, and every changed file must be planned."},
+  {"t": "build", "stage": "build", "agents": ["main session"], "say": "The main session swaps the fixed colour for the theme token in four files.", "files": ["src/main/resources/static/css/settings.css", "src/main/resources/templates/settings.html", "src/main/resources/templates/settings-dialog.html", "src/main/resources/static/css/buttons.css"], "min": 12, "why": "Build follows AGENTS.md, .claude/rules and the planned files. The rules check hook flags a hard-rule break right after each edit."},
+  {"t": "check", "stage": "build", "name": "After Build", "say": "Compile and the full suite again (no new failure), and the scope check: every changed file was planned.", "cmds": ["<commands.compile>", "<commands.test_all>", "python .claude/core/scripts/scope_check.py check <id>"], "cmdsUp": ["compile: your IDE", "mvn -o -q surefire:test", "python .claude/core/scripts/scope_check.py check <id>"], "result": "412 pass, 0 fail; 4 files, all planned", "why": "sdlc 5: a new failure after Build sends the task back to Build."},
+  {"t": "review", "stage": "review", "agents": ["code-reviewer"], "say": "One code-reviewer pass against the checklist and the rules: PASS.", "files": ["review.md"], "min": 6, "why": "sdlc 8: any MUST or failing test sends the task back to Build. The reviewer gets the diff, not your opinion of it."},
+  {"t": "stage", "stage": "test", "agents": ["main session"], "say": "The existing tests for the settings page pass.", "min": 3, "why": "New tests only when the change needs them; then qa-engineer joins."},
+  {"t": "stage", "stage": "verify", "agents": ["main session"], "say": "The main session opens the settings page in the browser (live-check): the buttons use the theme colour, focus ring only on keyboard.", "min": 4, "why": "sdlc 5: at low risk Verify checks the changed flow; medium and high add the smoke list."},
+  {"t": "stage", "stage": "wrap", "agents": ["main session"], "say": "commit-msg gives you a ready commit message. You commit; agents never do.", "min": 2, "why": "Hard rule: agents never run git commands that change the repo."},
+  {"t": "end", "say": "Done in about 27 minutes of agent time, with no gate to wait on."}]},
+{"id": "medium",
+ "label": "Medium-risk feature",
+ "group": "Task",
+ "mode": "task",
+ "size": "M",
+ "ask": "Add a 'Favourites' list: a new endpoint and a card on the dashboard that shows it.",
+ "lane": "Task",
+ "laneWhy": "New code across layers with a new screen.",
+ "risk": "medium",
+ "riskWhy": ["ItemService.addFavourite is shared: 6 callers outside the change (context.md)", "a new card on the dashboard", "4 files across layers (controller, service, card script, template)"],
+ "context": {"impact": [["method", "ItemService.addFavourite", "src/main/java/com/acme/items/ItemService.java:118", "6 callers"], ["endpoint", "GET /api/favourites (new)", "src/main/java/com/acme/items/FavouriteController.java", "new file"], ["screen", "dashboard cards", "src/main/resources/static/js/dashboard/cards.js:40", "renders the cards"], ["screen", "profile page", "src/main/resources/templates/profile.html:77", "also loads cards.js"]], "rules": ["controllers stay thin", "new labels in messages.properties only", "colours from the theme"], "signals": ["shared method with 6 callers", "a new screen"]},
+ "team": [{"stage": "design", "agent": "solution-architect", "why": "a new endpoint and card across layers"}, {"stage": "design", "agent": "ux-designer", "why": "a new card: its states and variants"}, {"stage": "design", "agent": "qa-engineer", "focus": "characterize", "why": "risk medium: lock what saveItem returns today"}, {"stage": "build", "agent": "main session", "why": "you build"}, {"stage": "review", "agent": "code-reviewer", "why": "one review pass, every caller checked"}, {"stage": "test", "agent": "qa-engineer", "why": "new tests for the endpoint and the card"}, {"stage": "verify", "agent": "main session", "why": "live-check and the smoke list"}, {"stage": "wrap", "agent": "main session", "why": "commit message"}],
+ "notNeeded": [{"agent": "spec-analyst", "why": "the goal has no real gaps"}, {"agent": "data-architect", "why": "reuses the favourites table; no column change (no D2)"}, {"agent": "security-architect", "why": "same role check as the other item endpoints (no D4)"}, {"agent": "verifier", "why": "few criteria: you verify"}],
+ "steps": [
+  {"t": "triage", "why": "sdlc 1: a change to the product that is more than a quick fix is a task."},
+  {"t": "context", "min": 3, "why": "sdlc 2.4: the impact map comes from impact.py: callers, endpoints, the screens calling them, each as path:line."},
+  {"t": "risk", "why": "sdlc 2.5: medium = a shared method with callers outside the change, a new screen, or 3+ files across layers."},
+  {"t": "team", "why": "sdlc 3: a new screen brings ux-designer; a change across layers brings solution-architect; medium risk brings qa-engineer to lock today's outputs."},
+  {"t": "stage", "stage": "design", "agents": ["solution-architect", "ux-designer"], "say": "Both design experts run at once. solution-architect writes the plan file by file and the D3 card for the new endpoint; ux-designer the card's states (empty, loading, error, many items).", "files": ["design.md", "decisions/D3-api.md", "ui.md"], "min": 12, "why": "sdlc 4: all Design experts in one message, in parallel. Each reads context.md first and does not explore beyond it."},
+  {"t": "note", "stage": "design", "title": "Prototype", "agents": ["main session"], "say": "You get one HTML file with 3 lettered variants of the card at real size. Your pick is the D5 card.", "files": ["prototype.html", "decisions/D5-ui.md"], "why": "New UI: prototype first, build only the variant you pick (prototype skill)."},
+  {"t": "stage", "stage": "design", "title": "Characterization tests", "agents": ["qa-engineer"], "say": "qa-engineer locks what addFavourite returns today for 6 inputs, in the scratchpad. The 'before' run passes.", "files": ["safety.md"], "cmds": ["python .claude/core/scripts/char_test.py run <id> before"], "min": 5, "why": "sdlc 5: at medium and high risk, today's outputs of every changed shared method are locked before Build, so a side effect shows up as a diff."},
+  {"t": "gate", "stage": "design", "q": "Approve the plan, the API (D3) and the card (D5)?", "files": ["triage.md", "design.md", "decisions/D3-api.md", "decisions/D5-ui.md"], "by": "solution-architect", "qa": {"q": "Does the old /api/items call change?", "a": "No. design.md lists it under 'Stays unchanged', and the characterization tests prove it."}, "why": "sdlc 7: medium risk has one gate, at the end of the last planning stage, covering understanding and plan together."},
+  {"t": "check", "stage": "build", "name": "Before Build", "say": "Files baseline, compile, full unit suite.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "compile: your IDE", "mvn -o -q surefire:test"], "result": "412 pass, 0 fail", "why": "sdlc 5: the same steps at every risk level."},
+  {"t": "build", "stage": "build", "agents": ["main session"], "say": "The main session builds the endpoint, the service method and the card exactly as the approved plan says.", "files": ["src/main/java/com/acme/items/FavouriteController.java", "src/main/java/com/acme/items/ItemService.java", "src/main/resources/static/js/dashboard/cards.js", "src/main/resources/messages.properties"], "min": 25, "why": "Build follows the approved cards; anything they do not cover needs a change card, never a silent change."},
+  {"t": "check", "stage": "build", "name": "After Build", "say": "Compile, the full suite, the characterization diff (no change outside 'Intended changes') and the scope check.", "cmds": ["<commands.compile>", "<commands.test_all>", "python .claude/core/scripts/char_test.py run <id> after", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "cmdsUp": ["compile: your IDE", "mvn -o -q surefire:test", "python .claude/core/scripts/char_test.py run <id> after", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "result": "417 pass, 0 fail; no output changed outside the plan; 4 files, all planned", "why": "sdlc 5: nothing else may break."},
+  {"t": "review", "stage": "review", "agents": ["code-reviewer", "qa-engineer"], "say": "Review and Test run together. code-reviewer checks the diff and every one of the 6 callers in the impact map; qa-engineer writes and runs the new tests. PASS.", "files": ["review.md", "test.md"], "min": 12, "why": "sdlc 5: at medium and high risk every caller in the impact map is checked by someone."},
+  {"t": "stage", "stage": "test", "agents": ["qa-engineer"], "say": "5 new tests, all green (ran alongside Review).", "min": 0, "why": "sdlc 8: Review and Test in parallel, in one message."},
+  {"t": "stage", "stage": "verify", "agents": ["main session"], "say": "Live-check of the dashboard card, then the smoke items for the areas touched: 'Dashboard' and 'Items API' from .claude/smoke.md.", "files": [".claude/smoke.md"], "min": 8, "why": "sdlc 5: medium and high add the smoke list of each area touched, so neighbours of the change are checked too."},
+  {"t": "stage", "stage": "wrap", "agents": ["main session"], "say": "commit-msg gives you the message and the files to include.", "min": 2, "why": "You commit; agents never do."},
+  {"t": "end", "say": "Done: one gate, 6 callers checked, today's outputs proved unchanged."}]},
+{"id": "high",
+ "label": "High-risk data change",
+ "group": "Task",
+ "mode": "task",
+ "size": "L",
+ "ask": "Categories can be archived; archived ones disappear from the picker.",
+ "lane": "Task",
+ "laneWhy": "A new column and a change to what three screens list.",
+ "risk": "high",
+ "riskWhy": ["data model: a new column on the category table (D2)", "the picker query is a native query used by 3 screens (context.md)"],
+ "context": {"impact": [["entity", "Category", "src/main/java/com/acme/catalog/Category.java:22", "table CATEGORY"], ["query", "findAllCategories (native)", "src/main/java/com/acme/catalog/CategoryRepository.java:41", "3 callers"], ["screen", "category picker", "src/main/resources/static/js/catalog/category-picker.js:65", "admin"], ["screen", "item form", "src/main/resources/templates/items/form.html:120", "editors"]], "rules": ["schema only through JPA entities", "never hand-edit generated DDL", "an upgrade job for existing rows if needed"], "signals": ["table change", "native query with 3 callers"]},
+ "team": [{"stage": "spec", "agent": "spec-analyst", "why": "a real gap: what happens to items already in an archived category?"}, {"stage": "design", "agent": "data-architect", "why": "a table change: the D2 card"}, {"stage": "design", "agent": "solution-architect", "why": "risk high: the plan file by file"}, {"stage": "design", "agent": "qa-engineer", "focus": "characterize", "why": "lock today's picker output"}, {"stage": "build", "agent": "main session", "why": "you build"}, {"stage": "review", "agent": "code-reviewer", "why": "one review pass"}, {"stage": "test", "agent": "qa-engineer", "why": "new tests"}, {"stage": "verify", "agent": "verifier", "why": "many criteria and smoke items"}, {"stage": "wrap", "agent": "main session", "why": "commit message"}],
+ "notNeeded": [{"agent": "security-architect", "why": "no role or permission change"}, {"agent": "ux-designer", "why": "no new screen; the picker only shows fewer rows"}],
+ "mustFail": {"finding": "MUST DA3: the native query findAllCategories still returns archived categories, so the picker shows them (CategoryRepository.java:41).", "fix": "Add the archived filter to the native query; add a test with one archived category.", "lesson": "- <date> <task>: a new status column is applied in every native query that lists the rows, not only in JPQL (*Repository.java)", "min": 10},
+ "steps": [
+  {"t": "triage", "why": "sdlc 1: anything that needs a decision card is a task."},
+  {"t": "context", "min": 3, "why": "sdlc 2.4: the pack shows the native query and its 3 callers, the evidence for high risk."},
+  {"t": "risk", "why": "sdlc 2.5: high = a data model change, a contract others call, permissions, an outside system, or many callers."},
+  {"t": "team", "why": "sdlc 3: a table change brings data-architect (D2); a real gap brings spec-analyst."},
+  {"t": "stage", "stage": "spec", "agents": ["spec-analyst"], "say": "brief.md says what was understood and lists the gaps, each with a recommended answer (D1 Scope).", "files": ["brief.md", "spec.md"], "min": 12, "why": "Nobody designs before the request is understood."},
+  {"t": "gate", "stage": "spec", "q": "Did I understand it? (D1 Scope)", "files": ["brief.md"], "by": "spec-analyst", "qa": {"q": "Can an archived category come back?", "a": "Yes: gap G2 recommends an Unarchive action; you can say no."}, "why": "sdlc 7: high risk has two gates, the spec gate (the brief's gaps) and then the design gate."},
+  {"t": "stage", "stage": "design", "agents": ["data-architect", "solution-architect", "qa-engineer"], "say": "The D2 card starts with 'Data model explained' in plain words, then the column, what happens to existing rows, deploy order and rollback. qa-engineer locks today's picker output.", "files": ["design.md", "decisions/D2-data-model.md", "safety.md"], "min": 20, "why": "sdlc 7: a D2 card is written by data-architect in the decision-card layout; handoff_check.py must pass before its gate opens."},
+  {"t": "gate", "stage": "design", "q": "Approve the design and the data model (D2)?", "files": ["design.md", "decisions/D2-data-model.md"], "by": "data-architect", "qa": {"q": "What happens to existing categories?", "a": "They get no mark, which counts as active, so nothing changes for them (D2 section 0)."}, "why": "Only you approve a card. ok records it in decisions.md."},
+  {"t": "guard", "stage": "build", "say": "Before you approved D2, the guard held every edit to the Category entity. Now the card is approved for this task, the edit goes through.", "why": "The guard hook blocks data-model (D2), access (D4) and config (D6) edits until their card is approved, in Claude and in Cursor."},
+  {"t": "check", "stage": "build", "name": "Before Build", "say": "Files baseline, compile, full unit suite, characterization 'before'.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>", "python .claude/core/scripts/char_test.py run <id> before"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "compile: your IDE", "mvn -o -q surefire:test", "python .claude/core/scripts/char_test.py run <id> before"], "result": "412 pass, 0 fail", "why": "sdlc 5."},
+  {"t": "build", "stage": "build", "agents": ["main session"], "say": "The column on the entity, the filter in the queries, the picker change.", "files": ["src/main/java/com/acme/catalog/Category.java", "src/main/java/com/acme/catalog/CategoryRepository.java", "src/main/java/com/acme/catalog/CategoryService.java", "src/main/resources/static/js/catalog/category-picker.js"], "min": 30, "why": "Schema changes go through the JPA entity; the generated DDL is never edited by hand."},
+  {"t": "check", "stage": "build", "name": "After Build", "say": "Compile, the full suite, the characterization diff and the scope check.", "cmds": ["<commands.compile>", "<commands.test_all>", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "cmdsUp": ["compile: your IDE", "mvn -o -q surefire:test", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "result": "416 pass, 0 fail; the picker output changes only as 'Intended changes' says", "why": "sdlc 5."},
+  {"t": "review", "stage": "review", "agents": ["code-reviewer", "qa-engineer"], "say": "Review and Test together; every caller of the native query is checked. PASS.", "files": ["review.md", "test.md"], "min": 12, "why": "sdlc 8: any MUST sends the task back to Build; only what failed runs again."},
+  {"t": "stage", "stage": "test", "agents": ["qa-engineer"], "say": "4 new tests, all green.", "min": 0, "why": "Ran alongside Review."},
+  {"t": "stage", "stage": "verify", "agents": ["verifier"], "say": "verifier checks each criterion with evidence; the smoke items for 'Items' and 'Categories' pass.", "min": 10, "why": "A verifier joins for many criteria or a pushed change."},
+  {"t": "stage", "stage": "wrap", "agents": ["main session"], "say": "commit-msg, plus 'For release' notes: the new column arrives with the restart.", "min": 3, "why": "Release needs go under For release in status.md."},
+  {"t": "end", "say": "Done: two gates, the guard held the entity until D2, and the review MUST became a lesson the next task reads."}]},
+{"id": "bug",
+ "label": "A bug",
+ "group": "Task",
+ "mode": "task",
+ "size": "M",
+ "ask": "After 'Retry', the failed imports page says 'page not found'.",
+ "lane": "Task",
+ "laneWhy": "A bug whose cause is not obvious: prove the cause before any fix.",
+ "risk": "medium",
+ "riskWhy": ["the same link is built in 3 places (context.md)", "the front door adds an /app prefix that links must keep"],
+ "context": {"impact": [["controller", "retry redirect", "src/main/java/com/acme/imports/ImportController.java:210", "builds a link"], ["helper", "LinkHelper.pageUrl", "src/main/java/com/acme/common/LinkHelper.java:31", "2 more callers"], ["script", "failed imports page", "src/main/resources/static/js/imports/failed-imports.js:88", "follows the link"]], "rules": ["links the browser follows keep the /app prefix"], "signals": ["3 places build the link"]},
+ "team": [{"stage": "spec", "agent": "bug-investigator", "why": "the cause is not obvious: prove it at path:line first"}, {"stage": "design", "agent": "qa-engineer", "focus": "characterize", "why": "risk medium: lock today's links"}, {"stage": "build", "agent": "main session", "why": "you fix"}, {"stage": "review", "agent": "code-reviewer", "why": "one review pass"}, {"stage": "test", "agent": "main session", "why": "the regression test"}, {"stage": "verify", "agent": "main session", "why": "redo the re-request in the browser"}, {"stage": "wrap", "agent": "main session", "why": "commit message"}],
+ "notNeeded": [{"agent": "spec-analyst", "why": "the expected behaviour is clear"}, {"agent": "solution-architect", "why": "a small fix in one layer"}],
+ "steps": [
+  {"t": "triage", "why": "sdlc 1 and 3: a bug whose cause is not obvious is a task with bug-investigator at Spec."},
+  {"t": "context", "min": 2, "why": "sdlc 2.4."},
+  {"t": "risk", "why": "sdlc 2.5: a shared method with callers outside the change = medium."},
+  {"t": "team", "why": "sdlc 3."},
+  {"t": "stage", "stage": "spec", "agents": ["bug-investigator"], "say": "Expected vs actual, how to reproduce, 3 likely causes ranked with evidence, the proven cause (a link built without the /app prefix, path:line), the smallest fix, the same pattern elsewhere, and a regression test that fails now and must pass after.", "files": ["brief.md", "spec.md"], "min": 15, "why": "bug-investigator never fixes code: it proves the cause first, so the fix is right the first time."},
+  {"t": "stage", "stage": "design", "title": "Characterization tests", "agents": ["qa-engineer"], "say": "qa-engineer locks the links the 3 places build today.", "files": ["safety.md"], "min": 5, "why": "sdlc 5: risk medium."},
+  {"t": "gate", "stage": "design", "q": "Is this the cause, and is the fix right?", "files": ["brief.md", "spec.md", "triage.md"], "by": "bug-investigator", "qa": {"q": "Are other links broken the same way?", "a": "Two more (spec.md, 'Same pattern elsewhere'); the fix covers all three."}, "why": "sdlc 7: medium risk, one gate at the end of the last planning stage."},
+  {"t": "check", "stage": "build", "name": "Before Build", "say": "Baseline, compile, full suite; the new regression test fails, as it should.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "compile: your IDE", "mvn -o -q surefire:test"], "result": "412 pass, 1 fail (the new regression test: expected)", "why": "A test that already fails before Build is noted, never fixed silently."},
+  {"t": "build", "stage": "build", "agents": ["main session"], "say": "One helper builds the link with the prefix; the 3 places use it.", "files": ["src/main/java/com/acme/common/LinkHelper.java", "src/main/java/com/acme/imports/ImportController.java", "src/main/resources/static/js/imports/failed-imports.js"], "min": 10, "why": "The smallest fix the spec proved."},
+  {"t": "check", "stage": "build", "name": "After Build", "say": "The regression test passes now; nothing else changed.", "cmds": ["<commands.test_all>", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "cmdsUp": ["mvn -o -q surefire:test", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "result": "413 pass, 0 fail", "why": "sdlc 5."},
+  {"t": "review", "stage": "review", "agents": ["code-reviewer"], "say": "One pass; the 2 other callers of the helper are checked. PASS.", "files": ["review.md"], "min": 6, "why": "sdlc 5: every caller in the impact map is checked by someone."},
+  {"t": "stage", "stage": "test", "agents": ["main session"], "say": "The suite and the regression test are green.", "min": 2, "why": "Existing tests: the main session runs them."},
+  {"t": "stage", "stage": "verify", "agents": ["main session"], "say": "Retry in the browser lands on the right page; smoke items for 'Imports' pass.", "min": 6, "why": "sdlc 5: + smoke at medium."},
+  {"t": "stage", "stage": "wrap", "agents": ["main session"], "say": "commit-msg.", "min": 2, "why": "You commit."},
+  {"t": "end", "say": "Done: cause proved before the fix, a test that keeps it fixed."}]},
+{"id": "ai",
+ "label": "An AI change",
+ "group": "Task",
+ "mode": "task",
+ "size": "M",
+ "ask": "The assistant takes 9 seconds before the first words of an answer appear. Make it faster without making it worse.",
+ "lane": "Task",
+ "laneWhy": "A change to AI behaviour and speed.",
+ "risk": "high",
+ "riskWhy": ["an LLM is in the path (an outside system)", "the answer's shape is a contract the chat panel reads"],
+ "context": {"impact": [["pipeline", "assistant: router step", "src/main/java/com/acme/assistant/Router.java:40", "LLM call"], ["pipeline", "assistant: two tool calls", "src/main/java/com/acme/assistant/ToolRunner.java:88", "in series"], ["n8n", "assistant workflow: planner and tool nodes", "n8n/assistant-workflow.json \"Run tools\"", "tool calls in series"], ["screen", "chat panel", "src/main/resources/static/js/assistant/chat.js:300", "reads the answer shape"]], "rules": ["own data only", "the answer shape stays the same", "every LLM call writes its token row"], "signals": ["LLM in the path", "a contract the chat panel reads"]},
+ "team": [{"stage": "spec", "agent": "performance-engineer", "why": "something slow: the time budget and the baseline"}, {"stage": "design", "agent": "ai-engineer", "why": "model, prompt, cache and cost, with numbers"}, {"stage": "design", "agent": "n8n-expert", "why": "the pack shows the answer is built in an n8n workflow: today's flow node by node and the node plan"}, {"stage": "design", "agent": "qa-engineer", "focus": "characterize", "why": "lock today's answers for the eval cases"}, {"stage": "build", "agent": "main session", "why": "you build"}, {"stage": "review", "agent": "code-reviewer", "why": "one review pass"}, {"stage": "review", "agent": "ai-engineer", "focus": "ai", "why": "most of the change is AI"}, {"stage": "test", "agent": "main session", "why": "the evals"}, {"stage": "verify", "agent": "main session", "why": "measure in the browser"}, {"stage": "wrap", "agent": "main session", "why": "commit message"}],
+ "notNeeded": [{"agent": "solution-architect", "why": "no new layer; the answer shape does not change"}, {"agent": "data-architect", "why": "no table change"}],
+ "steps": [
+  {"t": "triage", "why": "sdlc 1."},
+  {"t": "context", "min": 3, "why": "sdlc 2.4: the pack names the workflow nodes and the screen that reads the answer."},
+  {"t": "risk", "why": "sdlc 2.5: an outside system (an LLM) in the path makes it high."},
+  {"t": "team", "why": "sdlc 3: performance-engineer keeps the time budget; ai-engineer decides model, prompt, cache and cost; n8n-expert plans the workflow nodes."},
+  {"t": "stage", "stage": "spec", "agents": ["performance-engineer"], "say": "Target: first words within 5 s at P95. The main session measures 20 real runs in the browser (agents cannot open it).", "files": ["perf.md", "brief.md"], "min": 10, "why": "Baseline before any change: you cannot claim faster without a before number."},
+  {"t": "gate", "stage": "spec", "q": "Is this the right target?", "files": ["brief.md", "perf.md"], "by": "performance-engineer", "qa": {"q": "Why P95 and not the average?", "a": "The slow answers are the ones people notice; the average hides them."}, "why": "sdlc 7: high risk, spec gate first."},
+  {"t": "stage", "stage": "design", "agents": ["ai-engineer", "qa-engineer", "n8n-expert"], "say": "ai-engineer writes the baseline first, then a plan where every change names the eval that proves it and what stays unchanged. n8n-expert maps today's flow node by node (two tool calls in series) and plans the node change.", "files": ["ai.md", "safety.md", "n8n.md"], "min": 15, "table": {"head": ["Baseline", "Value", "Kind"], "rows": [["first words P50 / P95", "6.8 s / 9.4 s", "measured, 20 runs"], ["total time P95", "14.1 s", "measured"], ["retries", "4 % of turns", "measured"], ["cost per successful answer", "$0.021", "calculated from the token ledger"], ["router step", "LLM, but a rule could route 70 %", "estimated from 200 logged questions"]]}, "table2": {"head": ["#", "Change", "Gain", "Validated by (eval + threshold)", "Stays unchanged"], "rows": [["1", "rule-based router for the 5 top intents", "-1.9 s P95", "component: router accuracy at least 96 % (baseline), 0 high-priority misroutes", "answer shape, tools, own-data rule"], ["2", "run the two tool calls in parallel", "-1.2 s", "end-to-end: pass rate not below baseline", "prompts"], ["3", "stream the narrative", "first words -2 s", "regression: 0 high-priority cases lost; safety: 0 failures", "the final answer"]]}, "why": "ai-engineer (core 1.3.3): baseline first, every step marked code or LLM, every number marked measured, calculated, estimated or assumed, and each recommendation with its eval and threshold set before the run."},
+  {"t": "gate", "stage": "design", "q": "Approve the AI plan and its thresholds?", "files": ["ai.md", "n8n.md"], "by": "ai-engineer", "qa": {"q": "Will the answers get worse?", "a": "Each change has an eval that must pass first: router accuracy not below 96 %, 0 high-priority cases lost, 0 safety failures (ai.md, Evals)."}, "why": "Only you approve; the thresholds are fixed before Build."},
+  {"t": "check", "stage": "build", "name": "Before Build", "say": "Baseline, compile, full suite, and the offline evals run on today's version.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.test_all>", "<the repo's offline eval command>"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "mvn -o -q surefire:test", "<the repo's offline eval command>"], "result": "evals: 142 of 150 pass (baseline)", "why": "Evals: the baseline run comes first; every result is compared with it."},
+  {"t": "build", "stage": "build", "agents": ["main session"], "say": "Router rule, parallel tool calls, streaming.", "files": ["src/main/java/com/acme/assistant/Router.java", "src/main/java/com/acme/assistant/ToolRunner.java", "src/main/resources/static/js/assistant/chat.js"], "min": 25, "why": "A pipeline another person owns gets a handoff (D7) instead of an edit."},
+  {"t": "check", "stage": "build", "name": "After Build", "say": "Evals kept apart: router 97 % (component), 0 high-priority cases lost (regression), 0 safety failures. First words P95 4.6 s (measured, 20 runs); cost per successful answer $0.017 (calculated).", "cmds": ["<commands.test_all>", "<the repo's offline eval command>", "python .claude/core/scripts/scope_check.py check <id>"], "cmdsUp": ["mvn -o -q surefire:test", "<the repo's offline eval command>", "python .claude/core/scripts/scope_check.py check <id>"], "result": "all thresholds met", "why": "One blended score would hide a regression; the types stay apart."},
+  {"t": "review", "stage": "review", "agents": ["code-reviewer", "ai-engineer"], "say": "code-reviewer and an ai-engineer pass (AI checklist: schema on parsed output, token row, fenced data, bounded retries). PASS.", "files": ["review.md", "review-ai.md"], "min": 10, "why": "An expert review pass joins only when most of the change is in its domain."},
+  {"t": "stage", "stage": "test", "agents": ["main session"], "say": "The eval run is the test result.", "min": 0, "why": "Ran with the checks."},
+  {"t": "stage", "stage": "verify", "agents": ["main session"], "say": "You measure again in the browser: first words 4.4 s median of 3; smoke items for 'Assistant' pass.", "min": 8, "why": "Speed is measured by the main session in the browser, never guessed."},
+  {"t": "stage", "stage": "wrap", "agents": ["main session"], "say": "commit-msg, and a handoff for the pipeline owner if that part is theirs.", "min": 3, "why": "dev-handoff when another owner must act."},
+  {"t": "end", "say": "Done: faster with numbers to prove it, and nothing called better without an eval."}]},
+{"id": "sf",
+ "label": "A SuccessFactors change",
+ "group": "Task",
+ "mode": "task",
+ "size": "M",
+ "ask": "Show each employee's manager, read from SuccessFactors, on the requests page.",
+ "lane": "Task",
+ "laneWhy": "New data from an outside system, shown to more people.",
+ "risk": "high",
+ "riskWhy": ["an outside system in the path: SuccessFactors (context.md)", "personal data shown to more people: who may see the manager (D4)"],
+ "context": {"impact": [["client", "SuccessFactors client", "src/main/java/com/acme/sf/SfClient.java:52", "OData, token service"], ["endpoint", "GET /api/requests", "src/main/java/com/acme/requests/RequestController.java:64", "lists requests"], ["screen", "requests page", "src/main/resources/static/js/requests/requests.js:120", "renders the table"]], "rules": ["never call SuccessFactors inside a transaction", "page with $top and $orderby", "a timeout on every outside call"], "signals": ["outside system", "personal data"]},
+ "team": [{"stage": "spec", "agent": "sf-expert", "focus": "fit", "why": "which entity holds the manager, effective dating, what SuccessFactors already does"}, {"stage": "design", "agent": "sf-expert", "focus": "field", "why": "the exact fields, $select and paging"}, {"stage": "design", "agent": "integration-engineer", "why": "the call: timeout, retry, cache, what users see when it is down"}, {"stage": "design", "agent": "security-architect", "why": "D4: who may see another employee's manager"}, {"stage": "design", "agent": "qa-engineer", "focus": "characterize", "why": "risk high: lock today's requests list"}, {"stage": "build", "agent": "main session", "why": "you build"}, {"stage": "review", "agent": "code-reviewer", "why": "one review pass"}, {"stage": "review", "agent": "sf-expert", "focus": "review", "why": "most of the risk is the SuccessFactors call"}, {"stage": "test", "agent": "qa-engineer", "why": "new tests with SuccessFactors stubbed"}, {"stage": "verify", "agent": "main session", "why": "live-check with two test users"}, {"stage": "wrap", "agent": "main session", "why": "commit message"}],
+ "notNeeded": [{"agent": "data-architect", "why": "no table change: read live, cached for 10 minutes"}, {"agent": "ux-designer", "why": "one more column on an existing table"}, {"agent": "solution-architect", "why": "integration-engineer designs the call; no new layer"}],
+ "steps": [
+  {"t": "triage", "why": "sdlc 1: anything that needs a decision card is a task."},
+  {"t": "context", "min": 3, "why": "sdlc 2.4: the pack names the SuccessFactors client and every caller of the requests endpoint."},
+  {"t": "risk", "why": "sdlc 2.5: an outside system or personal data makes it high."},
+  {"t": "team", "why": "sdlc 3: SuccessFactors data brings sf-expert; an outside call brings integration-engineer; personal data brings security-architect (D4)."},
+  {"t": "stage", "stage": "spec", "agents": ["sf-expert"], "say": "Fit: the manager is on the employee's job record, effective dated; it is read per page of requests with $select, never a full pull. SuccessFactors already keeps the history, so nothing is copied.", "files": ["sf.md", "brief.md"], "min": 12, "why": "sf-expert checks facts on api.sap.com and help.sap.com and says what SuccessFactors already does, so nothing is rebuilt."},
+  {"t": "gate", "stage": "spec", "q": "Did I understand it? (D1 Scope)", "files": ["brief.md", "sf.md"], "by": "sf-expert", "qa": {"q": "Which manager, if someone changes team mid-month?", "a": "The one valid on the request's date (effective dating, sf.md)."}, "why": "sdlc 7: high risk, the spec gate first."},
+  {"t": "stage", "stage": "design", "agents": ["sf-expert", "integration-engineer", "security-architect", "qa-engineer"], "say": "sf-expert lists the exact fields; integration-engineer designs the call (2 s timeout, one retry, a 10-minute cache keyed by user and language, 'Manager not available' when SuccessFactors is down); security-architect writes the D4 card (the employee, their manager and HR admins only); qa-engineer locks today's requests list.", "files": ["design.md", "decisions/D4-access.md", "safety.md"], "min": 20, "why": "sdlc 4: the Design experts run in parallel; each reads context.md and the approved brief."},
+  {"t": "gate", "stage": "design", "q": "Approve the design and who may see the manager (D4)?", "files": ["design.md", "decisions/D4-access.md"], "by": "security-architect", "qa": {"q": "What if SuccessFactors is slow?", "a": "After 2 s the page shows the requests with 'Manager not available'; it never waits longer (design.md, Failure)."}, "why": "Only you approve a card; the guard holds access edits until D4 is approved."},
+  {"t": "guard", "stage": "build", "say": "Before you approved D4, the guard held the edit to the access check on the requests endpoint. Now it goes through.", "why": "The guard hook blocks access (D4), data-model (D2) and config (D6) edits until their card is approved, in Claude and in Cursor."},
+  {"t": "check", "stage": "build", "name": "Before Build", "say": "Files baseline, compile, full unit suite, characterization 'before'.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>", "python .claude/core/scripts/char_test.py run <id> before"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "compile: your IDE", "mvn -o -q surefire:test", "python .claude/core/scripts/char_test.py run <id> before"], "result": "412 pass, 0 fail", "why": "sdlc 5."},
+  {"t": "build", "stage": "build", "agents": ["main session"], "say": "The manager call with its timeout and cache, the access check, the new column.", "files": ["src/main/java/com/acme/sf/SfClient.java", "src/main/java/com/acme/requests/RequestService.java", "src/main/java/com/acme/requests/RequestController.java", "src/main/resources/static/js/requests/requests.js"], "min": 30, "why": "Build follows the approved cards; tests never call the real SuccessFactors."},
+  {"t": "check", "stage": "build", "name": "After Build", "say": "Compile, the full suite, the characterization diff and the scope check.", "cmds": ["<commands.compile>", "<commands.test_all>", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "cmdsUp": ["compile: your IDE", "mvn -o -q surefire:test", "python .claude/core/scripts/char_test.py diff <id>", "python .claude/core/scripts/scope_check.py check <id>"], "result": "418 pass, 0 fail; the requests list changes only by the new column", "why": "sdlc 5."},
+  {"t": "review", "stage": "review", "agents": ["code-reviewer", "sf-expert"], "say": "code-reviewer and an sf-expert review pass ($select, paging with $orderby, no call inside a transaction, the timeout). PASS.", "files": ["review.md", "review-sf.md"], "min": 12, "why": "An expert review pass joins only when most of the risk is in its domain."},
+  {"t": "stage", "stage": "test", "agents": ["qa-engineer"], "say": "6 new tests with SuccessFactors stubbed: found, not found, slow, down, no access, another language.", "min": 8, "why": "New tests for new behaviour; the stub keeps them fast and repeatable."},
+  {"t": "stage", "stage": "verify", "agents": ["main session"], "say": "Live-check with an employee and an HR admin; the smoke items for 'Requests' pass.", "min": 8, "why": "sdlc 5: + smoke at high."},
+  {"t": "stage", "stage": "wrap", "agents": ["main session"], "say": "commit-msg; 'For release': no new config key.", "min": 2, "why": "You commit."},
+  {"t": "end", "say": "Done: SuccessFactors facts checked at the source, access decided by you, and a page that still works when SuccessFactors does not."}]},
+{"id": "product",
+ "label": "A new product",
+ "group": "Product",
+ "mode": "product",
+ "size": "L",
+ "ask": "Build a desk-booking app for our three offices, with single sign-on and calendar invites.",
+ "lane": "Product",
+ "laneWhy": "An idea for a new product. Nobody builds straight from it: the factory runs it stage by stage, with your decision at each gate.",
+ "team": [{"stage": "intake", "agent": "main session", "why": "triage card and plan"}, {"stage": "intake", "agent": "spec-analyst", "why": "is the request ready?"}, {"stage": "intake", "agent": "devops-engineer", "why": "where and how it will run is decided before the base is built: platform, environments, sign-in, CI/CD, backup, cost"}, {"stage": "base", "agent": "base-builder", "why": "a fresh base project"}, {"stage": "base", "agent": "devops-engineer", "why": "the base deploys"}, {"stage": "requirements", "agent": "spec-analyst", "why": "spec and gap sheet"}, {"stage": "product", "agent": "product-critic", "why": "a good, clear product?"}, {"stage": "product", "agent": "ux-designer", "why": "journeys and screens"}, {"stage": "prototype", "agent": "ux-designer", "why": "options to pick from"}, {"stage": "stories", "agent": "story-sizer", "why": "stories, points, MVP"}, {"stage": "design", "agent": "solution-architect", "why": "architecture and API contract"}, {"stage": "design", "agent": "data-architect", "why": "data model for growth"}, {"stage": "design", "agent": "security-architect", "why": "roles and access"}, {"stage": "design", "agent": "integration-engineer", "why": "single sign-on and calendar invites"}, {"stage": "design", "agent": "devops-engineer", "why": "environments and pipeline"}, {"stage": "design", "agent": "verifier", "why": "the design parts fit together"}, {"stage": "build", "agent": "backend-developer", "why": "per story"}, {"stage": "build", "agent": "frontend-developer", "why": "per story"}, {"stage": "build", "agent": "integration-engineer", "why": "the two connections"}, {"stage": "build", "agent": "qa-engineer", "why": "tests from the criteria"}, {"stage": "review", "agent": "code-reviewer", "why": "code review"}, {"stage": "review", "agent": "qa-engineer", "why": "run the tests"}, {"stage": "review", "agent": "verifier", "why": "the built product matches the design"}, {"stage": "audit", "agent": "audit-expert", "why": "Definition of Done, with evidence"}, {"stage": "release", "agent": "devops-engineer", "why": "deploy plan"}, {"stage": "release", "agent": "release-manager", "why": "go-live package"}],
+ "notNeeded": [{"agent": "sf-expert", "why": "the app reads no SuccessFactors data"}, {"agent": "ai-engineer", "why": "no AI feature"}, {"agent": "performance-engineer", "why": "small volumes: 3 offices, about 400 desks"}],
+ "steps": [
+  {"t": "triage", "why": "Golden rule (factory skill): \"Hold on - I won't start building from this directly.\" Each expert reviews it first; building on gaps costs more than asking."},
+  {"t": "stage", "stage": "intake", "agents": ["main session", "spec-analyst", "devops-engineer"], "say": "What was understood, the plan, and at most 5 first questions with recommended answers; spec-analyst checks how ready the request is. devops-engineer asks where and how it will run (platform, environments, sign-in, CI/CD, backup, cost) before the base is built.", "files": ["00-prd.md", "00-intake.md", "01-prd-review.md", "00-infra.md"], "why": "S0 Intake: understand the request and plan the run before anyone designs; the team is the factory's default, trimmed to what this product needs."},
+  {"t": "gate", "stage": "intake", "q": "G0: Is the plan right?", "files": ["00-intake.md", "01-prd-review.md", "00-infra.md"], "by": "spec-analyst", "qa": {"q": "Why not start coding now?", "a": "Three blockers are open (who may book for others, opening hours, desk types); building on them would mean rework."}, "why": "Gate G0 Plan agreed: you confirm the plan and the first answers; your words are recorded on the live page."},
+  {"t": "stage", "stage": "base", "agents": ["base-builder", "devops-engineer"], "say": "Built for the platform approved at G0 (00-infra.md). A fresh base project from the core's base spec: shell, jobs, audit history, theme, demo flow; the base checker reaches 100 %; devops-engineer checks it deploys.", "files": ["10-base-check.md"], "why": "S1 Base: every new product starts from the same base, never from a copy of an old repo."},
+  {"t": "stage", "stage": "requirements", "agents": ["spec-analyst"], "say": "The spec and the gap sheet, each gap with a recommended answer. The non-functional sheet gives every need a number (users, speed, availability, accessibility, backup, cost) or a question.", "files": ["02-spec.md", "02-nfr.md", "02-gaps.md"], "why": "S2 Requirements: every gap gets a recommended answer, so you decide instead of writing."},
+  {"t": "stage", "stage": "product", "agents": ["product-critic", "ux-designer"], "say": "Is it a good, clear product? Verdict 'Good with fixes'. ux-designer maps the journeys and screens.", "files": ["03-product-review.md", "03-journeys.md"], "why": "S3 Product review: checks value and confusion, not grammar or technology."},
+  {"t": "gate", "stage": "product", "q": "G1: Answer the gaps and the review?", "files": ["02-gaps.md", "02-nfr.md", "03-product-review.md"], "by": "product-critic", "qa": {"q": "Do we need a waitlist?", "a": "Not for the first release: the review recommends it for later (LATER list)."}, "why": "Gate G1 Product owner answers: the gaps and the review findings are settled before options are drawn."},
+  {"t": "stage", "stage": "prototype", "agents": ["ux-designer"], "say": "2-3 genuinely different product options as one offline HTML; you pick one (D5).", "files": ["P-options.md", "P-prototype.html"], "why": "SP Prototype: only the approved option gets sized."},
+  {"t": "gate", "stage": "prototype", "q": "GP: Which option?", "files": ["P-options.md"], "by": "ux-designer", "why": "Gate GP Prototype approved: the option you pick (D5) is the one that gets stories and a design."},
+  {"t": "stage", "stage": "stories", "agents": ["story-sizer"], "say": "Epics and stories with Given/When/Then, points, the MVP slice and a first release plan.", "files": ["04-stories.md", "04-backlog.csv"], "why": "S4 Stories: sized stories make the MVP and the release plan concrete; only the approved option is sized."},
+  {"t": "gate", "stage": "stories", "q": "G2: Is the MVP slice right?", "files": ["04-stories.md"], "by": "story-sizer", "why": "Gate G2 Scope and MVP: what ships first, and what waits on the LATER list."},
+  {"t": "stage", "stage": "design", "agents": ["solution-architect", "data-architect", "security-architect", "integration-engineer", "devops-engineer", "verifier"], "say": "Architecture and the API contract, the data model for growth, roles and access, the single sign-on and calendar connections (integration-engineer: mapping, retries, what users see when the calendar is down), environments (devops-engineer); verifier checks the parts fit together.", "files": ["05-architecture.md", "05-openapi.yaml", "05-data-model.md", "05-security.md", "05-integrations.md", "05-ops.md"], "why": "S5 Design: architecture, data model, access and the API contract are fixed before any product code."},
+  {"t": "gate", "stage": "design", "q": "G3: Approve the design? Code writes open after this.", "files": ["05-architecture.md", "05-data-model.md"], "by": "solution-architect", "why": "Gate G3: until it is approved, the guard blocks product code (except the base)."},
+  {"t": "stage", "stage": "build", "agents": ["backend-developer", "frontend-developer", "integration-engineer", "qa-engineer"], "say": "One story at a time: backend and screens in parallel once the contract is fixed, the two connections, and qa-engineer's tests per acceptance criterion.", "why": "S6 Build: one story at a time against the fixed contract, each acceptance criterion with its test.", "files": ["06-build-log.md"]},
+  {"t": "stage", "stage": "review", "agents": ["code-reviewer", "qa-engineer", "verifier"], "say": "Code review, the test report, and verifier checks the built product against the design.", "files": ["07-code-review.md", "07-test-report.md"], "why": "S7 Review: the same review checklists as task mode; any MUST goes back to Build and becomes a lesson."},
+  {"t": "stage", "stage": "audit", "agents": ["audit-expert"], "say": "Every MUST of the Definition of Done marked PASS, FAIL or NOT VERIFIED with evidence; the rest goes to a LATER list.", "files": ["08-audit.md"], "why": "S8 Audit: an independent check before go-live."},
+  {"t": "stage", "stage": "release", "agents": ["devops-engineer", "release-manager"], "say": "devops-engineer writes the deploy plan (never deploys); release-manager the go-live package and the go or no-go.", "files": ["09-deploy-plan.md", "09-release.md"], "why": "S9 Release: how it ships and how it rolls back, before you say go."},
+  {"t": "gate", "stage": "release", "q": "G4: Go live?", "files": ["09-release.md"], "by": "release-manager", "why": "Gate G4 Go-live: only you say go."},
+  {"t": "end", "say": "Live. Six gates (G0 to G4 and GP), each with your words recorded; nothing was built from the request alone."}]}
+]}
+</script>
+
+<script>
+"use strict";
+const D=JSON.parse(document.getElementById("sim-data").textContent);
+const META=window.__SIM__||{};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const COLS={none:[["triage","Triage"],["do","Do it"],["check","Check"],["end","Done"]],
+  task:[["triage","Triage"],["plan","Context and team"],["spec","Spec"],["design","Design"],["build","Build"],["review","Review"],["test","Test"],["verify","Verify"],["wrap","Wrap-up"]],
+  product:[["triage","Triage"],["intake","S0 Intake"],["base","S1 Base"],["requirements","S2 Requirements"],["product","S3 Product review"],["prototype","SP Prototype"],["stories","S4 Stories"],["design","S5 Design"],["build","S6 Build"],["review","S7 Review"],["audit","S8 Audit"],["release","S9 Release"]]};
+const RISKNET={low:"Safety net: compile and the full suite before and after, scope check. No gate.",
+  medium:"Safety net: + characterization tests, every caller checked, smoke list. One gate.",
+  high:"Safety net: as medium. Two gates: spec, then design."};
+const S={sc:null,tg:{bug:false,unp:false,app:false},steps:[],i:0,asked:{},variant:"A",view:"flow",agent:null};
+
+function modelOf(sc,agent){const r=(sc.team||[]).find(x=>x.agent===agent&&x.model);return r?r.model:(D.models[agent]||(D.agents[agent]||{}).model||D.defaultModel||"Opus")}
+function badge(sc,agent,cls){const m=modelOf(sc,agent);return '<span class="ag '+(cls||"")+(agent===S.agent?" hl":"")+'">'+esc(agent)+' <i class="m m-'+m.toLowerCase()+'">'+esc(m==="You"?"main":m)+'</i></span>'}
+function colOf(s){if(s.t==="triage")return "triage";if(["context","risk","team"].includes(s.t))return "plan";if(s.t==="end")return null;return s.stage||"plan"}
+function lastCol(sc){const c=COLS[sc.mode];return c[c.length-1][0]}
+
+/* the same expansion as simulate.py's expand(): toggles add steps */
+function expand(sc,tg){
+  const out=[],bug=sc.mustFail||(tg.bug&&sc.mode==="task"?D.bug:null);
+  for(const s of sc.steps){
+    if(s.t==="review"&&bug){
+      out.push({t:"reviewFail",stage:"review",agents:s.agents,finding:bug.finding,min:s.min,why:"sdlc 8: any MUST or failing test = FAIL, back to Build; only what failed runs again."});
+      out.push({t:"rebuild",stage:"build",agents:["main session"],say:bug.fix,min:bug.min,why:"The fix follows the finding's path:line and fix; the checks after Build run again."});
+      out.push(Object.assign({},s,{again:true,min:Math.ceil((s.min||0)/2),say:"Review again, only for what failed: PASS."}));
+      out.push({t:"lessons",stage:"review",line:bug.lesson.replace("<date>",new Date().toISOString().slice(0,10)).replace("<task>",(sc.mode==="task"?"demo-"+sc.id:sc.id)),why:"sdlc 9 Lessons loop: every fixed review MUST adds one line to .claude/review/lessons.md. Agents read the lines for their area, and the reviewer fails a repeat."});
+      continue;
+    }
+    out.push(s);
+    if(s.t==="build"&&tg.unp&&sc.mode==="task")out.push({t:"scope",stage:"build",file:D.unplanned.file,say:D.unplanned.say,why:D.unplanned.why});
+  }
+  return out;
+}
+
+function title(s,sc){
+  switch(s.t){
+    case "triage":return "Triage: "+sc.lane;
+    case "context":return "Context pack";
+    case "risk":return "Risk: "+sc.risk;
+    case "team":return "The team";
+    case "gate":return "Gate: "+s.q;
+    case "build":return "Build";
+    case "review":return s.again?"Review again":"Review";
+    case "reviewFail":return "Review fails";
+    case "rebuild":return "Back to Build";
+    case "lessons":return "A lesson is recorded";
+    case "scope":return "Scope check blocks";
+    case "guard":return "The guard";
+    case "revise":return "Changes, then the gate again";
+    case "check":return s.name;
+    case "end":return "Done";
+    default:return s.title||(s.stage?stageName(sc,s.stage):"Step");
+  }
+}
+function stageName(sc,k){const c=(COLS[sc.mode]||[]).find(x=>x[0]===k);return c?c[1]:k}
+function colour(k){return "var(--"+(k||"cur")+")"}
+
+/* clock: estimated minutes per stage against the measured baseline */
+function minutes(upto){const est={},all={};S.steps.forEach((s,j)=>{const k=s.stage;if(!k||!s.min)return;all[k]=(all[k]||0)+s.min;if(j<upto)est[k]=(est[k]||0)+s.min});return {est,all}}
+function clockHTML(){
+  const sc=S.sc;
+  if(sc.mode==="none")return '<div class="card clk"><h3>Clock</h3><div class="muted">No task, no stages: minutes, not hours. Nothing to compare.</div></div>';
+  if(sc.mode==="product")return '<div class="card clk"><h3>Clock</h3><div class="muted">A whole product runs for days, so there is no stage budget or baseline; the live page shows working time and gate waits per stage.</div></div>';
+  const {est,all}=minutes(S.i+1),B=D.baseline.min;
+  const keys=["spec","design","build","review","test","verify","wrap"];
+  const max=Math.max(...keys.map(k=>Math.max(all[k]||0,B[k]||0)),1);
+  let rows="",tn=0,tb=0;
+  for(const k of keys){
+    const a=all[k]||0,b=B[k],e=est[k]||0;
+    if(b!=null){tn+=a;tb+=b}
+    if(!a&&b==null)continue;
+    rows+='<div class="row" style="--sc:'+colour(k)+'"><span>'+esc(stageName(sc,k))+'</span><div class="bar">'+(b!=null?'<span class="b" style="width:'+(b/max*100)+'%"></span>':'')+'<span class="e" style="width:'+(a/max*100)+'%"></span><span class="p" style="width:'+(e/max*100)+'%"></span></div><span class="sub">'+a+(b!=null?' / '+b:'')+' min</span></div>';
+  }
+  return '<div class="card clk"><h3>Clock: agent minutes per stage</h3>'+rows+
+    '<div style="margin-top:6px"><b style="font-weight:500">'+tn+' min</b> <span class="sub">estimated, against</span> <b style="font-weight:500">'+tb+' min</b> <span class="sub">measured on the old flow ('+esc(D.baseline.from)+'), spec + design + build + review</span></div>'+
+    '<div class="legend"><span><i style="background:var(--build)"></i>done so far</span><span><i style="background:color-mix(in srgb,var(--build) 30%,var(--card))"></i>planned (estimated)</span><span><i style="border:1px dashed var(--faint)"></i>old run (measured)</span></div>'+
+    '<div class="sub" style="margin-top:4px">Gate waits are your time, not agent time, and are left out (as on the live page).</div></div>';
+}
+function liveHTML(){
+  const sc=S.sc;
+  if(sc.mode==="none")return '<div class="card"><h3>On the live page</h3><div class="muted">This lane opens no task, so the live page shows nothing. That is the point: only real work gets a task.</div></div>';
+  const flags=(S.tg.bug&&!sc.mustFail?" --bug":"")+(S.tg.unp&&sc.mode==="task"?" --unplanned":"")+(S.tg.app&&sc.mode==="task"?" --app-up":"");
+  const cmd="python .claude/core/scripts/simulate.py "+sc.id+flags;
+  return '<div class="card"><h3>See it on the live page</h3><div class="sub">Run this in the repo; it replays this request as the demo task <code>demo-'+esc(sc.id)+'</code> through the real live-status script and opens its live page (also shown below):</div>'+
+    '<div class="copy" style="margin:6px 0"><code id="cmd">'+esc(cmd)+'</code><button class="btn ghost sm" id="cp">Copy</button></div>'+
+    '<a href="live.html?task=demo-'+encodeURIComponent(sc.id)+'" target="_blank" rel="noopener">Open live.html?task=demo-'+esc(sc.id)+'</a>'+
+    '<div class="sub" style="margin-top:4px">Demo tasks never bind to a session, are left out of timing reports, and go with <code>simulate.py --clean</code>.</div></div>';
+}
+function teamHTML(){
+  const sc=S.sc;if(sc.mode==="none")return "";
+  const seen=new Set(),cur=new Set((S.steps[S.i].agents)||[]);
+  S.steps.slice(0,S.i).forEach(s=>(s.agents||[]).forEach(a=>seen.add(a)));
+  if(S.i>0||S.steps[S.i].t!=="triage")seen.add("explorer");
+  let h='<div class="card"><h3>Team</h3><div class="chips">';
+  const shown=new Set();
+  for(const r of sc.team||[]){const k=r.agent;if(shown.has(k))continue;shown.add(k);h+=badge(sc,k,cur.has(k)?"on":seen.has(k)?"done":"")}
+  if(sc.mode==="task")h+=badge(sc,"explorer",S.steps[S.i].t==="context"?"on":seen.has("explorer")?"done":"");
+  h+='</div>';
+  if((sc.notNeeded||[]).length)h+='<div class="sub" style="margin-top:4px">Not needed:</div>'+(sc.notNeeded.map(n=>'<div class="sub">'+esc(n.agent)+': '+esc(n.why)+'</div>').join(""));
+  return h+'</div>';
+}
+
+function cmdsOf(s){return (S.tg.app&&s.cmdsUp)?s.cmdsUp:(s.cmds||[])}
+function filesHTML(fs,cls){return (fs||[]).length?'<div class="chips">'+fs.map(f=>'<span class="fc '+(cls||"new")+'">'+esc(f)+'</span>').join("")+'</div>':""}
+function tableHTML(t){return t?'<table><thead><tr>'+t.head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+t.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table>':""}
+
+function bodyHTML(s){
+  const sc=S.sc;let h="";
+  if(s.t==="triage"){
+    h+=(sc.mode==="product"?'<p class="say"><b style="font-weight:500">"Hold on - I won\'t start building from this directly."</b></p>':"")+
+      '<p class="say">Lane: <span class="lane">'+esc(sc.lane)+'</span> '+esc(sc.laneWhy)+'</p>';
+    if(sc.mode==="task")h+='<p class="muted">Next: a task folder <code>demo-'+esc(sc.id)+'</code> (normally the ticket id), started with <code>live_status.py init</code>.</p>';
+  }else if(s.t==="context"){
+    const c=sc.context;
+    h+='<p class="say">'+badge(sc,"explorer","on")+' writes <code>context.md</code>: what the change touches, so nobody explores twice.</p>'+
+      tableHTML({head:["Kind","What","Where","Note"],rows:c.impact})+
+      '<p class="muted" style="margin:6px 0 0">Rules that apply: '+esc(c.rules.join("; "))+'. Risk signals: '+esc(c.signals.join("; "))+'.</p>'+filesHTML(["context.md"]);
+  }else if(s.t==="risk"){
+    h+='<p class="say">Risk <span class="lane risk-'+esc(sc.risk)+'">'+esc(sc.risk)+'</span>, from the evidence:</p><ul>'+sc.riskWhy.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul><p class="muted">'+esc(RISKNET[sc.risk])+'</p>';
+  }else if(s.t==="team"){
+    h+='<p class="say">Each agent joins for a reason in <code>triage.md</code> (Who will work on this). Stages with nobody on them are skipped.</p><table><thead><tr><th>Stage</th><th>Agent and model</th><th>Why</th></tr></thead><tbody>'+
+      sc.team.map(r=>'<tr><td>'+esc(stageName(sc,r.stage))+'</td><td>'+badge(sc,r.agent)+(r.focus?' <span class="sub">('+esc(r.focus)+')</span>':'')+'</td><td>'+esc(r.why)+'</td></tr>').join("")+'</tbody></table>'+
+      ((sc.notNeeded||[]).length?'<p class="muted" style="margin:8px 0 2px">Left out, and why:</p><table><tbody>'+sc.notNeeded.map(n=>'<tr><td>'+esc(n.agent)+'</td><td>'+esc(n.why)+'</td></tr>').join("")+'</tbody></table>':'')+filesHTML(["triage.md"]);
+  }else if(s.t==="gate"||s.t==="revise"){
+    if(s.t==="revise")h+='<p class="say">'+badge(sc,s.by||"main session","on")+' changes the documents as you asked, then opens the gate again.</p>';
+    else{
+      h+='<div class="gatebox"><div class="q">'+esc(s.q)+'</div><div class="sub">Waiting for you. '+esc(s.by||"")+' wrote these; the full text is in the chat and on the live page, with line comments:</div>'+filesHTML(s.files)+
+        (S.asked[S.i]&&s.qa?'<div class="qa"><b style="font-weight:500">You asked:</b> '+esc(s.qa.q)+'<br><b style="font-weight:500">Answer:</b> '+esc(s.qa.a)+'<div class="sub">Logged with live_status.py ask, added to the document\'s Q&amp;A; the gate stays open.</div></div>':'')+
+        '<div class="nav"><button class="btn you" data-act="ok">Approve</button><button class="btn ghost" data-act="change">Change</button>'+(s.qa?'<button class="btn ghost" data-act="ask"'+(S.asked[S.i]?' disabled':'')+'>Ask: '+esc(s.qa.q)+'</button>':'')+'</div></div>';
+    }
+  }else if(s.t==="reviewFail"){
+    h+='<div class="blk"><b style="font-weight:500">FAIL.</b> '+esc(s.finding)+'</div><p class="muted">The Review stage is marked failed; the task goes back to Build.</p>';
+  }else if(s.t==="scope"){
+    h+='<p class="say">'+esc(s.say)+'</p><div class="blk"><code>scope_check.py check</code>: <code>'+esc(s.file)+'</code> is not planned (MUST).</div><p class="muted">The agent drops the change to that file (or, if it is really needed, accepts it with a reason). The stop hook would send the turn back while it is left open.</p>';
+  }else if(s.t==="lessons"){
+    h+='<p class="say">One line goes into <code>.claude/review/lessons.md</code>:</p><pre>'+esc(s.line)+'</pre><p class="muted">In the demo replay it goes into the demo folder, never your real lessons file.</p>';
+  }else if(s.t==="guard"){
+    h+='<div class="okbox">'+esc(s.say)+'</div>';
+  }else{
+    if(s.agents)h+='<div class="chips">'+s.agents.map(a=>badge(sc,a,"on")).join("")+'</div>';
+    if(s.say)h+='<p class="say">'+esc(s.say)+'</p>';
+    h+=tableHTML(s.table)+(s.table2?'<div style="height:8px"></div>'+tableHTML(s.table2):'');
+  }
+  const cm=cmdsOf(s);
+  if(cm.length)h+=(S.tg.app&&s.cmdsUp?'<p class="muted" style="margin:6px 0 0">'+esc(D.appUp)+'</p>':'')+'<pre>'+cm.map(esc).join("\n")+'</pre>'+(s.result?'<div class="okbox">'+esc(s.result)+'</div>':'');
+  if(s.files&&!["gate","context","team"].includes(s.t))h+=filesHTML(s.files);
+  if(s.min)h+='<div class="sub">About '+s.min+' min of agent time (estimated).</div>';
+  return h;
+}
+function navHTML(){
+  const s=S.steps[S.i],atGate=s.t==="gate",last=S.i>=S.steps.length-1;
+  return '<div class="nav"><button class="btn ghost sm" data-act="back"'+(S.i===0?' disabled':'')+'>Back</button><button class="btn sm" data-act="next"'+(atGate||last?' disabled':'')+'>'+(atGate?'Decide at the gate':'Next')+'</button><button class="btn ghost sm" data-act="play"'+(last?' disabled':'')+'>'+(S.auto?'Pause':'Play')+'</button><span class="sp"></span><button class="btn ghost sm" data-act="restart">Restart</button><span class="sub">Step '+(S.i+1)+' of '+S.steps.length+'</span></div>';
+}
+function stepCard(){
+  const s=S.steps[S.i],k=colOf(s)||lastCol(S.sc);
+  return '<div class="st-h" style="--sc:'+colour(k)+'"><span class="dot"></span><b>'+esc(title(s,S.sc))+'</b><span class="pill">'+esc(stageName(S.sc,k))+'</span></div>'+bodyHTML(s)+navHTML();
+}
+function whyHTML(){const s=S.steps[S.i];return '<div class="card why"><h3>Why this step</h3><div>'+esc(s.why||"")+'</div></div>'}
+
+function renderA(){
+  const sc=S.sc;
+  $("a-steps").innerHTML=S.steps.map((s,j)=>{const k=colOf(s)||lastCol(sc);return '<li class="'+(j<S.i?"done":j===S.i?"cur":"")+(s.t==="reviewFail"||s.t==="scope"?" bad":"")+'" style="--sc:'+colour(k)+'"><span class="n">'+(j+1)+'</span><span>'+esc(title(s,sc))+'</span></li>'}).join("");
+  $("a-main").innerHTML=stepCard();
+  $("a-side").innerHTML=whyHTML()+teamHTML()+clockHTML()+liveHTML();
+  const cur=$("a-steps").querySelector(".cur");if(cur)cur.scrollIntoView({block:"nearest"});
+}
+function renderB(){
+  const sc=S.sc,s=S.steps[S.i],curCol=colOf(s)||lastCol(sc);
+  const used=new Set(S.steps.map(x=>colOf(x)).filter(Boolean));used.add(lastCol(sc));
+  const {all}=minutes(0),B=D.baseline.min;
+  let h="";
+  for(const [k,name] of COLS[sc.mode]){
+    const past=S.steps.slice(0,S.i+1).filter(x=>(colOf(x)||lastCol(sc))===k);
+    let body="";const ags=new Map(),files=[];
+    past.forEach((x,j)=>{(x.agents||[]).forEach(a=>ags.set(a,x===s?"on":"done"));if(x.t==="context")ags.set("explorer",x===s?"on":"done");(x.files||[]).forEach(f=>files.includes(f)||files.push(f))});
+    ags.forEach((st,a)=>body+=badge(sc,a,st));
+    past.filter(x=>x.t==="gate").forEach(x=>body+='<div class="gatemini'+(x===s?'':' ok')+'">'+(x===s?'Waiting: ':'Approved: ')+esc(x.q)+'</div>');
+    past.filter(x=>x.t==="reviewFail"||x.t==="scope").forEach(x=>body+='<div class="mustmini">'+(x.t==="scope"?'Unplanned file blocked':'MUST: back to Build')+'</div>');
+    if(files.length)body+='<div>'+files.slice(-6).map(f=>'<span class="fc new">'+esc(f.split("/").pop())+'</span>').join("")+'</div>';
+    const est=all[k],bl=sc.mode==="task"?B[k]:null;
+    h+='<div class="col'+(k===curCol?" cur":"")+(used.has(k)?"":" skip")+'" style="--sc:'+colour(k)+'"><div class="ch"><b>'+esc(name)+'</b><span class="sub">'+(used.has(k)?(est?est+" min est.":"")+(bl!=null?" / old "+bl:""):"skipped")+'</span></div><div class="cb">'+body+'</div></div>';
+  }
+  $("b-board").innerHTML=h;
+  $("b-main").innerHTML=stepCard()+'<div style="margin-top:10px">'+whyHTML()+'</div>';
+  const feed=S.steps.slice(0,S.i+1).map((x,j)=>'<li><b>'+(j+1)+'. '+esc(title(x,sc))+'</b>'+(x.agents?' - '+esc(x.agents.join(", ")):"")+'</li>').reverse().join("");
+  $("b-side").innerHTML=clockHTML()+liveHTML()+'<div class="card"><h3>What happened</h3><ul class="feed">'+feed+'</ul></div>';
+  const c=$("b-board").querySelector(".col.cur");if(c)c.scrollIntoView({block:"nearest",inline:"nearest"});
+}
+/* roster: every agent, and the requests it works on */
+function agentsIn(sc){const a=new Set();(sc.team||[]).forEach(r=>a.add(r.agent));sc.steps.forEach(s=>(s.agents||[]).forEach(x=>a.add(x)));if(sc.mode==="task")a.add("explorer");return a}
+function stagesIn(sc,agent){const k=new Set();(sc.team||[]).filter(r=>r.agent===agent).forEach(r=>k.add(stageName(sc,r.stage)));
+  sc.steps.filter(s=>(s.agents||[]).includes(agent)).forEach(s=>s.stage&&k.add(stageName(sc,s.stage)));if(agent==="explorer"&&sc.mode==="task")k.add("Context pack");return [...k]}
+function budgetHTML(a){
+  if(a.model==="You")return '<div>Your session: no turn cap. The stage budgets below are the time the whole stage should take.</div>'+stageBudget(a);
+  return '<div>About '+(a.calls||20)+' tool calls, stops at '+a.turns+' turns'+(a.web?', at most 3 web lookups':'')+'; writes its file first, replies in 10 lines or fewer.</div>'+stageBudget(a);
+}
+function stageBudget(a){
+  const ks=(a.stages||[]).filter(k=>D.budgets.low[k]!=null);
+  if(!ks.length)return '<div class="sub">No task-stage budget: it works in product mode or before the stages start. A product has no stage budget; the live page shows its working time.</div>';
+  return '<table style="margin-top:4px"><thead><tr><th>Stage</th><th>low</th><th>medium</th><th>high</th></tr></thead><tbody>'+ks.map(k=>'<tr><td>'+esc(stageName({mode:"task"},k))+'</td><td>'+D.budgets.low[k]+' min</td><td>'+D.budgets.medium[k]+' min</td><td>'+D.budgets.high[k]+' min</td></tr>').join("")+
+    '</tbody></table><div class="sub">Minutes for the whole stage (shared with everyone on it), by the task\'s risk; the live page flags an overrun.</div>';
+}
+function renderR(){
+  const groups={},order=[];
+  Object.entries(D.agents).forEach(([n,a])=>{if(!groups[a.team]){groups[a.team]=[];order.push(a.team)}groups[a.team].push(n)});
+  const uses=n=>D.scenarios.filter(sc=>agentsIn(sc).has(n));
+  if(!S.agent||!D.agents[S.agent])S.agent=Object.keys(D.agents)[0];
+  $("r-list").innerHTML='<div class="sub" style="margin-bottom:8px">'+Object.keys(D.agents).length+' agents. Pick one to see what it does and which requests it works on.</div>'+order.map(t=>'<h3>'+esc(t)+'</h3><div class="agrid">'+groups[t].map(n=>{
+    const a=D.agents[n],k=uses(n).length,m=(a.model||D.defaultModel||"Opus");
+    return '<button class="agc'+(n===S.agent?" sel":"")+(k?"":" none")+'" data-ag="'+esc(n)+'"><span class="nm">'+esc(n)+' <i class="m m-'+m.toLowerCase()+'">'+esc(m==="You"?"main":m)+'</i></span><span class="sub">'+(k?k+' request'+(k>1?'s':''):'in no request')+(a.own?' - this repo':'')+'</span></button>'}).join("")+'</div>').join("");
+  const n=S.agent,a=D.agents[n],m=a.model||D.defaultModel||"Opus";
+  const ins=uses(n),outs=D.scenarios.map(sc=>[sc,(sc.notNeeded||[]).find(x=>x.agent===n)]).filter(x=>x[1]);
+  $("r-side").innerHTML='<div class="card"><div class="st-h"><b>'+esc(n)+'</b><i class="m m-'+m.toLowerCase()+'">'+esc(m==="You"?"main":m)+'</i><span class="pill">'+esc(a.team)+'</span>'+(a.own?'<span class="pill">this repo\'s own agent</span>':'')+'</div>'+
+    '<table class="kv"><tbody>'+[["Does",a.does],["Joins when",a.joins],["Left out when",a.skipped],["Reads",a.reads],["Writes",a.writes],["Hands to",a.hands],
+      ["Model",m==="You"?"the model of your session":m]].map(r=>'<tr><th>'+r[0]+'</th><td>'+esc(r[1])+'</td></tr>').join("")+
+    '<tr><th>Time budget</th><td>'+budgetHTML(a)+'</td></tr></tbody></table>'+
+    '<h3 style="margin-top:12px">Works on</h3>'+(ins.length?'<div class="chips">'+ins.map(sc=>'<button class="sc-chip" data-open="'+esc(sc.id)+'"><b>'+esc(sc.label)+'</b> <span class="sub">'+esc(stagesIn(sc,n).join(", "))+'</span></button>').join("")+'</div>':'<div class="sub">No request in this simulator uses it.</div>')+
+    (outs.length?'<h3>Left out, and why</h3>'+outs.map(([sc,x])=>'<div class="sub"><b style="font-weight:500;color:var(--text)">'+esc(sc.label)+':</b> '+esc(x.why)+'</div>').join(""):'')+
+    '<div class="sub" style="margin-top:8px">Open a request to follow '+esc(n)+' through it; the picker marks every request it works on.</div></div>';
+  markPicker();
+}
+function markPicker(){[...$("pick").options].forEach(o=>{const sc=D.scenarios.find(x=>x.id===o.value);o.textContent=(S.agent&&agentsIn(sc).has(S.agent)?"\u25CF ":"")+sc.label})}
+function setView(v){S.view=v;$("wFlow").setAttribute("aria-pressed",v==="flow");$("wAg").setAttribute("aria-pressed",v==="agents");
+  ["whatif","askrow","abseg"].forEach(id=>$(id).hidden=v!=="flow");$("VR").hidden=v!=="agents";
+  $("VA").hidden=v!=="flow"||S.variant!=="A";$("VB").hidden=v!=="flow"||S.variant!=="B";render()}
+
+/* the live page of this request's demo task, beside the flow (only when the page is served, not from a file) */
+function liveFrame(){
+  const sc=S.sc,box=$("livebox"),on=S.view==="flow"&&sc.mode!=="none"&&/^https?:$/.test(location.protocol);
+  box.hidden=!on;if(!on)return;
+  const src="live.html?task=demo-"+encodeURIComponent(sc.id);
+  if($("liveframe").dataset.src!==src){$("liveframe").dataset.src=src;$("liveframe").src=src}
+  $("livehint").textContent="demo-"+sc.id+": fills in while the command runs (python .claude/core/scripts/simulate.py "+sc.id+")";
+}
+function render(){
+  liveFrame();
+  if(S.view==="agents"){$("hlbar").hidden=true;renderR();return}
+  const sc=S.sc;
+  const hl=S.agent&&agentsIn(sc).has(S.agent);
+  $("hlbar").hidden=!S.agent;
+  $("hlbar").innerHTML=S.agent?(hl?'Following <b style="font-weight:500;color:var(--text)">'+esc(S.agent)+'</b> (outlined) in this request.':esc(S.agent)+' does not work on this request.')+' <button class="btn ghost sm" data-clear="1">Stop following</button>':"";
+  $("askq").textContent=sc.ask;
+  $("askchips").innerHTML='<span class="lane">'+esc(sc.lane)+'</span>'+(sc.risk?'<span class="lane risk-'+esc(sc.risk)+'">risk '+esc(sc.risk)+'</span>':'')+(sc.size?'<span class="pill">size '+esc(sc.size)+'</span>':'');
+  const taskOnly=sc.mode==="task";
+  [["tg-bug",taskOnly&&!sc.mustFail],["tg-unp",taskOnly],["tg-app",taskOnly]].forEach(([id,on])=>{$(id).classList.toggle("off",!on);$(id).querySelector("input").disabled=!on});
+  $("t-bug").checked=!!(S.tg.bug||sc.mustFail);
+  $("t-bug").title=sc.mustFail?"This request already has a review MUST":"";
+  if(S.variant==="A")renderA();else renderB();
+  const cp=$("cp");if(cp)cp.onclick=()=>{try{navigator.clipboard.writeText($("cmd").textContent);cp.textContent="Copied"}catch(e){}};
+}
+
+function load(id){S.sc=D.scenarios.find(x=>x.id===id)||D.scenarios[0];S.steps=expand(S.sc,S.tg);S.i=0;S.asked={};stop();render();try{history.replaceState(null,"","#"+S.sc.id)}catch(e){}}
+function stop(){if(S.auto){clearInterval(S.auto);S.auto=null}}
+function act(a){
+  const s=S.steps[S.i];
+  if(a==="next"&&S.i<S.steps.length-1&&s.t!=="gate")S.i++;
+  else if(a==="back"&&S.i>0)S.i--;
+  else if(a==="restart"){S.steps=expand(S.sc,S.tg);S.i=0;S.asked={}}
+  else if(a==="ok"&&s.t==="gate")S.i++;
+  else if(a==="ask")S.asked[S.i]=true;
+  else if(a==="change"&&s.t==="gate"){S.steps.splice(S.i+1,0,{t:"revise",stage:s.stage,by:s.by,agents:[s.by||"main session"],why:"You asked for changes: live_status.py changes marks the cards, the author changes only those and gates again. Nothing goes ahead on a card you did not approve."},Object.assign({},s,{again:true}));S.i++}
+  else if(a==="play"){if(S.auto)stop();else S.auto=setInterval(()=>{const c=S.steps[S.i];if(c.t==="gate"||S.i>=S.steps.length-1){stop();render();return}S.i++;render()},1600)}
+  if(a!=="play"&&(a==="back"||a==="restart"))stop();
+  render();
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(b&&!b.disabled)return act(b.dataset.act);
+  const g=e.target.closest("[data-ag]");if(g){S.agent=g.dataset.ag;return render()}
+  const o=e.target.closest("[data-open]");if(o){$("pick").value=o.dataset.open;S.view="flow";load(o.dataset.open);return setView("flow")}
+  if(e.target.closest("[data-clear]")){S.agent=null;markPicker();render()}});
+$("wFlow").onclick=()=>setView("flow");$("wAg").onclick=()=>setView("agents");
+$("wAg").textContent="Agents ("+Object.keys(D.agents).length+")";
+
+/* controls */
+const groups={};D.scenarios.forEach(x=>(groups[x.group]=groups[x.group]||[]).push(x));
+$("pick").innerHTML=Object.entries(groups).map(([g,xs])=>'<optgroup label="'+esc(g)+'">'+xs.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>').join("")+'</optgroup>').join("");
+$("pick").onchange=()=>load($("pick").value);
+[["t-bug","bug"],["t-unp","unp"],["t-app","app"]].forEach(([id,k])=>$(id).onchange=()=>{S.tg[k]=$(id).checked;S.steps=expand(S.sc,S.tg);S.i=Math.min(S.i,S.steps.length-1);S.asked={};render()});
+function setVariant(v){S.variant=v;$("VA").hidden=v!=="A"||S.view!=="flow";$("VB").hidden=v!=="B"||S.view!=="flow";$("vA").setAttribute("aria-pressed",v==="A");$("vB").setAttribute("aria-pressed",v==="B");try{localStorage.setItem("sim:variant",v)}catch(e){}render()}
+$("vA").onclick=()=>setVariant("A");$("vB").onclick=()=>setVariant("B");
+const THEMES=["light","dark","system"];
+function showTheme(){$("thm").textContent="Theme: "+document.documentElement.dataset.theme}
+$("thm").onclick=()=>{const t=THEMES[(THEMES.indexOf(document.documentElement.dataset.theme)+1)%3];document.documentElement.dataset.theme=t;try{localStorage.setItem("sim:theme",t)}catch(e){}showTheme()};
+showTheme();
+if(META.name)$("subt").textContent=META.name+": pick a request and step through what the agents do. Nothing here touches your code.";
+let v="A";try{v=localStorage.getItem("sim:variant")||"A"}catch(e){}
+const first=(location.hash||"").slice(1);
+if(first==="agents")S.view="agents";
+$("pick").value=D.scenarios.some(x=>x.id===first)?first:"medium";
+S.variant=v;$("VA").hidden=v!=="A";$("VB").hidden=v!=="B";$("vA").setAttribute("aria-pressed",v==="A");$("vB").setAttribute("aria-pressed",v==="B");
+load($("pick").value);
+if(S.view==="agents")setView("agents");
+</script>
+</body>
+</html>

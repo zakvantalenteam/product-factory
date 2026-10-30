@@ -1,0 +1,48 @@
+{
+  "name": "product-factory",
+  "ticket_prefix": "",
+  "work_dir": "work",
+  "live_port": 8765,
+  "default_mode": "task",
+  "products_root": "D:/products",
+  "newline": "lf",
+  "app": {
+    "url": "",
+    "status": ""
+  },
+  "commands": {},
+  "guard": {
+    "secret_files": [
+      "application-local.properties",
+      ".env"
+    ],
+    "read_only_roots": [
+      "D:/skillos"
+    ],
+    "generated": [
+      "work/*/tracker.html",
+      "work/*/tracker-data.js"
+    ]
+  },
+  "setup_paths": [
+    "README.md",
+    ".github/**",
+    ".claude-plugin/**",
+    "plugin/**",
+    "core/**",
+    "standards/**",
+    "base/**",
+    "scripts/**",
+    "templates/**"
+  ],
+  "decisions": {},
+  "rules": [],
+  "experts": [
+    "sf-expert",
+    "ai-engineer"
+  ],
+  "glossary": {
+    "code_words": "",
+    "words": []
+  }
+}

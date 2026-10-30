@@ -1,0 +1,538 @@
+{
+  "name": "SkillsOS",
+  "ticket_prefix": "SKL-",
+  "work_dir": ".claude/work",
+  "live_port": 8768,
+  "default_mode": "task",
+  "newline": "lf",
+  "app": {
+    "url": "http://127.0.0.1:8080/skillsos/api/public/health",
+    "status": "python .claude/scripts/app_status.py",
+    "strict": true
+  },
+  "commands": {
+    "compile": "mvn -f Backend/pom.xml -o -q test-compile",
+    "test": "mvn -f Backend/pom.xml -o -q surefire:test \"-Dtest={tests}\"",
+    "test_all": "mvn -f Backend/pom.xml -o -q surefire:test && npm --prefix Frontend test",
+    "char_run": "python .claude/scripts/char_run.py \"{file}\"",
+    "test_app_down": "mvn -f Backend/pom.xml -o -q test \"-Dtest={tests}\"",
+    "lint": "npm --prefix Frontend run lint",
+    "test_frontend": "npm --prefix Frontend test",
+    "typecheck": "cd Frontend && npx tsc -b",
+    "locales": "python .claude/scripts/locales.py check"
+  },
+  "guard": {
+    "blocked_commands": [
+      {
+        "pattern": "(^|[\\s;&|(`])(npm|pnpm|yarn)(\\.cmd)?\\s+(--prefix\\s+\\S+\\s+)?(ci|install|i|add|uninstall|remove|rm|un|update|up|upgrade)(\\s|$)",
+        "why": "dependency changes are the developer's (a D6 decision: reason, licence, version). Say which package and why; the developer runs npm. Checks that need no install: `npm --prefix Frontend test`, `npm --prefix Frontend run lint`, `cd Frontend && npx tsc -b`."
+      }
+    ],
+    "block_while_app_up": "(^|[\\s;&|(`])mvn(\\.cmd)?\\s.*(?<![\\w:-])(compile|test-compile|package|install|clean|verify|test|spring-boot:run)(?![\\w:-])",
+    "block_while_port_up": [
+      {
+        "host": "localhost",
+        "port": 5173,
+        "pattern": "(^|[\\s;&|(`])mvn(\\.cmd)?\\s.*(?<![\\w:-])(compile|test-compile|package|install|clean|verify|test|spring-boot:run)(?![\\w:-])",
+        "unless": "-pl\\s+[\\\"']?Backend|-f\\s+[\\\"']?\\S*Backend[/\\\\]pom\\.xml|\\bcd\\s+[\\\"']?\\S*Backend\\b",
+        "why": "a root reactor build runs `npm ci` in Frontend/ (frontend-maven-plugin), which replaces node_modules under the running Vite server on :5173. Build the backend only: `mvn -f Backend/pom.xml ...`."
+      }
+    ],
+    "secret_files": [
+      "application-local*.properties",
+      "application-test*.properties"
+    ],
+    "secret_ok_commands": [],
+    "no_show": [
+      "application*.properties",
+      "*Constants.java",
+      "manifest*.yml",
+      "manifest*.yaml",
+      "xs-security*.json"
+    ],
+    "no_read": [],
+    "big_file_hints": [
+      {
+        "paths": [
+          "Frontend/src/locales/**"
+        ],
+        "how": "Use `python .claude/scripts/locales.py grep|get|has|check|add` (i18n skill)."
+      }
+    ],
+    "no_write": [
+      {
+        "paths": [
+          "application-local*.properties",
+          "application-test*.properties"
+        ],
+        "why": "holds datasource credentials; the developer edits it."
+      }
+    ],
+    "generated": [
+      "Backend/releases/**",
+      "Backend/target/**",
+      "Frontend/dist/**",
+      "Frontend/node_modules/**",
+      "approuter/resources/**",
+      "Frontend/src/routeTree.gen.ts",
+      "Backend/createDDL.jdbc"
+    ],
+    "frozen_if_tracked": [
+      "Backend/src/main/resources/db/*.sql"
+    ],
+    "big_file_kb": 60,
+    "read_only_roots": []
+  },
+  "setup_paths": [],
+  "quick_fix": {
+    "max_files": 3,
+    "max_lines": 30,
+    "never": [
+      "pom.xml",
+      "Frontend/package.json",
+      "Frontend/package-lock.json",
+      "manifest.yml",
+      "Jenkinsfile",
+      "dev-jenkinsfile",
+      ".github/**",
+      "approuter/**",
+      "application*.properties",
+      "Backend/src/main/resources/db/**",
+      "**/domain/**",
+      "**/security/**"
+    ]
+  },
+  "decisions": {
+    "D2": {
+      "what": "the data model (a JPA entity or a migration script)",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "file_markers": [
+        "@Entity",
+        "@Embeddable",
+        "@MappedSuperclass"
+      ],
+      "any_paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ]
+    },
+    "D4": {
+      "what": "access rules (a permission or admin check)",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "line_markers": [
+        "@CheckPermission",
+        "@PreAuthorize",
+        "@Secured",
+        "@RolesAllowed",
+        "hasRole(",
+        "hasAnyRole(",
+        "hasAuthority(",
+        "hasAnyAuthority(",
+        "adminGuard",
+        "AdminGuard",
+        "requireAdmin(",
+        "isAdmin(",
+        "getAdminAccess(",
+        "getSuperAdminAccess(",
+        "SecurityRole"
+      ],
+      "any_paths": [
+        "approuter/xs-security.json",
+        "Backend/src/main/java/com/talenteam/skillsos/common/security/**"
+      ]
+    },
+    "D6": {
+      "what": "dependencies or app config",
+      "paths": [
+        "pom.xml",
+        "Frontend/package.json",
+        "manifest.yml",
+        "Backend/src/main/resources/application*.properties"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "id": "MUST AL1",
+      "paths": [
+        "**"
+      ],
+      "not_paths": [
+        ".claude/**"
+      ],
+      "pattern": "(?i)\\b(?:password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|auth[_-]?token|private[_-]?key)\\b[\\\"']?\\s*[:=]\\s*[\\\"'](?!(?:\\$\\{|(?-i:REPLACE_ME)|<[^\\s\\\"']*>[\\\"']|\\{\\{[^\\s\\\"']*\\}\\}[\\\"']|(?-i:[A-Z0-9_.]+)[\\\"']|(?-i:changeme)[\\\"']|(?-i:x{3,})[\\\"']|\\*+[\\\"']))[^\\\"'\\s]{8,}[\\\"']",
+      "comments": true,
+      "redact": true,
+      "message": "looks like a committed secret; use a config key or env var, never the value"
+    },
+    {
+      "id": "MUST AL1",
+      "paths": [
+        "**/*.properties",
+        "**/*.yml",
+        "**/*.yaml",
+        "**/*.env"
+      ],
+      "not_paths": [
+        ".claude/**"
+      ],
+      "pattern": "(?i)^\\s*[\\w.-]*(?:password|passwd|secret|api[_-]?key|token)[\\w.-]*\\s*[:=]\\s*(?!(?:\\$\\{|(?-i:REPLACE_ME)|<[^\\s#\\\"']*>\\s*$|\\{\\{[^\\s#\\\"']*\\}\\}\\s*$|(?-i:[A-Z0-9_.]+)\\s*$|(?-i:changeme)\\s*$|(?-i:x{3,})\\s*$|\\*+\\s*$))[^\\s#\\\"']{8,}\\s*$",
+      "redact": true,
+      "message": "looks like a committed secret; use a config key or env var, never the value"
+    },
+    {
+      "id": "MUST AL1",
+      "paths": [
+        "**"
+      ],
+      "not_paths": [
+        ".claude/**"
+      ],
+      "pattern": "-----BEGIN [A-Z ]*PRIVATE KEY-----|\\bsk-[A-Za-z0-9_-]{20,}|\\bAKIA[0-9A-Z]{16}\\b|\\bghp_[A-Za-z0-9]{30,}|\\bxox[baprs]-[A-Za-z0-9-]{10,}|\\beyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\.|jdbc:[^\\s\\\"']*password=[^\\s&\\\"'$]",
+      "comments": true,
+      "redact": true,
+      "message": "looks like a committed secret; use a config key or env var, never the value"
+    },
+    {
+      "id": "MUST JA1",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "\\\"[^\\\"\\n]*\\b(SELECT|UPDATE|DELETE|INSERT|WHERE|FROM|JOIN|ORDER BY|GROUP BY|AND|OR|SET|VALUES|LIMIT|OFFSET|IN|LIKE)\\b[^\\\"\\n]*\\\"\\s*\\+\\s*(?!\\\")[\\w(]|[\\w)\\]]\\s*\\+\\s*\\\"[^\\\"\\n]*\\b(SELECT|UPDATE|DELETE|INSERT|WHERE|FROM|JOIN|ORDER BY|GROUP BY|AND|OR|SET|VALUES|LIMIT|OFFSET|IN|LIKE)\\b|String\\.format\\(\\s*\\\"[^\\\"\\n]*\\b(SELECT|UPDATE|DELETE|INSERT|WHERE|FROM|JOIN|ORDER BY|GROUP BY|AND|OR|SET|VALUES|LIMIT|OFFSET|IN|LIKE)\\b",
+      "unless": "\\blog(ger)?\\.\\w+\\(|Exception\\(|\\bthrow\\b|\\.append\\(\\\"<|message|Message",
+      "message": "SQL/JPQL built by concatenation; bind parameters (?1 / :name) unless the part is a whitelisted constant"
+    },
+    {
+      "id": "MUST AL3",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}|printStackTrace\\(\\)|System\\.out\\.print|System\\.err\\.print",
+      "message": "empty catch, printStackTrace or System.out; log with context and rethrow or return an error state"
+    },
+    {
+      "id": "MUST AL4",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "(?i)\\blog(ger)?\\.(info|debug|warn|error|trace)\\(.*\\b(password|token|secret|authorization|cookie|jwt|api[_-]?key)\\b",
+      "message": "a log line names a token, secret, cookie or auth header; never log it"
+    },
+    {
+      "id": "MUST AL6",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "new RestTemplate\\(\\s*\\)|HttpClient\\.newHttpClient\\(\\)|WebClient\\.create\\(",
+      "message": "HTTP client without connect and read timeouts; build it with explicit timeouts"
+    },
+    {
+      "id": "MUST JA2",
+      "paths": [
+        "Backend/src/main/java/**/controller/**/*.java",
+        "Backend/src/main/java/**/*Controller.java"
+      ],
+      "pattern": "^@Transactional",
+      "message": "@Transactional on a controller; move the transaction to a public service method"
+    },
+    {
+      "id": "MUST DA2",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "\\.findAll\\(\\s*\\)",
+      "message": "(on list or sync paths) findAll() reads the whole table; page it or query what you need"
+    },
+    {
+      "id": "SHOULD JA8",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "^@Autowired",
+      "message": "use constructor injection, not @Autowired"
+    },
+    {
+      "id": "SHOULD JA10",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "pattern": "\\bLocalDateTime\\.now\\(\\s*\\)|\\bnew Date\\(\\s*\\)",
+      "message": "zone-less time; use Instant/OffsetDateTime or ZoneOffset.UTC for stored or tenant-facing times"
+    },
+    {
+      "id": "MUST DB3",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)\\bCREATE\\s+TABLE\\b(?!\\s+IF\\s+NOT\\s+EXISTS)",
+      "unless": "^--",
+      "message": "CREATE TABLE without IF NOT EXISTS; a second run fails"
+    },
+    {
+      "id": "MUST DB3",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)^(?!.*IF\\s+NOT\\s+EXISTS).*\\bCREATE\\s+(?:UNIQUE\\s+)?INDEX\\b",
+      "unless": "^--",
+      "message": "CREATE INDEX without IF NOT EXISTS; a second run fails"
+    },
+    {
+      "id": "SHOULD DB5",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)^(?!.*CONCURRENTLY).*\\bCREATE\\s+(?:UNIQUE\\s+)?INDEX\\b",
+      "unless": "^--",
+      "message": "on a large table create the index CONCURRENTLY (outside a transaction)"
+    },
+    {
+      "id": "MUST DB3",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)\\bADD\\s+COLUMN\\b(?!\\s+IF\\s+NOT\\s+EXISTS)",
+      "unless": "^--",
+      "message": "ADD COLUMN without IF NOT EXISTS; a second run fails"
+    },
+    {
+      "id": "MUST DB4",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)\\bDROP\\s+(COLUMN|TABLE)\\b|\\bRENAME\\s+(COLUMN\\b|TO\\b)|\\bALTER\\s+COLUMN\\s+\\w+\\s+(SET\\s+DATA\\s+)?TYPE\\b",
+      "unless": "^--",
+      "message": "drop, rename or type change breaks the running build; use expand/contract across releases"
+    },
+    {
+      "id": "SHOULD DB10",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)\\btimestamp\\b(?!\\s*(\\(\\s*\\d\\s*\\)\\s*)?with\\s+time\\s+zone)",
+      "unless": "(?i)timestamptz|^--",
+      "message": "timestamp without time zone; use timestamptz for instants"
+    },
+    {
+      "id": "SHOULD DB10",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)\\b(float[48]?|real|double\\s+precision)\\b",
+      "unless": "^--",
+      "message": "inexact numeric type; use numeric for exact values"
+    },
+    {
+      "id": "SHOULD DB10",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "pattern": "(?i)\\bCREATE\\s+SCHEMA\\b",
+      "unless": "^--",
+      "message": "new schema; tables stay flat in public"
+    },
+    {
+      "id": "MUST CF1",
+      "paths": [
+        "Backend/src/main/resources/application*.properties"
+      ],
+      "pattern": "^skillsos\\.cors\\.allowed-origins\\s*=.*\\*",
+      "message": "CORS wildcard with credentials; list the allowed origins"
+    },
+    {
+      "id": "MUST FE1",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx",
+        "Frontend/src/**/*.css"
+      ],
+      "pattern": "dangerouslySetInnerHTML",
+      "unless": "(?i)DOMPurify|sanitize|richText|toSafeHtml",
+      "message": "dangerouslySetInnerHTML without DOMPurify.sanitize (src/lib/richText.ts)"
+    },
+    {
+      "id": "MUST FE2",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "Frontend/src/lib/api/**"
+      ],
+      "pattern": "\\bfetch\\(|from\\s+['\\\"]axios['\\\"]|from\\s+['\\\"](@reduxjs/toolkit|redux|react-redux)['\\\"]",
+      "message": "server data goes through the feature api/ module (apiJson/apiFetch) and TanStack Query; no fetch, axios or redux here"
+    },
+    {
+      "id": "SHOULD FE9",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "pattern": ":\\s*any\\b|\\bas\\s+any\\b|<any>|\\bany\\[\\]|@ts-ignore|@ts-nocheck",
+      "message": "no any, @ts-ignore or @ts-nocheck; type it"
+    },
+    {
+      "id": "SHOULD FE9",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "pattern": "[\\w)\\]]!(?=[.\\[])",
+      "message": "non-null assertion (!); narrow the value instead"
+    },
+    {
+      "id": "SHOULD FE7",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx",
+        "Frontend/src/**/*.css"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "Frontend/src/theme/**"
+      ],
+      "pattern": "(^|[\\\"'`\\s:(,])#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![\\w-])",
+      "message": "fixed hex colour; use tokens from src/theme/tokens.ts or the MUI theme"
+    },
+    {
+      "id": "SHOULD FE7",
+      "paths": [
+        "Frontend/src/**/*.css"
+      ],
+      "pattern": ":focus(?![-\\w])",
+      "message": "focus ring for keyboard only, use :focus-visible"
+    },
+    {
+      "id": "SHOULD FE7",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "pattern": "&:focus(?![-\\w])",
+      "message": "focus ring for keyboard only, use :focus-visible"
+    },
+    {
+      "id": "SHOULD FE6",
+      "paths": [
+        "Frontend/src/**/*.tsx"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "pattern": ">\\s*[A-Z][a-z]+(?:[ ,'\u2019-]+[A-Za-z]+)+[.!?:]?\\s*(<|$)|\\b(placeholder|aria-label|title|label|helperText|alt|tooltip)=\\\"([A-Za-z][^\\\"{}]*)\\\"",
+      "unless": "t\\(",
+      "message": "literal UI text; use t('key') with the key in all five locales (i18n skill)"
+    },
+    {
+      "id": "SHOULD AL10",
+      "paths": [
+        "Frontend/src/**/*.ts",
+        "Frontend/src/**/*.tsx"
+      ],
+      "not_paths": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
+      "pattern": "\\bconsole\\.(log|debug)\\(",
+      "message": "console.log left in the change"
+    }
+  ],
+  "checks": [
+    {
+      "id": "MUST EP2",
+      "paths": [
+        "Backend/src/main/java/**/*.java"
+      ],
+      "command": "python .claude/scripts/checks.py ep2",
+      "message": "@RequestBody binds an entity (mass assignment); use a request DTO"
+    },
+    {
+      "id": "MUST DB2",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "command": "python .claude/scripts/checks.py db2",
+      "message": "script name must be NN_snake_case.sql with the next free number"
+    },
+    {
+      "id": "SHOULD DB9",
+      "paths": [
+        "Backend/src/main/resources/db/*.sql"
+      ],
+      "command": "python .claude/scripts/checks.py db9",
+      "message": "add a header comment with what the script changes and the rollback SQL"
+    },
+    {
+      "id": "MUST LO1",
+      "paths": [
+        "Frontend/src/locales/*.json"
+      ],
+      "command": "python .claude/scripts/checks.py lo1",
+      "message": "locale files must have the same keys (python .claude/scripts/locales.py add / check)"
+    }
+  ],
+  "experts": [
+    "sf-expert",
+    "ai-engineer"
+  ],
+  "glossary": {
+    "code_words": "\\b(?:jp|sl|sf)_[a-z_]+\\b|\\bcompanyprofile_audit\\b",
+    "words": [
+      "JPQL",
+      "native query",
+      "bind parameter",
+      "approuter",
+      "xs-security",
+      "query key"
+    ]
+  },
+  "impact": {
+    "code": [
+      "**/*.java",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js"
+    ],
+    "clients": [
+      "Frontend/src/**/*.ts",
+      "Frontend/src/**/*.tsx",
+      "Frontend/src/**/*.js",
+      "Frontend/src/**/*.html"
+    ],
+    "n8n": {
+      "paths": [],
+      "command": ""
+    },
+    "tools": {
+      "marker": "",
+      "inventory": ""
+    },
+    "skip": [
+      "**/target/**",
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/*.min.js",
+      "Frontend/node/**",
+      ".claude/worktrees/**"
+    ]
+  }
+}

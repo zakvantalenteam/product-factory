@@ -1,0 +1,8 @@
+{
+  "bot": {"name": "agent-core bot", "email": "agent-core-bot@users.noreply.github.com"},
+  "targets": [
+    {"name": "SkillsOS", "host": "github", "repo": "talenteam/SkillsOS", "branch": "dev"},
+    {"name": "Blend", "host": "codecommit", "repo": "LearningContentPack", "region": "eu-west-2", "branch": "dev"},
+    {"name": "TalentBox", "host": "codecommit", "repo": "LearningAdmin", "region": "eu-west-2", "branch": "dev"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "BASE",
+  "at": "2026-10-28T18:17:59.591Z",
+  "by": "user (tracker)",
+  "items": {
+    "1": "accept: Keep the split: shell endpoints keep the wrapper, every DeskBook /api/v1 endpoint uses problem details.",
+    "2": "accept: Use Flyway: numbered scripts run on start, same on every system.",
+    "3": "accept: Keep all of them until the base is built and tested, then drop the unused ones in one pass.",
+    "4": "accept: Add two role templates, USER and ADMIN, so the BTP admin can assign DeskBook roles (ADR-7, Q69).",
+    "5": "accept: Follow dev: remove it, so custom labels load from the database."
+  }
+}

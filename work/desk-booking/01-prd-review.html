@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PRD review - DeskBook (v0.3 draft)</title><style>
+:root{--bg:#fff;--text:#1c1917;--muted:#78716c;--line:#e7e5e4;--code:#f5f5f4;--accent:#2563eb;
+--bad:#b91c1c;--bad-bg:#fef2f2;--warn:#b45309;--warn-bg:#fffbeb;--mid:#1d4ed8;--mid-bg:#eff6ff;
+--ok:#15803d;--ok-bg:#f0fdf4}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0a09;--text:#f5f5f4;--muted:#a8a29e;--line:#292524;
+--code:#1c1917;--accent:#60a5fa;--bad:#f87171;--bad-bg:#450a0a;--warn:#fbbf24;--warn-bg:#422006;
+--mid:#93c5fd;--mid-bg:#172554;--ok:#4ade80;--ok-bg:#052e16}}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px}h1{font-size:22px;font-weight:500}
+h2{font-size:16px;font-weight:500;margin-top:28px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+h3{font-size:14px;font-weight:500}a{color:var(--accent)}code{background:var(--code);padding:1px 4px;border-radius:4px}
+pre{background:var(--code);padding:10px;border-radius:6px;overflow:auto}table{border-collapse:collapse;width:100%;
+display:block;overflow-x:auto}th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{font-weight:500}li{margin:3px 0}.b{font-size:11px;font-weight:500;padding:1px 6px;border-radius:4px}
+.BLOCKER,.FAIL,.MUST{color:var(--bad);background:var(--bad-bg)}.HIGH{color:var(--warn);background:var(--warn-bg)}
+.MEDIUM,.SHOULD{color:var(--mid);background:var(--mid-bg)}.LOW{color:var(--muted);background:var(--code)}
+.PASS{color:var(--ok);background:var(--ok-bg)}
+</style></head><body><main><h1>PRD review - DeskBook (v0.3 draft)</h1>
+<h2>Verdict</h2>
+<p><strong>Ready with questions.</strong> The idea, users and main journey are clear enough to start the spec, but 11 rules are missing or contradict each other, so the spec will carry recommended answers until you confirm them.</p>
+<p>Blockers: 0, High: 11, Medium: 7, Low: 3</p>
+<h2>What the document covers</h2>
+<ol>
+<li>Background - why the offices are badly used.</li>
+<li>Goals - four goals, two without numbers.</li>
+<li>Users - Employee, Manager, Facilities admin (one line each).</li>
+<li>Features - office setup, booking, check-in, team view, reports, notifications.</li>
+<li>Non-functional - six short bullets.</li>
+<li>Out of scope - meeting rooms, parking.</li>
+<li>Open - one TBD (repeated no-shows).</li>
+</ol>
+<table><tr><th>Area</th><th>Coverage</th></tr><tr><td>Purpose (problem, who, why now, success numbers)</td><td>Partly - problem is clear, no numbers</td></tr><tr><td>Users and roles</td><td>Partly - roles named, no limits per role, no admin scope</td></tr><tr><td>Scope (in, out, first release)</td><td>Partly - out is listed, first release vs later is not</td></tr><tr><td>Flows</td><td>Partly - book, check-in, release are there; cancel, change, no-show end states are not</td></tr><tr><td>Data</td><td>Partly - desks and bookings yes; personal data, source and keeping time no</td></tr><tr><td>Rules</td><td>Partly - several clash (see below)</td></tr><tr><td>Non-functional</td><td>Missing numbers - only "real time", "mobile", 3,000 people</td></tr><tr><td>Integrations</td><td>Partly - SuccessFactors named, nothing on direction, timing or outage</td></tr><tr><td>Ambiguity</td><td>7 vague spots (see Words to define)</td></tr><tr><td>Conflicts</td><td>3 found</td></tr><tr><td>Testability</td><td>Partly - "fast and easy", "real time", "Etc." cannot be checked</td></tr></table>
+<h2>Must answer before we start</h2>
+<ol>
+<li><span class="b HIGH">HIGH</span> - No success numbers. Section 2 says "always find a desk" and "fast and easy to use". How will Facilities know it worked?<br>Recommended: target 90 % of bookers get a desk, no-show rate under 15 %, booking takes under 1 minute, desk use per office reported weekly.<br>If not decided: we cannot say when the product is good enough, and the audit has nothing to check.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Half-day bookings clash with the 10:00 release. Section 4.3 releases anything not checked in by 10:00. Asha books an afternoon desk in Pune; at 10:00 it is released before she arrives.<br>Recommended: a morning booking is released at 10:00, an afternoon booking at 14:00 (both per office setting).<br>If not decided: every afternoon booking is lost every day.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Whose clock is 10:00? Section 4.1 gives each office a timezone, section 4.3 gives one time. (Also asked at intake.)<br>Recommended: per-office setting, default 10:00 in the office's local time.<br>If not decided: Bengaluru desks may be released at the wrong hour.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Who may see where a colleague sits? Section 4.4 shows managers their team, but nothing says what peers or other people see. This is personal data of staff, including in Germany and France.<br>Recommended: employee sees own bookings only; manager sees direct reports; admin sees counts, not names, in reports.<br>If not decided: we may show everyone's location to everyone, and Legal may block release.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Manager booking vs "One booking per employee per day" (section 4.2). A manager books a desk for Ravi, who already booked one. Also unclear: who counts as "team" (direct reports only, or the whole line below)?<br>Recommended: direct reports only; a manager booking replaces nothing and is refused if Ravi already has one; the employee is notified.<br>If not decided: double bookings, or managers cancelling staff bookings silently.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Recurring bookings "should be possible" (4.2) but employees can book only 2 weeks ahead. A "every Tuesday" booking must reach beyond 2 weeks.<br>Recommended: not in release 1; add later with a clear limit and fairness rule.<br>If not decided: the same people hold the best desks every week, and the booking rule breaks.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Repeated no-shows are an open TBD (section 7), yet the no-show rate is a report and the release rule exists because of it.<br>Recommended: show the rate to manager and admin only, no penalty in release 1; after 3 no-shows in a month send a reminder, nothing blocked.<br>If not decided: the build has no rule, or someone adds a penalty without HR approval.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - "A group of desks near each other" (4.4) needs a way to say "near", but the floor map is not required and no desk position exists in 4.1.<br>Recommended: each desk has a zone name (e.g. "3rd floor, east"); group booking picks free desks in one zone.<br>If not decided: the feature cannot be built, or is built as a map nobody asked for.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - "Real time availability" (section 5) with two people booking the last desk at the same second. What is the promise?<br>Recommended: the desk list refreshes within 5 seconds, and the system gives a desk to the first booker; the second sees "just taken".<br>If not decided: either double-booked desks or an expensive live-push system we did not need.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - Non-functional rules are almost empty. Missing: how many people book at once at 8:00 on Monday, response time, uptime, who may sign in and how, accessibility, record of who changed what, how long data is kept, languages beyond "English first".<br>Recommended: 3,000 users, 500 at peak, page under 2 s, 99.5 % weekdays 06:00-20:00, company sign-in only, accessible to WCAG 2.1 AA, change history kept 2 years.<br>If not decided: we design for the wrong size and the audit cannot pass.</li>
+</ol>
+<ol>
+<li><span class="b HIGH">HIGH</span> - SuccessFactors link has no detail (section 5). Which data (name, manager, office), one way or both, how often, and what happens when it is down or Ravi changes manager mid-week.<br>Recommended: read-only, nightly sync of employees, direct manager and office; the app keeps working on the last copy if SuccessFactors is down.<br>If not decided: wrong team lists, or the app stops when SuccessFactors does.</li>
+</ol>
+<h2>Smaller points</h2>
+<ul>
+<li><span class="b MEDIUM">MEDIUM</span> - "Cancel any time" (4.2): after check-in, or after the day started? Recommended: allowed until checked in; after that, "release desk" instead.</li>
+<li><span class="b MEDIUM">MEDIUM</span> - Employee arrives at 10:05 after the desk was released (4.3): what does she see? Recommended: show free desks first, no apology wall.</li>
+<li><span class="b MEDIUM">MEDIUM</span> - Notifications (4.6) end with "Etc.": which messages and which channel (email, Teams, push)? Recommended: email only; evening reminder and release notice.</li>
+<li><span class="b MEDIUM">MEDIUM</span> - "Capacity" in reports (4.5): does a blocked desk count? Recommended: no, only bookable desks.</li>
+<li><span class="b MEDIUM">MEDIUM</span> - Who administers: one global admin team, or one per office (4.1)? Recommended: global admins, per-office admins later.</li>
+<li><span class="b MEDIUM">MEDIUM</span> - Can a booking be made for today, and until what time (4.2)? Recommended: yes, until 10:00 local (afternoon desks until 14:00).</li>
+<li><span class="b MEDIUM">MEDIUM</span> - Desks for people who need them (ergonomic, accessible) are not mentioned. Recommended: a desk feature "reserved for accessibility", booking by approval.</li>
+<li><span class="b LOW">LOW</span> - Can an employee book in an office that is not their own (4.2)? Recommended: yes.</li>
+<li><span class="b LOW">LOW</span> - Export to Excel (4.5): which columns, how big? Recommended: whatever is on screen, up to 100,000 rows.</li>
+<li><span class="b LOW">LOW</span> - German and French "later": is that release 2? Recommended: yes; all texts prepared for translation from the start.</li>
+</ul>
+<h2>Words to define</h2>
+<ul>
+<li>"Team" (4.4) - direct reports or everyone below the manager?</li>
+<li>"Fast", "easy to use" (section 2) and "real time" (section 5) - give numbers.</li>
+<li>"Occupancy" and "capacity" (4.5) - capacity of desks, or of people allowed?</li>
+<li>"Blocked for maintenance" (4.1) - can it be set for a past or booked date, and what happens to existing bookings?</li>
+<li>"Released" (4.3) - does the original booker lose the booking, or can she still claim any free desk?</li>
+<li>"Checked in" (4.3) - does a QR scan on the desk count the same as the button, and may a person scan a desk they did not book?</li>
+<li>"Etc." (4.6) and "maybe phase 2" (section 6) - say which items, or remove.</li>
+</ul>
+<h2>What happens next</h2>
+<p>You answer the 11 items above (or say "go with recommended"); the intake questions already asked count for items 3, 4 and part of 5. The requirements analyst then writes the spec and the gap sheet with these answers built in.</p></main></body></html>

@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flow simulator - redesign prototype (A, B, C)</title>
+<style>
+/* Base palette: the SkillsOS review tracker tokens (soft Bento). Light first, dark redefines them. */
+:root{
+  --bg:#f6f6fa;--surface:#ffffff;--surface-2:#f3f2f8;--surface-3:#ebe9f3;--ink:#1f1d30;--muted:#615e76;--line:#e6e4ee;--line-2:#d8d5e3;--focus:#7d68d0;
+  --rose:#fcecf0;--rose-ink:#9b3553;--peach:#fdf0e6;--peach-ink:#8f4a1f;--lemon:#fbf5df;--lemon-ink:#6b5414;
+  --sky:#eaf3fb;--sky-ink:#235b84;--mint:#e6f5ee;--mint-ink:#226a4b;--lilac:#f0ecfb;--lilac-ink:#5a46a6;
+  --grad:linear-gradient(130deg,#fbe4d8 0%,#f8dde7 50%,#e7e0f8 100%);--on-grad:#2b2440;--grad-chip:rgba(255,255,255,.62);
+  --grad-strong:linear-gradient(130deg,#efa98b 0%,#e48aa6 52%,#a493dd 100%);
+  --a1:#8d7ad3;--a2:#7581d6;--a3:#6c9bd6;--a4:#5eaea3;--a5:#de9a6f;--a6:#d3b25d;--a7:#d98cae;--a8:#6eb78b;--a9:#63aed3;--a10:#a2aab8;
+  --crit:#cf6079;--high:#d88a58;--med:#cdaa4c;--low:#6aa1c9;
+  --code-bg:#24223a;--code-ink:#e8e5f6;--code-dim:#8f8bad;
+  --f-ui:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13131f;--surface:#1b1b2a;--surface-2:#232335;--surface-3:#2b2b40;--ink:#ebeaf4;--muted:#a6a3bb;--line:#2c2b40;--line-2:#3a3952;--focus:#b3a5ee;
+  --rose:#2e1c25;--rose-ink:#f0aabd;--peach:#2e231b;--peach-ink:#efb995;--lemon:#2b2718;--lemon-ink:#e3cd84;
+  --sky:#192634;--sky-ink:#a3cbea;--mint:#172a21;--mint-ink:#98d8b6;--lilac:#231f3b;--lilac-ink:#c6baf0;
+  --grad:linear-gradient(130deg,#3a2c29 0%,#382634 50%,#2a2746 100%);--on-grad:#f2eef9;--grad-chip:rgba(255,255,255,.09);
+  --a1:#a495e3;--a2:#8f99e3;--a3:#86b0e3;--a4:#76c2b7;--a5:#e8ad86;--a6:#dcc275;--a7:#e3a2c0;--a8:#86c9a0;--a9:#7fc0e0;--a10:#b2b9c6;
+  --crit:#e47d95;--high:#e6a173;--med:#dcbf66;--low:#86b8dc;
+  --code-bg:#0f0e19;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13131f;--surface:#1b1b2a;--surface-2:#232335;--surface-3:#2b2b40;--ink:#ebeaf4;--muted:#a6a3bb;--line:#2c2b40;--line-2:#3a3952;--focus:#b3a5ee;
+  --rose:#2e1c25;--rose-ink:#f0aabd;--peach:#2e231b;--peach-ink:#efb995;--lemon:#2b2718;--lemon-ink:#e3cd84;
+  --sky:#192634;--sky-ink:#a3cbea;--mint:#172a21;--mint-ink:#98d8b6;--lilac:#231f3b;--lilac-ink:#c6baf0;
+  --grad:linear-gradient(130deg,#3a2c29 0%,#382634 50%,#2a2746 100%);--on-grad:#f2eef9;--grad-chip:rgba(255,255,255,.09);
+  --a1:#a495e3;--a2:#8f99e3;--a3:#86b0e3;--a4:#76c2b7;--a5:#e8ad86;--a6:#dcc275;--a7:#e3a2c0;--a8:#86c9a0;--a9:#7fc0e0;--a10:#b2b9c6;
+  --crit:#e47d95;--high:#e6a173;--med:#dcbf66;--low:#86b8dc;
+  --code-bg:#0f0e19;color-scheme:dark}
+
+/* One tint family per stage, used the same way on every variant (track, ticks, pills, why box, board). */
+.k-triage{--k:var(--a9);--kb:color-mix(in srgb,var(--a9) 15%,var(--surface));--ki:color-mix(in srgb,var(--a9) 45%,var(--ink))}
+.k-plan{--k:var(--a2);--kb:color-mix(in srgb,var(--a2) 14%,var(--surface));--ki:color-mix(in srgb,var(--a2) 50%,var(--ink))}
+.k-spec{--k:var(--a1);--kb:var(--lilac);--ki:var(--lilac-ink)}
+.k-design{--k:var(--a5);--kb:var(--peach);--ki:var(--peach-ink)}
+.k-build{--k:var(--a3);--kb:var(--sky);--ki:var(--sky-ink)}
+.k-review{--k:var(--a6);--kb:var(--lemon);--ki:var(--lemon-ink)}
+.k-test{--k:var(--a8);--kb:var(--mint);--ki:var(--mint-ink)}
+.k-verify{--k:var(--a4);--kb:color-mix(in srgb,var(--a4) 14%,var(--surface));--ki:color-mix(in srgb,var(--a4) 45%,var(--ink))}
+.k-wrap{--k:var(--a10);--kb:color-mix(in srgb,var(--a10) 18%,var(--surface));--ki:color-mix(in srgb,var(--a10) 35%,var(--ink))}
+.k-fail{--k:var(--crit);--kb:var(--rose);--ki:var(--rose-ink)}
+.k-ok{--k:var(--a8);--kb:var(--mint);--ki:var(--mint-ink)}
+.r-low{--k:var(--low)}.r-medium{--k:var(--med)}.r-high{--k:var(--high)}
+.r-low,.r-medium,.r-high{--kb:color-mix(in srgb,var(--k) 16%,var(--surface));--ki:color-mix(in srgb,var(--k) 42%,var(--ink))}
+/* One accent per team, for the agent avatars and team marks. */
+.t-Lead{--ac:var(--a9)}.t-Helpers{--ac:var(--a2)}.t-Product{--ac:var(--a1)}.t-Design{--ac:var(--a5)}.t-Architecture{--ac:var(--a7)}
+.t-Engineering{--ac:var(--a3)}.t-Quality{--ac:var(--a6)}.t-Operations{--ac:var(--a4)}.t-Audit{--ac:var(--a10)}.t-Domain-experts{--ac:var(--a8)}.t-all{--ac:var(--a10)}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.5 var(--f-ui)}
+button,input,select{font:inherit;color:inherit}
+b,strong,th{font-weight:500}
+h1,h2,h3,h4{margin:0;font-weight:500}
+h1{font:500 17px/1.3 var(--f-display)}
+h2{font:500 15px/1.35 var(--f-display)}
+h3{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;gap:6px;align-items:center}
+h4{font-size:12px;font-weight:500;color:var(--muted);margin:14px 0 6px;display:flex;gap:6px;align-items:center}
+p{margin:0 0 8px}
+ul{margin:4px 0 8px;padding-left:18px}
+q{quotes:"\201C" "\201D"}
+code{font:12px/1.45 var(--f-mono);background:var(--surface-2);border-radius:6px;padding:0 5px;overflow-wrap:anywhere}
+pre{font:12px/1.6 var(--f-mono);background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:8px 12px;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
+.sub{color:var(--muted);font-size:12px}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.ic.fill{fill:currentColor;stroke:none}
+
+/* controls */
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 12px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.pri{background:var(--lilac);color:var(--lilac-ink);border-color:color-mix(in srgb,var(--a1) 40%,var(--surface))}
+.btn.pri:hover:not(:disabled){background:color-mix(in srgb,var(--a1) 22%,var(--surface))}
+.btn.go{background:var(--mint);color:var(--mint-ink);border-color:color-mix(in srgb,var(--a8) 45%,var(--surface))}
+.btn.go:hover:not(:disabled){background:color-mix(in srgb,var(--a8) 24%,var(--surface))}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover:not(:disabled){background:var(--surface-2);color:var(--ink)}
+.btn.sm{min-height:26px;padding:2px 9px;font-size:12px}
+.btn.icon{padding:4px 7px}
+.seg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px;padding:2px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
+.seg button{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:2px 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface);border-color:var(--line-2);color:var(--ink)}
+.seg.sm button{min-height:24px;padding:1px 8px;font-size:12px}
+.cnt{font-size:11px;line-height:16px;padding:0 6px;border-radius:999px;background:var(--surface-3);color:var(--muted)}
+.mark{width:8px;height:8px;border-radius:50%;background:var(--focus);display:inline-block;flex:none}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;white-space:nowrap;background:var(--kb);color:var(--ki);border:1px solid color-mix(in srgb,var(--k) 35%,var(--surface))}
+.pn{display:inline-flex;align-items:center;font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.m{font-size:10.5px;line-height:16px;padding:0 6px;border-radius:999px;background:var(--surface-3);color:var(--muted);font-style:normal;white-space:nowrap}
+
+/* avatars: coloured initials by team */
+.av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;flex:none;font-size:10px;font-weight:500;letter-spacing:.02em;
+  background:color-mix(in srgb,var(--ac,var(--a10)) 20%,var(--surface));color:color-mix(in srgb,var(--ac,var(--a10)) 45%,var(--ink));border:1px solid color-mix(in srgb,var(--ac,var(--a10)) 45%,var(--surface))}
+.av.s{width:22px;height:22px;font-size:9.5px}
+.av.l{width:44px;height:44px;font-size:15px}
+.av.t-You{background:var(--grad);color:var(--on-grad);border-color:color-mix(in srgb,var(--a7) 40%,var(--surface))}
+.av.fin{background:var(--mint);color:var(--mint-ink);border-color:color-mix(in srgb,var(--a8) 45%,var(--surface))}
+.av.fin .ic{width:12px;height:12px}
+.av.hl{outline:2px solid var(--focus);outline-offset:1px}
+
+/* prototype strip (not part of the page) */
+.proto{background:var(--surface-2);border-bottom:1px dashed var(--line-2)}
+.pin{max-width:1440px;margin:0 auto;padding:6px 16px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.pl{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.sl{font-size:12px;color:var(--muted);padding:0 4px 0 6px}
+.app{max-width:1440px;margin:0 auto;padding:16px;container:app/inline-size}
+.app.narrow{max-width:390px;margin:16px auto;border:1px dashed var(--line-2);border-radius:18px;padding:12px}
+
+/* page header */
+.top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--grad);color:var(--on-grad);flex:none}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.follow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding:5px 10px;border-radius:12px;background:color-mix(in srgb,var(--focus) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--focus) 30%,var(--surface))}
+.follow .btn{margin-left:auto}
+
+/* step body, shared by all variants */
+.files{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.fc{display:inline-flex;align-items:center;gap:4px;font:11px/1.6 var(--f-mono);padding:1px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);overflow-wrap:anywhere}
+.fc .ic{width:12px;height:12px}
+.agrow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.agc{display:inline-flex;align-items:center;gap:6px;padding:2px 8px 2px 2px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px}
+.imp{display:grid;gap:4px;margin:8px 0}
+.ir{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:0 10px;padding:6px 10px;border-radius:10px;background:var(--surface-2)}
+.ir .kind{font-size:11px;color:var(--muted)}
+.ir code{grid-column:2/-1;background:transparent;padding:0;color:var(--muted)}
+.team{display:grid}
+.tr{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:4px 10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+.tr .tn{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+details.out{margin-top:8px}
+details.out summary{cursor:pointer;color:var(--muted);font-size:12px;padding:2px 0}
+details.out .tr{grid-template-columns:auto auto minmax(0,1fr)}
+.note-box,.okbox,.failbox,.donebox{display:flex;gap:8px;align-items:flex-start;border-radius:12px;padding:8px 12px;margin:8px 0}
+.note-box{background:var(--surface-2);color:var(--muted)}
+.okbox{background:var(--mint);color:var(--mint-ink);border:1px solid color-mix(in srgb,var(--a8) 35%,var(--surface))}
+.failbox{background:var(--rose);color:var(--rose-ink);border:1px solid color-mix(in srgb,var(--crit) 45%,var(--surface))}
+.loopnote{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:1px 10px;margin:0 0 8px;background:var(--rose);color:var(--rose-ink);font-size:12px}
+.donebox{background:var(--mint);color:var(--mint-ink);border:1px solid color-mix(in srgb,var(--a8) 35%,var(--surface));padding:12px 14px}
+.donebox .dt{font:500 15px/1.4 var(--f-display)}
+.stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
+.gate{background:var(--grad);color:var(--on-grad);border-radius:14px;padding:12px 14px;margin:2px 0 8px;border:1px solid color-mix(in srgb,var(--a7) 30%,var(--surface))}
+.gate .gh{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.gate .gq{font:500 17px/1.35 var(--f-display);margin:4px 0 8px}
+.gate .gs{display:flex;gap:6px;align-items:center;font-size:12px}
+.gate .fc{background:var(--grad-chip);border-color:transparent;color:var(--on-grad)}
+.gate .qa{background:var(--grad-chip);border-radius:10px;padding:8px 10px;margin:8px 0}
+.gact{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.gate .btn:not(.go){background:var(--grad-chip);color:var(--on-grad);border-color:transparent}
+.decided{display:inline-flex;gap:6px;align-items:center;margin-top:8px;padding:2px 10px;border-radius:999px;background:var(--grad-chip)}
+.mins{display:flex;align-items:center;gap:6px;margin-top:6px}
+.mins .ic{width:14px;height:14px}
+.sh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:10px}
+.sh .n{margin-left:auto}
+.ctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.ctrls .sp{flex:1}
+.ticks{display:flex;gap:2px;align-items:center}
+.tk{flex:1 1 0;min-width:4px;height:8px;border:0;padding:0;border-radius:999px;background:color-mix(in srgb,var(--k) 24%,var(--surface));cursor:pointer}
+.tk.done{background:var(--k)}
+.tk.cur{background:var(--k);height:14px}
+.tk.g.done,.tk.g.cur{background:var(--grad-strong)}
+.tk:disabled{cursor:default}
+.why{background:var(--kb);border-color:color-mix(in srgb,var(--k) 35%,var(--surface))}
+.why h3{color:var(--ki)}
+.why p{font-size:14px;line-height:1.55;margin:0;color:var(--ink)}
+.wrow{display:flex;gap:8px;align-items:center;padding:3px 0}
+.wif .tg{display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer}
+.wif .tg input{margin:3px 0 0;accent-color:var(--focus)}
+.wif .tg.off{color:var(--muted);cursor:default}
+.clock .ct{margin-bottom:6px}
+.crow{display:grid;grid-template-columns:104px minmax(0,1fr) 78px;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+.cbar{position:relative;height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.cbar i{position:absolute;inset:0 auto 0 0;border-radius:999px}
+.cbar .ce{background:var(--kb);border:1px solid color-mix(in srgb,var(--k) 45%,var(--surface))}
+.cbar .cd{background:var(--k)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;background:var(--k,var(--ac));display:inline-block}
+.legend .lg-you i{background:var(--grad-strong)}
+
+/* live tracker placeholder */
+.live{margin-top:12px}
+.lh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.lh h3{margin:0}
+.lv-frame{border:1.5px dashed var(--line-2);border-radius:12px;min-height:220px;display:grid;place-items:center;padding:16px;background:var(--surface-2)}
+.lv-ph{display:flex;gap:10px;max-width:560px;align-items:flex-start}
+.lv-load{border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-height:220px;align-content:start}
+.sk{height:12px;border-radius:6px;background:var(--surface-3);animation:pulse 1.4s ease-in-out infinite}
+.sk:nth-child(2){width:72%}.sk:nth-child(3){width:90%}.sk:nth-child(4){width:56%}.sk:nth-child(5){width:80%}.sk:nth-child(6){width:40%}
+.lv-off{display:flex;gap:10px;padding:14px;border-radius:12px;background:var(--peach);color:var(--peach-ink);border:1px solid color-mix(in srgb,var(--a5) 40%,var(--surface))}
+.lv-off .btn{margin-top:8px}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes pop{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- A: journey map ---------- */
+.A .hero{margin-top:14px;background:var(--grad);color:var(--on-grad);border-radius:18px;padding:16px 18px}
+.A .hq{display:flex;flex-direction:column;gap:2px}
+.A .hlab{font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.A .hero q{font:500 18px/1.35 var(--f-display)}
+.hchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.gc{font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;background:var(--grad-chip)}
+.A .hprog{margin-top:14px}
+.A .hpl{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px}
+.A .trackcard{margin-top:12px;padding:10px 6px 6px}
+.A .track{list-style:none;margin:0;padding:0 4px;display:flex;overflow-x:auto;position:relative;scrollbar-width:thin}
+.A .st{flex:1 1 0;min-width:96px;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 2px 4px}
+.A .st::before{content:"";position:absolute;top:41px;left:-50%;width:100%;height:2px;background:var(--line-2)}
+.A .st:first-child::before{display:none}
+.A .st.is-done::before,.A .st.is-cur::before,.A .st.is-fail::before{background:var(--k)}
+.A .st.is-skip::before{background:repeating-linear-gradient(90deg,var(--line-2) 0 4px,transparent 4px 8px)}
+.A .now,.A .nowsp{height:20px}
+.A .now{font-size:10.5px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--grad);color:var(--on-grad);border:1px solid color-mix(in srgb,var(--a7) 30%,var(--surface));animation:pop .15s ease-out;white-space:nowrap}
+.A .nb{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:4px 2px 0;margin-top:4px;cursor:pointer;color:inherit;border-radius:10px}
+.A .nb:disabled{cursor:default}
+.A .node{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;position:relative;z-index:1;background:var(--surface);border:1.5px solid var(--line-2);color:var(--muted)}
+.A .node .ic{width:14px;height:14px}
+.A .is-done .node{background:var(--kb);border-color:var(--k);color:var(--ki)}
+.A .is-cur .node{background:var(--kb);border:2px solid var(--k);color:var(--ki);outline:4px solid color-mix(in srgb,var(--k) 24%,transparent)}
+.A .is-skip .node{border-style:dashed;background:var(--surface-2)}
+.A .is-fail .node{background:var(--rose);border-color:var(--crit);color:var(--rose-ink);outline:4px solid color-mix(in srgb,var(--crit) 20%,transparent)}
+.A .nm{font-size:12px;color:var(--ink);line-height:1.3}
+.A .is-todo .nm,.A .is-skip .nm{color:var(--muted)}
+.A .ags{display:flex;justify-content:center;min-height:22px;margin-top:4px}
+.A .ags .av+.av{margin-left:-6px}
+.A .stn{font-size:11px;color:var(--muted);min-height:16px;line-height:1.3;padding:0 2px}
+.A .is-fail .stn{color:var(--rose-ink)}
+.A .is-cur .stn{color:var(--ki)}
+.A .skipline{display:flex;gap:6px;align-items:flex-start;padding:8px 10px 2px;color:var(--muted);font-size:12px;border-top:1px dashed var(--line);margin-top:6px}
+.A .amain{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;margin-top:12px;align-items:start}
+.A .stepcard{border-color:color-mix(in srgb,var(--k) 40%,var(--line))}
+.A .aside{display:flex;flex-direction:column;gap:10px}
+
+/* ---------- B: story timeline ---------- */
+.B .bgrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;margin-top:14px;align-items:start}
+.B .bmain{min-width:0}
+.B .askB .ab{display:flex;gap:10px;align-items:flex-start}
+.B .askB q{font:500 16px/1.35 var(--f-display)}
+.B .tl{list-style:none;margin:12px 0 0;padding:0;position:relative}
+.B .tl::before{content:"";position:absolute;left:15px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.B .ev{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;padding:2px 0;position:relative}
+.B .who{display:flex;justify-content:center;padding-top:3px;position:relative;z-index:1}
+.B .stack{display:flex;flex-direction:column;align-items:center}
+.B .stack .av+.av{margin-top:-6px}
+.B .prow{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:10px;padding:4px 8px;cursor:pointer;color:inherit}
+.B .prow:hover{background:var(--surface);border-color:var(--line)}
+.B .pt{font-weight:500}
+.B .ps{flex:1 1 200px;min-width:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.B .ev.f .prow{background:var(--rose);color:var(--rose-ink)}
+.B .ev.f .ps{color:var(--rose-ink)}
+.B .ev.g .prow{background:var(--grad);color:var(--on-grad)}
+.B .ev.g .ps{color:var(--on-grad)}
+.B .bub{background:var(--surface);border:1px solid color-mix(in srgb,var(--k) 45%,var(--line));border-radius:14px;padding:12px 14px;margin:4px 0 6px;animation:pop .15s ease-out}
+.B .eh{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-bottom:8px}
+.B .eh .sub{width:100%}
+.B .whyB{display:flex;gap:8px;align-items:flex-start;background:var(--kb);border-radius:12px;padding:8px 12px;margin-top:10px;font-size:14px;line-height:1.55}
+.B .whyB .wl{display:inline-flex;gap:4px;align-items:center;color:var(--ki);font-weight:500;flex:none;font-size:13px}
+.B .skrow,.B .nrow{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:4px 8px;color:var(--muted)}
+.B .skrow{border:1px dashed var(--line-2);border-radius:10px;background:var(--surface-2);margin:2px 0}
+.B .hollow{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--bg);margin-top:6px;display:grid;place-items:center;color:var(--muted)}
+.B .ev.skip .hollow{width:22px;height:22px;margin-top:4px;border-style:dashed}
+.B .ev.skip .hollow .ic{width:12px;height:12px}
+.B .rail{position:sticky;top:12px;display:flex;flex-direction:column;gap:10px}
+.B .pp{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.B .big{font:500 24px/1 var(--f-display)}
+.B .smap{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.B .smap li{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 6px;border-radius:8px}
+.B .smap .sd{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line-2);display:grid;place-items:center;color:var(--ki)}
+.B .smap .sd .ic{width:11px;height:11px}
+.B .smap .is-done .sd{background:var(--kb);border-color:var(--k)}
+.B .smap .is-cur{background:var(--kb);color:var(--ki)}
+.B .smap .is-cur .sd{border:2px solid var(--k);background:var(--surface)}
+.B .smap .is-skip{color:var(--muted)}
+.B .smap .is-skip .sd{border-style:dashed;color:var(--muted)}
+.B .smap .is-fail{background:var(--rose);color:var(--rose-ink)}
+.B .smap .is-fail .sd{border-color:var(--crit);color:var(--rose-ink)}
+.B .smap .is-todo{color:var(--muted)}
+.B .crew{display:flex;flex-wrap:wrap;gap:4px}
+.B .cw{display:inline-flex;gap:6px;align-items:center;padding:2px 8px 2px 2px;border-radius:999px;background:var(--surface-2);font-size:12px}
+
+/* ---------- C: studio ---------- */
+.C .cgrid{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;gap:12px;margin-top:14px;align-items:start}
+.C .reqs{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rq{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:inherit;margin-bottom:6px;position:relative}
+.rq:hover{border-color:var(--line-2)}
+.rq[aria-pressed="true"]{background:color-mix(in srgb,var(--focus) 9%,var(--surface));border-color:color-mix(in srgb,var(--focus) 45%,var(--surface))}
+.rq .rt{font-weight:500;padding-right:14px}
+.rq .ra{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rq .rp{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.rq .mark{position:absolute;top:12px;right:10px}
+.C .mid{display:flex;flex-direction:column;gap:12px;min-width:0}
+.C .board{padding:0;overflow:hidden}
+.C .bscroll{overflow-x:auto;position:relative}
+.C .bgridC{display:grid;grid-template-columns:128px repeat(9,minmax(64px,1fr));min-width:704px}
+.C .corner,.C .bh{padding:8px;font-size:12px;border-bottom:1px solid var(--line)}
+.C .corner{color:var(--muted);position:sticky;left:0;background:var(--surface);z-index:2}
+.C .bh{display:flex;flex-direction:column;gap:1px;border-left:1px solid var(--line)}
+.C .bh .bn{font-weight:500;color:var(--ki)}
+.C .bh .bs{font-size:11px;color:var(--muted)}
+.C .bh.is-cur,.C .bh.is-fail{background:var(--kb)}
+.C .bh.is-fail{--kb:var(--rose);--ki:var(--rose-ink)}
+.C .bh.is-todo .bn{color:var(--muted)}
+.C .bl{position:sticky;left:0;z-index:1;background:var(--surface);display:flex;gap:6px;align-items:center;padding:4px 8px;border-top:1px solid var(--line);font-size:12px;min-width:0}
+.C .bl .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.C .bl.hlrow{background:color-mix(in srgb,var(--focus) 9%,var(--surface))}
+.C .bcell{border-top:1px solid var(--line);border-left:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:3px;min-height:36px}
+.C .bcell.is-cur{background:color-mix(in srgb,var(--k) 7%,var(--surface))}
+.C .bcell.is-skip,.C .bh.is-skip{background:repeating-linear-gradient(135deg,var(--surface-2) 0 6px,var(--surface) 6px 12px)}
+.C .tile{display:flex;align-items:center;gap:4px;width:100%;text-align:left;overflow-wrap:anywhere;font-size:11px;line-height:1.3;padding:3px 6px;border-radius:6px;border:1px solid color-mix(in srgb,var(--k) 40%,var(--surface));background:var(--surface);color:var(--ki);cursor:pointer}
+.C .tile .ic{width:11px;height:11px}
+.C .tile.done{background:var(--kb)}
+.C .tile.cur{background:var(--kb);border:1.5px solid var(--k);outline:3px solid color-mix(in srgb,var(--k) 24%,transparent);animation:pop .15s ease-out}
+.C .tile.todo{border-style:dashed;color:var(--muted);cursor:default}
+.C .tile.g{background:var(--grad);color:var(--on-grad);border-color:transparent}
+.C .tile.g.todo{background:var(--surface);color:var(--muted);border:1px dashed var(--line-2)}
+.C .tpt{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.C .tpt .gc{display:inline-flex;gap:4px;align-items:center;background:var(--grad);color:var(--on-grad);border:1px solid color-mix(in srgb,var(--a7) 30%,var(--surface))}
+.A span.nb{cursor:default}
+.C .transport .tk{height:12px;border-radius:4px}
+.C .transport .tk.cur{height:18px}
+.C .insp{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+.C .whybig{background:var(--kb);border-radius:12px;padding:10px 12px;margin-bottom:12px;border:1px solid color-mix(in srgb,var(--k) 35%,var(--surface))}
+.C .whybig .wl{display:flex;gap:6px;align-items:center;color:var(--ki);font-size:12px;font-weight:500;margin-bottom:4px}
+.C .whybig p{font:15px/1.5 var(--f-display);margin:0}
+.C .whoC{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+
+/* ---------- Agents views ---------- */
+.hint{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:var(--muted);margin:14px 0 10px}
+.am{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:12px;align-items:start}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;align-items:start}
+.team{padding:10px}
+.team h3{color:var(--ink);margin:0 0 6px 4px}
+.tdot{width:10px;height:10px;border-radius:50%;background:var(--ac,var(--a10));flex:none;display:inline-block}
+.arow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;width:100%;text-align:left;padding:5px 6px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;color:inherit}
+.arow:hover{background:var(--surface-2)}
+.arow.sel{background:color-mix(in srgb,var(--ac) 14%,var(--surface));border-color:color-mix(in srgb,var(--ac) 40%,var(--surface))}
+.arow .an{display:flex;flex-direction:column;min-width:0}
+.arow .an>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arow.none .an>span:first-child{color:var(--muted)}
+.sdots{display:inline-flex;gap:2px}
+.sdots i{width:7px;height:7px;border-radius:50%;background:var(--surface-3)}
+.sdots i.on{background:var(--k)}
+.adet{position:sticky;top:12px}
+.dh{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.dm{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tpill{display:inline-flex;align-items:center;font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;background:color-mix(in srgb,var(--ac) 16%,var(--surface));color:color-mix(in srgb,var(--ac) 45%,var(--ink));border:1px solid color-mix(in srgb,var(--ac) 40%,var(--surface))}
+.does{font-size:14px;line-height:1.55}
+.mini{display:flex;gap:3px;flex-wrap:wrap}
+.mi{display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;padding:0 7px;border-radius:999px;border:1px dashed var(--line-2);color:var(--muted)}
+.mi i{width:7px;height:7px;border-radius:50%;background:var(--surface-3)}
+.mi.on{border-style:solid;background:var(--kb);color:var(--ki);border-color:color-mix(in srgb,var(--k) 40%,var(--surface))}
+.mi.on i{background:var(--k)}
+.jw{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.jbox{border-radius:12px;padding:8px 10px}
+.jbox h4{margin:0 0 4px}
+.jbox p{margin:0}
+.jbox.in{background:var(--mint)}
+.jbox.in h4{color:var(--mint-ink)}
+.jbox.out{background:var(--surface-2)}
+.chain{display:grid;gap:2px;margin-top:8px}
+.chain .cl{border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.chain .cl h4{margin:0 0 2px}
+.chain .cl p{margin:0}
+.chain .ca{display:flex;justify-content:center;color:var(--muted)}
+.chain .ca .ic{transform:rotate(90deg)}
+.rq-chip{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:6px 10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--focus) 35%,var(--surface));background:color-mix(in srgb,var(--focus) 7%,var(--surface));cursor:pointer;color:inherit;margin-bottom:4px}
+.rq-chip>span:nth-child(2){flex:1}
+.empty{display:flex;gap:10px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line-2);color:var(--muted)}
+.empty b{color:var(--ink)}
+.lo{font-size:12px;color:var(--muted);margin:2px 0}
+.kv{width:100%;border-collapse:collapse;margin-top:10px}
+.kv th{width:104px;text-align:left;vertical-align:top;color:var(--muted);font-size:12px;padding:5px 8px 5px 0;border-bottom:1px solid var(--line)}
+.kv td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.bt{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+.bt th,.bt td{text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+.bt th{color:var(--muted)}
+.B .bag{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;margin-top:14px;align-items:start}
+.B .cast{padding:6px 8px;max-height:calc(100vh - 24px);overflow:auto;position:sticky;top:12px}
+.B .cg h3{margin:10px 6px 4px}
+.B .crow{display:flex;gap:8px;align-items:center;width:100%;padding:4px 6px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;text-align:left;color:inherit}
+.B .crow:hover{background:var(--surface-2)}
+.B .crow .cnt{margin-left:auto}
+.B .crow.sel{background:color-mix(in srgb,var(--ac) 14%,var(--surface));border-color:color-mix(in srgb,var(--ac) 40%,var(--surface))}
+.B .pcard{padding:0 18px 16px;overflow:hidden}
+.B .pcard .dh{margin:0 -18px 14px;padding:18px;background:color-mix(in srgb,var(--ac) 14%,var(--surface))}
+.B .pcard .does{font:15px/1.55 var(--f-display)}
+.B .pcard .chain{grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch}
+.B .pcard .chain .ca{align-items:center}
+.B .pcard .chain .ca .ic{transform:none}
+.C .tf{display:flex;flex-direction:column;gap:2px}
+.tfb{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;text-align:left;color:inherit}
+.tfb:hover{background:var(--surface-2)}
+.tfb .sub{margin-left:auto}
+.tfb[aria-pressed="true"]{background:color-mix(in srgb,var(--ac) 14%,var(--surface));border-color:color-mix(in srgb,var(--ac) 40%,var(--surface))}
+.C .tbl{padding:0;overflow-x:auto}
+.at{width:100%;border-collapse:collapse;min-width:560px}
+.at th{text-align:left;font-size:12px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+.at td{padding:4px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.at tr.sel td{background:color-mix(in srgb,var(--focus) 8%,var(--surface))}
+.alink{display:flex;gap:8px;align-items:center;background:none;border:0;padding:2px 0;cursor:pointer;text-align:left;color:inherit;border-radius:8px}
+.alink>span{display:flex;flex-direction:column}
+
+/* narrow frames: container queries, so the 390 px preview and real phones behave the same */
+@container app (max-width:1100px){
+  .C .cgrid{grid-template-columns:220px minmax(0,1fr)}
+  .C .insp{grid-column:1/-1;position:static;max-height:none}
+}
+@container app (max-width:1000px){
+  .A .amain,.am{grid-template-columns:minmax(0,1fr)}
+  .adet{position:static}
+  .B .bgrid{grid-template-columns:minmax(0,1fr)}
+  .B .rail{display:contents}
+  .B .rail>.prog{order:-1}
+  .B .bmain{order:0}
+  .B .rail>:not(.prog){order:1}
+  .B .bag{grid-template-columns:minmax(0,1fr)}
+  .B .cast{position:static;max-height:280px}
+}
+@container app (max-width:700px){
+  .C .cgrid{grid-template-columns:minmax(0,1fr)}
+  .C .reqs,.C .mid{display:contents}
+  .C .tfc,.C .rl{order:0}
+  .C .board,.C .tbl{order:1}.C .transport{order:2}.C .insp{order:3;grid-column:auto}.C .live{order:4;margin-top:0}.C .wif{order:5}.C .clock{order:6}.C .legend{order:7}
+  .C .rqs{display:flex;gap:6px;overflow-x:auto}
+  .C .rq{min-width:230px;margin:0}
+  .C .tf{flex-direction:row;flex-wrap:wrap}
+}
+@container app (max-width:560px){
+  .top{flex-direction:column;align-items:flex-start}
+  .ctl{width:100%}
+  .seg.req{width:100%}
+  .seg.req button{flex:1;justify-content:center}
+  .A .hero q,.B .askB q{font-size:15px}
+  .A .st{min-width:84px}
+  .ir{grid-template-columns:1fr}
+  .ir code{grid-column:auto}
+  .tr{grid-template-columns:auto minmax(0,1fr)}
+  .tr>.sub{grid-column:1/-1}
+  .jw{grid-template-columns:1fr}
+  .B .pcard .chain{grid-template-columns:1fr}
+  .B .pcard .chain .ca .ic{transform:rotate(90deg)}
+  .ctrls .sp{display:none}
+  .crow{grid-template-columns:84px minmax(0,1fr) 64px}
+  .gate .gq{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="proto" id="proto"></div>
+<div class="app" id="app"></div>
+<script type="application/json" id="sim-data">{"version":"1.3.9","baseline":{"from":"review-next16","kind":"measured","min":{"spec":45,"design":14,"build":47,"review":29}},"models":{"main session":"You"},"bug":{"finding":"MUST JV1: the new code reads a joined row's title without a null check; a favourite whose item was deleted gives a 500 (review.md, path:line).","fix":"Null-check the joined row and skip it; add a test with a deleted item.","lesson":"- <date> <task>: a value from a joined row that can be deleted is null-checked before use (src/main/java/**)","min":8},"unplanned":{"file":"src/main/java/com/acme/common/StringUtil.java","say":"While building, the agent also tidied a shared helper that no plan lists.","why":"Every changed file must be planned (scope_check.py). An unplanned file is a MUST: drop it, or accept it with a reason (scope_check.py add <id> <path> --why ...). The stop hook sends the turn back once while one is left."},"appUp":"The app is running: the guard blocks Maven build goals (they would stop or break it), so the checks use the classes your IDE already built.","budgets":{"low":{"spec":5,"design":10,"build":30,"review":10,"test":10,"verify":10,"release":10,"wrap":5},"medium":{"spec":15,"design":20,"build":45,"review":20,"test":15,"verify":15,"release":15,"wrap":5},"high":{"spec":30,"design":40,"build":90,"review":30,"test":30,"verify":20,"release":20,"wrap":10}},"defaultModel":"Opus","agents":{"main session":{"team":"Lead","model":"You","turns":0,"stages":["build","verify","wrap"],"does":"The session you talk to. It triages, sets the risk from the evidence, picks the team, briefs each agent, builds in task mode, runs the checks and opens the gates. It never commits.","joins":"Always.","skipped":"Never.","reads":"your request, context.md, the lessons for its area, every agent's output file","writes":"triage.md, the code (task mode), the live page","hands":"you, at each gate and at the end","web":false},"explorer":{"team":"Helpers","model":"Opus","turns":25,"stages":[],"does":"Read-only search. On a task it writes the context pack: the impact map (every caller, endpoint, screen and outside node as path:line), key code, the rules that apply and the risk signals.","joins":"First on every task, before the risk is set; any big search behind a question.","skipped":"A change in one or two files with no callers outside them (the main session writes a 5-line context itself).","reads":"the code (Grep before Read), impact.py, AGENTS.md rules","writes":"context.md","hands":"the main session (risk and team); every later agent reads the pack instead of exploring again","web":false,"calls":20},"spec-analyst":{"team":"Product","model":"Opus","turns":50,"stages":["spec"],"does":"Makes sure the request is understood before anyone designs: the brief with each gap and a recommended answer, the spec with kind of work, team and decisions. In product mode the request review, spec and gap sheet.","joins":"A task with real gaps or many areas; every product (S0, S2).","skipped":"The goal is clear and has no gaps.","reads":"context.md, the lessons for its area, decisions.md, questions.md","writes":"brief.md, spec.md (task); 01-prd-review.md, 02-spec.md, 02-nfr.md, 02-gaps.md (product)","hands":"you at the spec gate, then the designers","web":false,"calls":35},"bug-investigator":{"team":"Quality","model":"Opus","turns":50,"stages":["spec"],"does":"Proves a bug's root cause at path:line before anyone fixes it: expected against actual, ranked causes with evidence, the smallest fix, the same pattern elsewhere and a regression test that fails now.","joins":"A bug whose cause is not obvious (Spec).","skipped":"The cause is obvious: a quick fix or a plain task.","reads":"context.md, the lessons for its area, logs and steps you give","writes":"brief.md, spec.md","hands":"you at the gate, then Build; it never fixes code","web":false,"calls":35},"product-critic":{"team":"Product","model":"Opus","turns":50,"stages":[],"does":"Asks whether it will make a good, clear product: value, journeys, overlapping features, confusing ideas, missing must-haves, scope creep. Verdict: Good, Good with fixes or Rethink.","joins":"Product mode S3; a large new feature in task mode.","skipped":"Ordinary changes to an existing product.","reads":"context.md, the lessons for its area, the spec and gap sheet","writes":"03-product-review.md","hands":"you at G1, then ux-designer","web":false,"calls":35},"story-sizer":{"team":"Product","model":"Opus","turns":30,"stages":[],"does":"Turns the approved spec into epics and stories with Given/When/Then, points with confidence, the MVP slice and a first release plan.","joins":"Product mode S4; a task with several stories.","skipped":"A task that is one story.","reads":"context.md, the lessons for its area, the sizing standard, the approved option","writes":"04-stories.md, 04-backlog.csv","hands":"you at G2, then the design stage","web":false,"calls":20},"ux-designer":{"team":"Design","model":"Opus","turns":50,"stages":["design"],"does":"Journeys and screens, 2-3 product options or 2-4 lettered variants at real size with all states, the UI build spec, and a UI review of a diff.","joins":"A new screen, card, dialog or redesign (Design); product S3, SP and S5.","skipped":"No new screen: the same UI with a small change.","reads":"context.md, the lessons for its area, the theme tokens and components","writes":"ui.md, prototype.html, review-ui.md (task); 03-journeys.md, P-prototype.html, 05-ui.md (product)","hands":"you (the variant you pick is the D5 card), then Build","web":false,"calls":35},"solution-architect":{"team":"Architecture","model":"Opus","turns":50,"stages":["design"],"does":"Designs how it will be built: the file-by-file plan, the design-patterns check and the D3, D4 and D6 cards; in product mode the architecture, ADRs and the OpenAPI contract.","joins":"New code across layers, a new endpoint or a new approach; product S5.","skipped":"One layer and no new approach.","reads":"context.md, the lessons for its area, the approved brief","writes":"design.md, decisions/D3-*.md, D6 (task); 05-architecture.md, 05-openapi.yaml (product)","hands":"you at the design gate, then Build","web":false,"calls":35},"data-architect":{"team":"Architecture","model":"Opus","turns":50,"stages":["design"],"does":"Writes the D2 data-model card, plain words first: columns, existing rows, migration, deploy order, rollback, size and query speed. In product mode the data model built for growth.","joins":"Any table or column change (D2); product S5.","skipped":"No data model change.","reads":"context.md, the lessons for its area, the entities and queries in the pack","writes":"decisions/D2-data-model.md (task); 05-data-model.md (product)","hands":"you at the gate; the guard holds entity edits until D2 is approved","web":false,"calls":35},"security-architect":{"team":"Architecture","model":"Opus","turns":50,"stages":["design"],"does":"Designs access and privacy: roles, the access matrix, tenant isolation, threat model, secrets, personal data and retention; the D4 card.","joins":"Roles, permissions, personal data or outside access change; product S5.","skipped":"The same role check as the code around it.","reads":"context.md, the lessons for its area, the access checks in the pack","writes":"decisions/D4-access.md (task); 05-security.md (product)","hands":"you at the gate; the guard holds access edits until D4 is approved","web":false,"calls":35},"base-builder":{"team":"Engineering","model":"Opus","turns":60,"stages":[],"does":"Builds a new product's base project from the core base spec (shell, jobs, audit history, theme, demo flow) until the base checker says 100 %, then installs the core there.","joins":"Every new product, S1.","skipped":"Changes to an existing product.","reads":"the base spec and manifest","writes":"10-base-check.md and the product root","hands":"devops-engineer (does it deploy?), then requirements","web":false,"calls":20},"backend-developer":{"team":"Engineering","model":"Opus","turns":60,"stages":[],"does":"Builds one story's backend exactly as designed (API operations, data model, access matrix) with unit and API tests per acceptance criterion.","joins":"Product mode S6, one story at a time, after G3.","skipped":"Task mode: the main session builds.","reads":"context.md, the lessons for its area, the story, 05-openapi.yaml, 05-data-model.md","writes":"product code, 06-build-log.md","hands":"code-reviewer and qa-engineer","web":false,"calls":20},"frontend-developer":{"team":"Engineering","model":"Opus","turns":60,"stages":[],"does":"Builds one story's screens from the approved prototype and the API contract: generated types, theme tokens, all states, keyboard and screen-reader support, component tests.","joins":"Product mode S6, in parallel with backend-developer once the contract is fixed.","skipped":"Task mode: the main session builds.","reads":"context.md, the lessons for its area, the story, the prototype, 05-ui.md","writes":"product code, 06-build-log.md","hands":"code-reviewer and qa-engineer","web":false,"calls":20},"integration-engineer":{"team":"Engineering","model":"Opus","turns":30,"stages":["design"],"does":"Every connection to an outside system: contract, field mapping, full and delta sync, idempotency, retries and backoff, rate limits, what users see when it is down, monitoring.","joins":"A change that calls or syncs an outside system (Design); product S5 and S6.","skipped":"No outside system involved.","reads":"context.md, the lessons for its area, the outside system's documentation","writes":"a section of design.md (task); 05-integrations.md (product)","hands":"Build (the main session or the developers), then code-reviewer","web":false,"calls":20},"devops-engineer":{"team":"Operations","model":"Opus","turns":30,"stages":["design"],"does":"Environments, build and deploy files, service bindings, pipeline, health checks, logging, secrets through bindings, deploy and rollback runbook. Never deploys.","joins":"Product S0 (where and how it will run, 00-infra.md), S1 (the base deploys), S5, S6 and S9; a task that changes build or deploy files (D6).","skipped":"No build, deploy or environment change.","reads":"context.md, the lessons for its area, the build and deploy files","writes":"a section of design.md (task); 00-infra.md, 05-ops.md, 09-deploy-plan.md (product)","hands":"release-manager","web":false,"calls":20},"performance-engineer":{"team":"Quality","model":"Opus","turns":50,"stages":["spec"],"does":"Makes something slow fast without changing what it returns: scenario and budget, the baseline the main session measures, where the time goes, ranked fixes, before and after tests.","joins":"Something is slow (Spec); product S5 budgets and S7 hot paths.","skipped":"Speed is not part of the change.","reads":"context.md, the lessons for its area, timings and captures you give","writes":"perf.md (task); 05-performance.md, 07-performance.md (product)","hands":"the designers and Build","web":false,"calls":35},"code-reviewer":{"team":"Quality","model":"Opus","turns":50,"stages":["review"],"does":"Reviews the diff against the spec, the approved design and cards, the hard rules and the review checklists; MUST and SHOULD findings with path:line, proof and the fix, each re-checked.","joins":"Every code change (Review); product S7.","skipped":"Nothing changed in code (an answer, setup work).","reads":"context.md, the lessons for its area, the diff, the checklists","writes":"review.md (task); 07-code-review.md (product)","hands":"PASS: Test and Verify. FAIL: back to Build, and a line in lessons.md","web":false,"calls":35},"qa-engineer":{"team":"Quality","model":"Opus","turns":30,"stages":["design","test"],"does":"Locks today's outputs with characterization tests before Build, turns criteria into tests, writes and runs them without stopping your app, reports per criterion and per impact-map line.","joins":"Medium and high risk (characterize at Design); new tests (Test); product S6 and S7.","skipped":"Low risk where the existing tests are enough.","reads":"context.md, the lessons for its area, the criteria, the impact map","writes":"safety.md, test.md (task); 07-test-report.md (product)","hands":"Review and Verify","web":false,"calls":20},"verifier":{"team":"Quality","model":"Opus","turns":30,"stages":["verify"],"does":"Read-only check that a change meets its criteria (PASS or FAIL per criterion, with evidence), or that the design documents and the built product agree.","joins":"Many criteria, a pushed change; product S5 and S7.","skipped":"Few criteria: the main session verifies.","reads":"context.md, the lessons for its area, the criteria, the diff","writes":"verify.md","hands":"you","web":false,"calls":20},"audit-expert":{"team":"Audit","model":"Opus","turns":50,"stages":[],"does":"Independent go-live audit: every MUST of the Definition of Done marked PASS, FAIL or NOT VERIFIED with evidence; everything else to a LATER list.","joins":"Product S8; a task only when you ask.","skipped":"Ordinary task work.","reads":"context.md, the lessons for its area, the Definition of Done, every approved document","writes":"08-audit.md (product); audit.md (task)","hands":"release-manager and you","web":false,"calls":35},"release-manager":{"team":"Operations","model":"Opus","turns":30,"stages":["release"],"does":"Checks that finished work can ship: scope, stage results, migrations, config keys, restart and deploy notes, handoffs, rollback triggers; the go or no-go. Guides only when asked.","joins":"Product S9; a task with a release stage (size L or a deploy).","skipped":"A change that ships with the next normal deploy.","reads":"context.md, the lessons for its area, every stage result","writes":"release.md (task); 09-release.md (product)","hands":"you at the go-live gate","web":false,"calls":20},"sf-expert":{"team":"Domain experts","model":"Opus","turns":50,"stages":["spec","design","review"],"does":"SAP SuccessFactors adviser: which module, entity and fields, what SuccessFactors already does, effective dating, ids, permissions, paging, delta, auth and failure modes; facts checked on api.sap.com.","joins":"A change that reads or writes SuccessFactors data (fit at Spec, fields at Design, a review pass).","skipped":"No SuccessFactors data involved.","reads":"context.md, the lessons for its area, the SuccessFactors reference, .claude/experts/sf.md","writes":"sf.md, review-sf.md (task); 02-sf-fit.md, 05-sf-fields.md (product)","hands":"the designers and Build","web":true,"calls":35},"ai-engineer":{"team":"Domain experts","model":"Opus","turns":50,"stages":["design","review"],"does":"Every LLM feature: a baseline first, then model per step, code or LLM per step, prompts, tools, tokens and cost, caching, latency, evals with thresholds, guardrails; numbers, never adjectives.","joins":"A change to AI behaviour, a prompt, a model, tokens, cost or answer quality (Design, a review pass).","skipped":"No AI in the path.","reads":"context.md, the lessons for its area, the AI reference, .claude/experts/ai.md","writes":"ai.md, review-ai.md (task); 05-ai.md (product)","hands":"Build, and a handoff to whoever owns the pipeline","web":true,"calls":35},"n8n-expert":{"team":"Domain experts","model":"Opus","turns":50,"stages":["design","review"],"does":"n8n workflow engineer: today's flow node by node, where LLM and tool calls run in series, a node plan with an eval case per change, the rollout and the handoff for the workflow owner.","joins":"A change that touches an n8n workflow, a node, a prompt held in n8n, routing, or the payload and callbacks between the app and n8n (Design; a review pass when most of the change is n8n).","skipped":"No n8n workflow involved.","reads":"context.md, the lessons for its area, the n8n reference, .claude/experts/n8n.md","writes":"n8n.md, review-n8n.md (task); 05-n8n.md (product)","hands":"Build, or the workflow owner (handoff)","web":true,"calls":35}},"scenarios":[{"id":"medium","label":"Medium-risk feature","group":"Task","mode":"task","size":"M","ask":"Add a 'Favourites' list: a new endpoint and a card on the dashboard that shows it.","lane":"Task","laneWhy":"New code across layers with a new screen.","risk":"medium","riskWhy":["ItemService.addFavourite is shared: 6 callers outside the change (context.md)","a new card on the dashboard","4 files across layers (controller, service, card script, template)"],"context":{"impact":[["method","ItemService.addFavourite","src/main/java/com/acme/items/ItemService.java:118","6 callers"],["endpoint","GET /api/favourites (new)","src/main/java/com/acme/items/FavouriteController.java","new file"],["screen","dashboard cards","src/main/resources/static/js/dashboard/cards.js:40","renders the cards"],["screen","profile page","src/main/resources/templates/profile.html:77","also loads cards.js"]],"rules":["controllers stay thin","new labels in messages.properties only","colours from the theme"],"signals":["shared method with 6 callers","a new screen"]},"team":[{"stage":"design","agent":"solution-architect","why":"a new endpoint and card across layers"},{"stage":"design","agent":"ux-designer","why":"a new card: its states and variants"},{"stage":"design","agent":"qa-engineer","focus":"characterize","why":"risk medium: lock what saveItem returns today"},{"stage":"build","agent":"main session","why":"you build"},{"stage":"review","agent":"code-reviewer","why":"one review pass, every caller checked"},{"stage":"test","agent":"qa-engineer","why":"new tests for the endpoint and the card"},{"stage":"verify","agent":"main session","why":"live-check and the smoke list"},{"stage":"wrap","agent":"main session","why":"commit message"}],"notNeeded":[{"agent":"spec-analyst","why":"the goal has no real gaps"},{"agent":"data-architect","why":"reuses the favourites table; no column change (no D2)"},{"agent":"security-architect","why":"same role check as the other item endpoints (no D4)"},{"agent":"verifier","why":"few criteria: you verify"}],"steps":[{"t":"triage","why":"sdlc 1: a change to the product that is more than a quick fix is a task."},{"t":"context","min":3,"why":"sdlc 2.4: the impact map comes from impact.py: callers, endpoints, the screens calling them, each as path:line."},{"t":"risk","why":"sdlc 2.5: medium = a shared method with callers outside the change, a new screen, or 3+ files across layers."},{"t":"team","why":"sdlc 3: a new screen brings ux-designer; a change across layers brings solution-architect; medium risk brings qa-engineer to lock today's outputs."},{"t":"stage","stage":"design","agents":["solution-architect","ux-designer"],"say":"Both design experts run at once. solution-architect writes the plan file by file and the D3 card for the new endpoint; ux-designer the card's states (empty, loading, error, many items).","files":["design.md","decisions/D3-api.md","ui.md"],"min":12,"why":"sdlc 4: all Design experts in one message, in parallel. Each reads context.md first and does not explore beyond it."},{"t":"note","stage":"design","title":"Prototype","agents":["main session"],"say":"You get one HTML file with 3 lettered variants of the card at real size. Your pick is the D5 card.","files":["prototype.html","decisions/D5-ui.md"],"why":"New UI: prototype first, build only the variant you pick (prototype skill)."},{"t":"stage","stage":"design","title":"Characterization tests","agents":["qa-engineer"],"say":"qa-engineer locks what addFavourite returns today for 6 inputs, in the scratchpad. The 'before' run passes.","files":["safety.md"],"cmds":["python .claude/core/scripts/char_test.py run <id> before"],"min":5,"why":"sdlc 5: at medium and high risk, today's outputs of every changed shared method are locked before Build, so a side effect shows up as a diff."},{"t":"gate","stage":"design","q":"Approve the plan, the API (D3) and the card (D5)?","files":["triage.md","design.md","decisions/D3-api.md","decisions/D5-ui.md"],"by":"solution-architect","qa":{"q":"Does the old /api/items call change?","a":"No. design.md lists it under 'Stays unchanged', and the characterization tests prove it."},"why":"sdlc 7: medium risk has one gate, at the end of the last planning stage, covering understanding and plan together."},{"t":"check","stage":"build","name":"Before Build","say":"Files baseline, compile, full unit suite.","cmds":["python .claude/core/scripts/scope_check.py baseline <id>","<commands.compile>","<commands.test_all>"],"cmdsUp":["python .claude/core/scripts/scope_check.py baseline <id>","compile: your IDE","mvn -o -q surefire:test"],"result":"412 pass, 0 fail","why":"sdlc 5: the same steps at every risk level."},{"t":"build","stage":"build","agents":["main session"],"say":"The main session builds the endpoint, the service method and the card exactly as the approved plan says.","files":["src/main/java/com/acme/items/FavouriteController.java","src/main/java/com/acme/items/ItemService.java","src/main/resources/static/js/dashboard/cards.js","src/main/resources/messages.properties"],"min":25,"why":"Build follows the approved cards; anything they do not cover needs a change card, never a silent change."},{"t":"check","stage":"build","name":"After Build","say":"Compile, the full suite, the characterization diff (no change outside 'Intended changes') and the scope check.","cmds":["<commands.compile>","<commands.test_all>","python .claude/core/scripts/char_test.py run <id> after","python .claude/core/scripts/char_test.py diff <id>","python .claude/core/scripts/scope_check.py check <id>"],"cmdsUp":["compile: your IDE","mvn -o -q surefire:test","python .claude/core/scripts/char_test.py run <id> after","python .claude/core/scripts/char_test.py diff <id>","python .claude/core/scripts/scope_check.py check <id>"],"result":"417 pass, 0 fail; no output changed outside the plan; 4 files, all planned","why":"sdlc 5: nothing else may break."},{"t":"review","stage":"review","agents":["code-reviewer","qa-engineer"],"say":"Review and Test run together. code-reviewer checks the diff and every one of the 6 callers in the impact map; qa-engineer writes and runs the new tests. PASS.","files":["review.md","test.md"],"min":12,"why":"sdlc 5: at medium and high risk every caller in the impact map is checked by someone."},{"t":"stage","stage":"test","agents":["qa-engineer"],"say":"5 new tests, all green (ran alongside Review).","min":0,"why":"sdlc 8: Review and Test in parallel, in one message."},{"t":"stage","stage":"verify","agents":["main session"],"say":"Live-check of the dashboard card, then the smoke items for the areas touched: 'Dashboard' and 'Items API' from .claude/smoke.md.","files":[".claude/smoke.md"],"min":8,"why":"sdlc 5: medium and high add the smoke list of each area touched, so neighbours of the change are checked too."},{"t":"stage","stage":"wrap","agents":["main session"],"say":"commit-msg gives you the message and the files to include.","min":2,"why":"You commit; agents never do."},{"t":"end","say":"Done: one gate, 6 callers checked, today's outputs proved unchanged."}]},{"id":"high","label":"High-risk data change","group":"Task","mode":"task","size":"L","ask":"Categories can be archived; archived ones disappear from the picker.","lane":"Task","laneWhy":"A new column and a change to what three screens list.","risk":"high","riskWhy":["data model: a new column on the category table (D2)","the picker query is a native query used by 3 screens (context.md)"],"context":{"impact":[["entity","Category","src/main/java/com/acme/catalog/Category.java:22","table CATEGORY"],["query","findAllCategories (native)","src/main/java/com/acme/catalog/CategoryRepository.java:41","3 callers"],["screen","category picker","src/main/resources/static/js/catalog/category-picker.js:65","admin"],["screen","item form","src/main/resources/templates/items/form.html:120","editors"]],"rules":["schema only through JPA entities","never hand-edit generated DDL","an upgrade job for existing rows if needed"],"signals":["table change","native query with 3 callers"]},"team":[{"stage":"spec","agent":"spec-analyst","why":"a real gap: what happens to items already in an archived category?"},{"stage":"design","agent":"data-architect","why":"a table change: the D2 card"},{"stage":"design","agent":"solution-architect","why":"risk high: the plan file by file"},{"stage":"design","agent":"qa-engineer","focus":"characterize","why":"lock today's picker output"},{"stage":"build","agent":"main session","why":"you build"},{"stage":"review","agent":"code-reviewer","why":"one review pass"},{"stage":"test","agent":"qa-engineer","why":"new tests"},{"stage":"verify","agent":"verifier","why":"many criteria and smoke items"},{"stage":"wrap","agent":"main session","why":"commit message"}],"notNeeded":[{"agent":"security-architect","why":"no role or permission change"},{"agent":"ux-designer","why":"no new screen; the picker only shows fewer rows"}],"mustFail":{"finding":"MUST DA3: the native query findAllCategories still returns archived categories, so the picker shows them (CategoryRepository.java:41).","fix":"Add the archived filter to the native query; add a test with one archived category.","lesson":"- <date> <task>: a new status column is applied in every native query that lists the rows, not only in JPQL (*Repository.java)","min":10},"steps":[{"t":"triage","why":"sdlc 1: anything that needs a decision card is a task."},{"t":"context","min":3,"why":"sdlc 2.4: the pack shows the native query and its 3 callers, the evidence for high risk."},{"t":"risk","why":"sdlc 2.5: high = a data model change, a contract others call, permissions, an outside system, or many callers."},{"t":"team","why":"sdlc 3: a table change brings data-architect (D2); a real gap brings spec-analyst."},{"t":"stage","stage":"spec","agents":["spec-analyst"],"say":"brief.md says what was understood and lists the gaps, each with a recommended answer (D1 Scope).","files":["brief.md","spec.md"],"min":12,"why":"Nobody designs before the request is understood."},{"t":"gate","stage":"spec","q":"Did I understand it? (D1 Scope)","files":["brief.md"],"by":"spec-analyst","qa":{"q":"Can an archived category come back?","a":"Yes: gap G2 recommends an Unarchive action; you can say no."},"why":"sdlc 7: high risk has two gates, the spec gate (the brief's gaps) and then the design gate."},{"t":"stage","stage":"design","agents":["data-architect","solution-architect","qa-engineer"],"say":"The D2 card starts with 'Data model explained' in plain words, then the column, what happens to existing rows, deploy order and rollback. qa-engineer locks today's picker output.","files":["design.md","decisions/D2-data-model.md","safety.md"],"min":20,"why":"sdlc 7: a D2 card is written by data-architect in the decision-card layout; handoff_check.py must pass before its gate opens."},{"t":"gate","stage":"design","q":"Approve the design and the data model (D2)?","files":["design.md","decisions/D2-data-model.md"],"by":"data-architect","qa":{"q":"What happens to existing categories?","a":"They get no mark, which counts as active, so nothing changes for them (D2 section 0)."},"why":"Only you approve a card. ok records it in decisions.md."},{"t":"guard","stage":"build","say":"Before you approved D2, the guard held every edit to the Category entity. Now the card is approved for this task, the edit goes through.","why":"The guard hook blocks data-model (D2), access (D4) and config (D6) edits until their card is approved, in Claude and in Cursor."},{"t":"check","stage":"build","name":"Before Build","say":"Files baseline, compile, full unit suite, characterization 'before'.","cmds":["python .claude/core/scripts/scope_check.py baseline <id>","<commands.compile>","<commands.test_all>","python .claude/core/scripts/char_test.py run <id> before"],"cmdsUp":["python .claude/core/scripts/scope_check.py baseline <id>","compile: your IDE","mvn -o -q surefire:test","python .claude/core/scripts/char_test.py run <id> before"],"result":"412 pass, 0 fail","why":"sdlc 5."},{"t":"build","stage":"build","agents":["main session"],"say":"The column on the entity, the filter in the queries, the picker change.","files":["src/main/java/com/acme/catalog/Category.java","src/main/java/com/acme/catalog/CategoryRepository.java","src/main/java/com/acme/catalog/CategoryService.java","src/main/resources/static/js/catalog/category-picker.js"],"min":30,"why":"Schema changes go through the JPA entity; the generated DDL is never edited by hand."},{"t":"check","stage":"build","name":"After Build","say":"Compile, the full suite, the characterization diff and the scope check.","cmds":["<commands.compile>","<commands.test_all>","python .claude/core/scripts/char_test.py diff <id>","python .claude/core/scripts/scope_check.py check <id>"],"cmdsUp":["compile: your IDE","mvn -o -q surefire:test","python .claude/core/scripts/char_test.py diff <id>","python .claude/core/scripts/scope_check.py check <id>"],"result":"416 pass, 0 fail; the picker output changes only as 'Intended changes' says","why":"sdlc 5."},{"t":"review","stage":"review","agents":["code-reviewer","qa-engineer"],"say":"Review and Test together; every caller of the native query is checked. PASS.","files":["review.md","test.md"],"min":12,"why":"sdlc 8: any MUST sends the task back to Build; only what failed runs again."},{"t":"stage","stage":"test","agents":["qa-engineer"],"say":"4 new tests, all green.","min":0,"why":"Ran alongside Review."},{"t":"stage","stage":"verify","agents":["verifier"],"say":"verifier checks each criterion with evidence; the smoke items for 'Items' and 'Categories' pass.","min":10,"why":"A verifier joins for many criteria or a pushed change."},{"t":"stage","stage":"wrap","agents":["main session"],"say":"commit-msg, plus 'For release' notes: the new column arrives with the restart.","min":3,"why":"Release needs go under For release in status.md."},{"t":"end","say":"Done: two gates, the guard held the entity until D2, and the review MUST became a lesson the next task reads."}]}]}</script>
+<script>
+"use strict";
+const D=JSON.parse(document.getElementById("sim-data").textContent);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const COLS=[["triage","Triage"],["plan","Context and team"],["spec","Spec"],["design","Design"],["build","Build"],["review","Review"],["test","Test"],["verify","Verify"],["wrap","Wrap-up"]];
+const CK=COLS.map(c=>c[0]);
+const NAME=Object.assign(Object.fromEntries(COLS),{fail:"Review",ok:"Done"});
+const RISKNET={low:"Safety net: compile and the full suite before and after, scope check. No gate.",
+  medium:"Safety net: plus characterization tests, every caller checked, smoke list. One gate.",
+  high:"Safety net: as medium. Two gates: spec, then design."};
+const S={v:"A",view:"flow",sc:null,steps:[],i:0,max:0,asked:{},dec:{},tg:{bug:false,unp:false,app:false},agent:null,speed:1,auto:null,live:"live",narrow:false,theme:"system",team:"all",moved:false};
+
+const IC={back:'<path d="M15 18l-6-6 6-6"/>',next:'<path d="M9 18l6-6-6-6"/>',play:'<path d="M7 5l12 7-12 7z"/>',pause:'<path d="M9 5v14M15 5v14"/>',
+ restart:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',x:'<path d="M7 7l10 10M17 7L7 17"/>',skip:'<path d="M6 12h12"/>',
+ loop:'<path d="M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4"/><path d="M20 12a8 8 0 0 1-14 5.3"/><path d="M6 21v-4h4"/>',
+ bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+ flag:'<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>',file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-4-5.6"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',auto:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+ live:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',shield:'<path d="M12 21s7-3.5 7-9V5.5L12 3 5 5.5V12c0 5.5 7 9 7 9z"/>',
+ route:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/>',
+ book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',warn:'<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/>'};
+const ic=(n,c)=>'<svg class="ic '+(c||"")+'" viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||"")+'</svg>';
+
+/* ---------- the flow engine (same rules as simulate.html) ---------- */
+function expand(sc,tg){
+  const out=[],bug=sc.mustFail||(tg.bug?D.bug:null);
+  for(const s of sc.steps){
+    if(s.t==="review"&&bug){
+      out.push({t:"reviewFail",stage:"review",agents:s.agents,finding:bug.finding,min:s.min,why:"sdlc 8: any MUST or failing test = FAIL, back to Build; only what failed runs again."});
+      out.push({t:"rebuild",stage:"build",agents:["main session"],say:bug.fix,min:bug.min,why:"The fix follows the finding's path:line and fix; the checks after Build run again."});
+      out.push(Object.assign({},s,{again:true,min:Math.ceil((s.min||0)/2),say:"Review again, only for what failed: PASS."}));
+      out.push({t:"lessons",stage:"review",line:bug.lesson.replace("<date>",new Date().toISOString().slice(0,10)).replace("<task>","demo-"+sc.id),why:"sdlc 9 Lessons loop: every fixed review MUST adds one line to .claude/review/lessons.md. Agents read the lines for their area, and the reviewer fails a repeat."});
+      continue;
+    }
+    out.push(s);
+    if(s.t==="build"&&tg.unp)out.push({t:"scope",stage:"build",file:D.unplanned.file,say:D.unplanned.say,why:D.unplanned.why});
+  }
+  return out;
+}
+function load(id){S.sc=D.scenarios.find(x=>x.id===id)||D.scenarios[0];S.steps=expand(S.sc,S.tg);S.i=0;S.max=0;S.asked={};S.dec={};stop()}
+function colOf(s){if(s.t==="triage")return "triage";if(["context","risk","team"].includes(s.t))return "plan";if(s.t==="end")return null;return s.stage||"plan"}
+function kOf(s){return s.t==="end"?"ok":s.t==="reviewFail"?"fail":colOf(s)}
+const kc=k=>"k-"+(k||"ok");
+function title(s){const sc=S.sc;switch(s.t){
+  case "triage":return "Triage: "+sc.lane;case "context":return "Context pack";case "risk":return "Risk: "+sc.risk;case "team":return "The team";
+  case "gate":return (s.again?"Gate again: ":"Gate: ")+s.q;case "build":return "Build";case "review":return s.again?"Review again":"Review";case "reviewFail":return "Review fails";
+  case "rebuild":return "Back to Build";case "lessons":return "A lesson is recorded";case "scope":return "Scope check blocks";case "guard":return "The guard";
+  case "revise":return "Changes, then the gate again";case "check":return s.name;case "end":return "Done";default:return s.title||NAME[s.stage]||"Step"}}
+function short(s){switch(s.t){case "triage":return "Triage";case "context":return "Context pack";case "risk":return "Risk";case "team":return "Team";case "gate":return s.again?"Gate again":"Gate";
+  case "check":return s.name;case "build":return "Build";case "rebuild":return "Fix";case "review":return s.again?"Review again":"Review";case "reviewFail":return "Review fails";
+  case "lessons":return "Lesson";case "guard":return "Guard";case "scope":return "Scope check";case "revise":return "Changes";case "end":return "Done";default:return s.title||NAME[s.stage]||"Step"}}
+function who(s){
+  if(s.t==="gate")return ["You"];
+  if(["triage","risk","team","check","guard","scope","lessons"].includes(s.t))return ["main session"];
+  if(s.t==="context")return ["explorer"];
+  if(s.t==="revise")return [s.by||"main session"];
+  if(s.t==="end")return [];
+  return s.agents||["main session"];
+}
+function stageState(k){
+  const idx=[];S.steps.forEach((x,j)=>{if(colOf(x)===k)idx.push(j)});
+  if(!idx.length)return "skip";
+  const cur=S.steps[S.i];if(cur.t==="end")return "done";
+  const fi=S.steps.findIndex(x=>x.t==="reviewFail"),ai=S.steps.findIndex(x=>x.t==="review"&&x.again);
+  if(k==="review"&&fi>=0&&fi<=S.i&&ai>S.i)return "fail";
+  if(colOf(cur)===k)return "cur";
+  return idx[0]<S.i?"done":"todo";
+}
+function looped(){const ai=S.steps.findIndex(x=>x.t==="review"&&x.again);return ai>=0&&ai<=S.i}
+function gateWaiting(){const s=S.steps[S.i];return s.t==="gate"&&!S.dec[S.i]}
+function stWord(k,st){if(st==="cur"&&gateWaiting()&&colOf(S.steps[S.i])===k)return "waiting for you";return {done:"done",cur:"now",todo:"to come",skip:"skipped",fail:"failed"}[st]}
+function skipWhy(k){const outs=(S.sc.notNeeded||[]).filter(n=>((D.agents[n.agent]||{}).stages||[]).includes(k));return outs.length?outs.map(n=>n.agent+": "+n.why).join("; "):"nobody is needed here for this request"}
+function agentsIn(sc){const a=new Set(["main session"]);if(sc.mode==="task")a.add("explorer");(sc.team||[]).forEach(r=>a.add(r.agent));sc.steps.forEach(s=>(s.agents||[]).forEach(x=>a.add(x)));return a}
+function stagesIn(sc,n){const k=new Set();(sc.team||[]).filter(r=>r.agent===n).forEach(r=>k.add(NAME[r.stage]||r.stage));sc.steps.filter(s=>(s.agents||[]).includes(n)).forEach(s=>s.stage&&k.add(NAME[s.stage]||s.stage));if(n==="explorer")k.add("Context pack");if(n==="main session")k.add("Triage");return [...k]}
+function uses(n){return D.scenarios.filter(sc=>agentsIn(sc).has(n))}
+function mins(){let d=0,a=0;const per={};S.steps.forEach((s,j)=>{if(!s.min)return;const k=s.stage||"plan";per[k]=per[k]||{d:0,a:0};per[k].a+=s.min;a+=s.min;if(j<S.i){d+=s.min;per[k].d+=s.min}});return {d,a,per}}
+
+/* ---------- small parts ---------- */
+function modelOf(n){const r=((S.sc&&S.sc.team)||[]).find(x=>x.agent===n&&x.model);const m=r?r.model:((D.models||{})[n]||(D.agents[n]||{}).model||D.defaultModel||"Opus");return m==="You"?"session":m}
+function initials(n){if(n==="You")return "You";const p=n.split(/[- ]/).filter(Boolean);return (p.length>1?p[0][0]+p[1][0]:n.slice(0,2)).toUpperCase()}
+function teamOf(n){return n==="You"?"You":((D.agents[n]||{}).team||"Helpers")}
+const slug=t=>String(t).replace(/\s+/g,"-");
+function av(n,size){return '<span class="av '+(size||"")+' t-'+slug(teamOf(n))+(S.agent===n?" hl":"")+'" title="'+esc(n==="You"?"You decide":n+" ("+teamOf(n)+")")+'">'+esc(initials(n))+'</span>'}
+const mdl=n=>'<span class="m">'+esc(modelOf(n))+'</span>';
+const pill=(k,t)=>'<span class="pill '+kc(k)+'">'+esc(t)+'</span>';
+const riskPill=r=>'<span class="pill r-'+esc(r)+'">Risk: '+esc(r)+'</span>';
+const files=fs=>(fs||[]).length?'<div class="files">'+fs.map(f=>'<span class="fc">'+ic("file")+esc(f)+'</span>').join("")+'</div>':"";
+const agentsRow=a=>(a||[]).length?'<div class="agrow">'+a.map(n=>'<span class="agc">'+av(n,"s")+esc(n)+mdl(n)+'</span>').join("")+'</div>':"";
+const markDot=sc=>S.agent&&agentsIn(sc).has(S.agent)?'<span class="mark" title="'+esc(S.agent)+' works on this request"></span>':"";
+function ticks(){return S.steps.map((s,j)=>'<button class="tk '+kc(kOf(s))+(j<S.i?" done":j===S.i?" cur":"")+(s.t==="gate"?" g":"")+'" data-act="jump" data-arg="'+j+'"'+(j>S.max?" disabled":"")+' aria-label="Step '+(j+1)+': '+esc(title(s))+'" title="'+(j+1)+'. '+esc(title(s))+'"></button>').join("")}
+function controls(){
+  const last=S.i>=S.steps.length-1,g=gateWaiting();
+  return '<div class="ctrls"><button class="btn" data-act="back"'+(S.i?"":" disabled")+'>'+ic("back")+'Back</button>'+
+    '<button class="btn pri" data-act="next"'+(g||last?" disabled":"")+'>'+(g?"Decide at the gate":last?"Done":"Next")+ic("next")+'</button>'+
+    '<button class="btn" data-act="play"'+(last?" disabled":"")+' aria-pressed="'+!!S.auto+'">'+(S.auto?ic("pause")+"Pause":ic("play","fill")+"Play")+'</button>'+
+    '<span class="seg sm" role="group" aria-label="Speed">'+[[0.5,"Slow"],[1,"Normal"],[2,"Fast"]].map(([v,n])=>'<button data-act="speed" data-arg="'+v+'" aria-pressed="'+(S.speed===v)+'">'+n+'</button>').join("")+'</span>'+
+    '<span class="sp"></span><button class="btn ghost" data-act="restart">'+ic("restart")+'Restart</button></div>';
+}
+function stepHead(s){const k=kOf(s);return '<div class="sh">'+pill(k,NAME[k]||"Step")+'<h2>'+esc(title(s))+'</h2><span class="sub n">Step '+(S.i+1)+' of '+S.steps.length+'</span></div>'}
+function topHTML(picker){
+  return '<header class="top"><div class="brand"><span class="logo">'+ic("route")+'</span><div><h1>How a request flows</h1><div class="sub">Pick a request and step through what the agents do. Nothing here touches your code.</div></div></div>'+
+  '<div class="ctl">'+(picker?'<div class="seg req" role="group" aria-label="Request">'+D.scenarios.map(sc=>'<button data-act="load" data-arg="'+sc.id+'" aria-pressed="'+(S.view==="flow"&&sc.id===S.sc.id)+'">'+markDot(sc)+esc(sc.label)+'</button>').join("")+'</div>':"")+
+  '<div class="seg" role="group" aria-label="View"><button data-act="view" data-arg="flow" aria-pressed="'+(S.view==="flow")+'">'+ic("route")+'Flow</button><button data-act="view" data-arg="agents" aria-pressed="'+(S.view==="agents")+'">'+ic("users")+'Agents <span class="cnt">'+Object.keys(D.agents).length+'</span></button></div>'+
+  '<button class="btn icon" data-act="theme" title="Theme: '+S.theme+'" aria-label="Theme: '+S.theme+'">'+ic(S.theme==="dark"?"moon":S.theme==="light"?"sun":"auto")+'</button></div></header>';
+}
+function followHTML(){if(!S.agent)return "";const on=agentsIn(S.sc).has(S.agent);
+  return '<div class="follow">'+av(S.agent,"s")+'<span>Following <b>'+esc(S.agent)+'</b>: '+(on?"ringed wherever it works in this request.":"it does not work on this request.")+'</span><button class="btn ghost sm" data-act="agent" data-arg="">Stop following</button></div>'}
+function whatIf(){const hb=!!S.sc.mustFail;
+  return '<section class="card wif"><h3>What if</h3>'+
+  '<label class="tg'+(hb?" off":"")+'"><input type="checkbox" data-act="tg" data-arg="bug"'+(S.tg.bug||hb?" checked":"")+(hb?" disabled":"")+'><span>a bug slips into Build'+(hb?' <span class="sub">(this request has one already)</span>':"")+'</span></label>'+
+  '<label class="tg"><input type="checkbox" data-act="tg" data-arg="unp"'+(S.tg.unp?" checked":"")+'><span>an agent edits a file nobody planned</span></label>'+
+  '<label class="tg"><input type="checkbox" data-act="tg" data-arg="app"'+(S.tg.app?" checked":"")+'><span>the app is running</span></label></section>'}
+function clockHTML(){const m=mins(),b=D.budgets[S.sc.risk]||{};
+  return '<section class="card clock"><h3>'+ic("clock")+'Agent time</h3><div class="ct"><b>'+m.d+'</b> of about '+m.a+' min so far</div>'+
+  COLS.filter(([k])=>m.per[k]).map(([k,n])=>{const p=m.per[k],bb=b[k]||p.a||1,w=Math.min(100,Math.round(p.a/bb*100)),dw=Math.min(100,Math.round(p.d/bb*100));
+    return '<div class="crow '+kc(k)+'"><span>'+n+'</span><span class="cbar" aria-hidden="true"><i class="ce" style="width:'+w+'%"></i><i class="cd" style="width:'+dw+'%"></i></span><span class="sub">'+p.a+(b[k]?' / '+b[k]:"")+' min</span></div>'}).join("")+
+  '<div class="sub">Estimate, against the stage budget for '+esc(S.sc.risk)+' risk.</div></section>'}
+function legend(){return '<div class="legend">'+COLS.map(([k,n])=>'<span class="'+kc(k)+'"><i></i>'+n+'</span>').join("")+'<span class="lg-you"><i></i>Your decision</span><span class="k-fail"><i></i>Failed</span></div>'}
+function legendTeams(){return '<div class="legend">'+teamGroups().map(([t])=>'<span class="t-'+slug(t)+'"><i></i>'+esc(t)+'</span>').join("")+'</div>'}
+function liveHTML(){const id="demo-"+S.sc.id;let body;
+  if(S.live==="loading")body='<div class="lv-load" aria-busy="true"><div class="sub">Loading the live tracker...</div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>';
+  else if(S.live==="off")body='<div class="lv-off">'+ic("warn")+'<div><b>The live tracker is not available.</b><div>It shows only when this page is served, not opened as a file. Run <code>python .claude/core/scripts/simulate.py '+esc(S.sc.id)+'</code> and open the link it prints.</div><button class="btn" data-act="live" data-arg="retry">'+ic("restart")+'Try again</button></div></div>';
+  else body='<div class="lv-frame"><div class="lv-ph">'+ic("live")+'<div><b>Live tracker frame</b><div class="sub">The real page shows <code>live.html?task='+esc(id)+'</code> here, in a frame about 760 px tall. It fills in while the simulator command runs.</div></div></div></div>';
+  return '<section class="card live"><div class="lh"><h3>'+ic("live")+'Live tracker</h3><span class="sub">'+esc(id)+'</span></div>'+body+'</section>'}
+
+/* ---------- step body (shared) ---------- */
+function gateHTML(s){const j=S.i,d=S.dec[j];
+  return '<div class="gate"><div class="gh">'+ic("flag")+'<span>Your decision'+(s.again?" (again)":"")+'</span></div><div class="gq">'+esc(s.q)+'</div>'+
+  '<div class="gs">'+av(s.by||"main session","s")+'<span>'+esc(s.by||"main session")+' wrote these. The full text is in the chat and on the live page, with line comments.</span></div>'+files(s.files)+
+  (S.asked[j]&&s.qa?'<div class="qa"><div><b>You asked:</b> '+esc(s.qa.q)+'</div><div><b>Answer:</b> '+esc(s.qa.a)+'</div><div class="sub">Logged and added to the document\'s questions. The gate stays open.</div></div>':"")+
+  (d==="ok"?'<div class="decided">'+ic("check")+'You approved. It is recorded in decisions.md.</div>':d==="change"?'<div class="decided">'+ic("loop")+'You asked for changes.</div>':
+  '<div class="gact"><button class="btn go" data-act="ok">'+ic("check")+'Approve</button><button class="btn" data-act="change">'+ic("loop")+'Change</button>'+(s.qa&&!S.asked[j]?'<button class="btn" data-act="ask">Ask: '+esc(s.qa.q)+'</button>':"")+'</div>')+'</div>'}
+function doneHTML(s){const g=S.steps.filter(x=>x.t==="gate").length,l=S.steps.filter(x=>x.t==="reviewFail").length,m=mins();
+  return '<div class="donebox">'+ic("check")+'<div><div class="dt">'+esc(s.say)+'</div><div class="stats"><span><b>'+g+'</b> gate'+(g===1?"":"s")+'</span><span><b>'+l+'</b> review loop'+(l===1?"":"s")+'</span><span>about <b>'+m.a+'</b> min of agent time</span></div></div></div>'}
+function bodyHTML(s){
+  const sc=S.sc;let h="";
+  switch(s.t){
+    case "triage":h+='<p>Lane '+pill("triage",sc.lane)+' '+esc(sc.laneWhy)+'</p><p class="muted">Next: a task folder <code>demo-'+esc(sc.id)+'</code> (normally the ticket id), with its own live page.</p>';break;
+    case "context":{const c=sc.context;
+      h+='<p>'+av("explorer","s")+' <b>explorer</b> writes <code>context.md</code>: everything this change touches, so nobody explores twice.</p><div class="imp">'+
+      c.impact.map(r=>'<div class="ir"><span class="kind">'+esc(r[0])+'</span><span>'+esc(r[1])+'</span><span class="sub">'+esc(r[3])+'</span><code>'+esc(r[2])+'</code></div>').join("")+'</div>'+
+      '<p class="muted"><b>Rules that apply:</b> '+esc(c.rules.join("; "))+'.</p><p class="muted"><b>Risk signals:</b> '+esc(c.signals.join("; "))+'.</p>'+files(["context.md"]);break}
+    case "risk":h+='<p>'+riskPill(sc.risk)+' set from the evidence:</p><ul>'+sc.riskWhy.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul><div class="note-box">'+ic("shield")+'<span>'+esc(RISKNET[sc.risk])+'</span></div>';break;
+    case "team":h+='<p>Each agent joins for a reason. A stage with nobody on it is skipped.</p><div class="team">'+sc.team.map(r=>'<div class="tr">'+pill(r.stage,NAME[r.stage]||r.stage)+'<span class="tn">'+av(r.agent,"s")+esc(r.agent)+mdl(r.agent)+'</span><span class="sub">'+esc(r.why)+'</span></div>').join("")+'</div>'+
+      ((sc.notNeeded||[]).length?'<details class="out"><summary>'+sc.notNeeded.length+' agents left out, and why</summary>'+sc.notNeeded.map(n=>'<div class="tr">'+av(n.agent,"s")+'<span>'+esc(n.agent)+'</span><span class="sub">'+esc(n.why)+'</span></div>').join("")+'</details>':"")+files(["triage.md"]);break;
+    case "gate":h+=gateHTML(s);break;
+    case "revise":h+='<p>'+av(s.by||"main session","s")+' <b>'+esc(s.by||"main session")+'</b> changes only the parts you marked, then opens the gate again.</p>';break;
+    case "reviewFail":h+=agentsRow(s.agents)+'<div class="failbox">'+ic("x")+'<div><b>Review failed.</b> '+esc(s.finding)+'<div>The task goes back to Build. Only what failed runs again.</div></div></div>';break;
+    case "rebuild":h+='<div class="loopnote">'+ic("loop")+'Back to Build to fix the finding</div>'+agentsRow(s.agents)+'<p>'+esc(s.say)+'</p>';break;
+    case "lessons":h+='<p>One line goes into <code>.claude/review/lessons.md</code>. Agents read the lines for their area; the reviewer fails a repeat.</p><pre>'+esc(s.line)+'</pre>';break;
+    case "scope":h+='<p>'+esc(s.say)+'</p><div class="failbox">'+ic("warn")+'<div><b>Scope check blocks.</b> <code>'+esc(s.file)+'</code> is in no plan.<div>The agent drops that change, or accepts it with a reason.</div></div></div>';break;
+    case "guard":h+='<div class="okbox">'+ic("shield")+'<div>'+esc(s.say)+'</div></div>';break;
+    case "end":h+=doneHTML(s);break;
+    default:h+=agentsRow(s.agents)+(s.say?'<p>'+esc(s.say)+'</p>':"");
+  }
+  const cm=(S.tg.app&&s.cmdsUp)?s.cmdsUp:(s.cmds||[]);
+  if(cm.length)h+=(S.tg.app&&s.cmdsUp?'<p class="muted">'+esc(D.appUp)+'</p>':"")+'<pre>'+cm.map(esc).join("\n")+'</pre>'+(s.result?'<div class="okbox">'+ic("check")+'<div>'+esc(s.result)+'</div></div>':"");
+  if(s.files&&!["gate","context","team"].includes(s.t))h+=files(s.files);
+  if(s.min)h+='<div class="sub mins">'+ic("clock")+'About '+s.min+' min of agent time (estimated)</div>';
+  return h;
+}
+function summary(s,j){const sc=S.sc;switch(s.t){
+  case "triage":return sc.laneWhy;case "context":return "explorer wrote context.md: "+sc.context.impact.length+" places this change touches.";
+  case "risk":return sc.riskWhy[0];case "team":return sc.team.length+" jobs given, "+(sc.notNeeded||[]).length+" agents left out.";
+  case "gate":return S.dec[j]==="ok"?"You approved.":S.dec[j]==="change"?"You asked for changes.":"Waiting for you.";
+  case "reviewFail":return s.finding;case "lessons":return "One line added to lessons.md.";case "scope":return s.file+" was in no plan.";
+  case "revise":return "Documents changed as you asked.";case "check":return s.result||s.say;default:return s.say||""}}
+
+/* ---------- A: journey map ---------- */
+function stationA([k,n],x){
+  const st=stageState(k),cur=S.steps[S.i];
+  const ags=[...new Set(S.steps.filter(s=>colOf(s)===k).flatMap(who))].filter(a=>a!=="You");
+  const first=S.steps.findIndex(s=>colOf(s)===k);
+  let note="";
+  if(st==="skip")note="Skipped";else if(st==="fail")note="Failed";
+  else if(st==="cur")note=gateWaiting()?"Waiting for you":cur.t==="rebuild"?"Fixing the finding":short(cur);
+  else if(st==="done"&&k==="review"&&looped())note="Passed on 2nd try";
+  const node=st==="done"?ic("check"):st==="fail"?ic("x"):st==="skip"?ic("skip"):(x+1);
+  return '<li class="st '+kc(k)+' is-'+st+'">'+(st==="cur"?'<span class="now">'+(gateWaiting()?"Your turn":"Now")+'</span>':'<span class="nowsp"></span>')+
+    '<button class="nb" data-act="jump" data-arg="'+first+'"'+(first<0||first>S.max?" disabled":"")+' aria-label="'+esc(n)+': '+stWord(k,st)+'"'+(st==="skip"?' title="'+esc(skipWhy(k))+'"':"")+'><span class="node">'+node+'</span><span class="nm">'+esc(n)+'</span></button>'+
+    '<span class="ags">'+ags.slice(0,4).map(a=>av(a,"s")).join("")+'</span><span class="stn">'+esc(note)+'</span></li>';
+}
+function flowA(){
+  const sc=S.sc,s=S.steps[S.i],k=kOf(s),end=s.t==="end";
+  const skips=COLS.filter(([c])=>stageState(c)==="skip");
+  return topHTML(true)+followHTML()+
+  '<section class="hero"><div class="hq"><span class="hlab">The request</span><q>'+esc(sc.ask)+'</q></div>'+
+  '<div class="hchips"><span class="gc">'+esc(sc.lane)+': '+esc(sc.laneWhy)+'</span>'+riskPill(sc.risk)+'<span class="gc">Size '+esc(sc.size)+'</span></div>'+
+  '<div class="hprog"><div class="hpl"><span>Step '+(S.i+1)+' of '+S.steps.length+'</span><span>'+esc(title(s))+'</span></div><div class="ticks">'+ticks()+'</div></div></section>'+
+  '<section class="card trackcard"><ol class="track" aria-label="Stages">'+COLS.map(stationA).join("")+
+    '<li class="st k-ok is-'+(end?"done":"todo")+'"><span class="'+(end?"now":"nowsp")+'">'+(end?"Done":"")+'</span><span class="nb"><span class="node">'+ic("check")+'</span><span class="nm">Done</span></span><span class="ags"></span><span class="stn"></span></li></ol>'+
+    (skips.length?'<div class="skipline">'+ic("skip")+'<span>Skipped: '+skips.map(([c,n])=>'<b>'+n+'</b>, '+esc(skipWhy(c))).join("; ")+'.</span></div>':"")+'</section>'+
+  '<div class="amain"><article class="card stepcard '+kc(k)+'">'+stepHead(s)+'<div class="body">'+bodyHTML(s)+'</div>'+controls()+'</article>'+
+  '<aside class="aside"><section class="card why '+kc(k)+'"><h3>'+ic("bulb")+'Why this step</h3><p>'+esc(s.why||"")+'</p></section>'+
+  '<section class="card"><h3>'+ic("users")+'Working now</h3>'+(who(s).length?who(s).map(n=>'<div class="wrow">'+av(n)+'<span>'+(n==="You"?"You":esc(n))+'</span>'+(n!=="You"?mdl(n):"")+'<span class="sub">'+(n==="You"?"decide at the gate":esc(teamOf(n)))+'</span></div>').join(""):'<div class="sub">Nobody: the request is done.</div>')+'</section>'+
+  whatIf()+clockHTML()+'</aside></div>'+liveHTML()+legend();
+}
+
+/* ---------- B: story timeline ---------- */
+const avStack=ns=>ns.length?'<span class="stack">'+ns.slice(0,3).map(n=>av(n)).join("")+'</span>':'<span class="av fin">'+ic("check")+'</span>';
+function pastB(s,j){const k=kOf(s);
+  return '<li class="ev past '+kc(k)+(s.t==="gate"?" g":"")+(s.t==="reviewFail"?" f":"")+'"><div class="who">'+avStack(who(s))+'</div><button class="prow" data-act="jump" data-arg="'+j+'" title="Go back to this step">'+pill(k,NAME[k]||"Step")+'<span class="pt">'+esc(title(s))+'</span><span class="ps">'+esc(summary(s,j))+'</span></button></li>'}
+function curB(s,j){const k=kOf(s),w=who(s);
+  return '<li class="ev cur '+kc(k)+'" id="evcur"><div class="who">'+avStack(w)+'</div><div class="bub">'+
+  '<div class="eh">'+pill(k,NAME[k]||"Step")+'<h2>'+esc(title(s))+'</h2>'+(w.length?'<span class="sub">'+w.map(n=>n==="You"?"You decide":esc(n)).join(", ")+'</span>':"")+'</div>'+
+  bodyHTML(s)+'<div class="whyB"><span class="wl">'+ic("bulb")+'Why</span><span>'+esc(s.why||"")+'</span></div>'+controls()+'</div></li>'}
+function flowB(){
+  const sc=S.sc,skipK=CK.filter(k=>stageState(k)==="skip"),emitted=new Set();let items="";
+  const emitSkips=upto=>skipK.forEach(k=>{if(!emitted.has(k)&&CK.indexOf(k)<upto){emitted.add(k);
+    items+='<li class="ev skip '+kc(k)+'"><div class="who"><span class="hollow">'+ic("skip")+'</span></div><div class="skrow">'+pill(k,NAME[k])+'<span>Skipped: '+esc(skipWhy(k))+'.</span></div></li>'}});
+  for(let j=0;j<=S.i;j++){const s=S.steps[j],c=colOf(s);emitSkips(c?CK.indexOf(c):99);items+=j<S.i?pastB(s,j):curB(s,j)}
+  const up=S.steps.slice(S.i+1,S.i+4),more=S.steps.length-S.i-1-up.length;
+  items+=up.map((s,x)=>'<li class="ev next"><div class="who"><span class="hollow"></span></div><div class="nrow">'+(x===0?'<span class="sub">Next</span>':"")+pill(kOf(s),NAME[kOf(s)]||"Step")+'<span>'+esc(title(s))+'</span></div></li>').join("");
+  if(more>0)items+='<li class="ev next"><div class="who"></div><div class="nrow sub">and '+more+' more step'+(more>1?"s":"")+'</div></li>';
+  const pct=Math.round(S.i/Math.max(1,S.steps.length-1)*100);
+  return topHTML(true)+followHTML()+'<div class="bgrid"><main class="bmain">'+
+  '<section class="card askB"><div class="ab">'+av("You")+'<div><div class="sub">You asked</div><q>'+esc(sc.ask)+'</q><div class="hchips">'+pill("triage",sc.lane)+riskPill(sc.risk)+'<span class="pn">Size '+esc(sc.size)+'</span></div></div></div></section>'+
+  '<ol class="tl" aria-label="What happened so far">'+items+'</ol>'+liveHTML()+'</main>'+
+  '<aside class="rail"><section class="card prog"><div class="pp"><span class="big">'+pct+'%</span><span class="sub">Step '+(S.i+1)+' of '+S.steps.length+'</span></div><div class="ticks">'+ticks()+'</div></section>'+
+  '<section class="card"><h3>Stages</h3><ol class="smap">'+COLS.map(([k,n])=>{const st=stageState(k);return '<li class="'+kc(k)+' is-'+st+'"><span class="sd">'+(st==="done"?ic("check"):st==="fail"?ic("x"):st==="skip"?ic("skip"):"")+'</span><span>'+n+'</span><span class="sub">'+stWord(k,st)+'</span></li>'}).join("")+'</ol></section>'+
+  '<section class="card"><h3>'+ic("users")+'On this request</h3><div class="crew">'+[...agentsIn(sc)].map(n=>'<span class="cw">'+av(n,"s")+esc(n)+'</span>').join("")+'</div></section>'+
+  whatIf()+clockHTML()+'</aside></div>';
+}
+
+/* ---------- C: studio ---------- */
+function reqList(){return '<section class="card rl"><h3>Requests</h3><div class="rqs">'+D.scenarios.map(sc=>'<button class="rq" data-act="'+(S.view==="flow"?"load":"open")+'" data-arg="'+sc.id+'" aria-pressed="'+(S.view==="flow"&&sc.id===S.sc.id)+'">'+markDot(sc)+
+  '<span class="rt">'+esc(sc.label)+'</span><span class="ra">'+esc(sc.ask)+'</span><span class="rp">'+pill("triage",sc.lane)+riskPill(sc.risk)+'<span class="sub">'+expand(sc,S.tg).length+' steps</span></span></button>').join("")+
+  '</div><div class="sub">The real page lists all 10 requests.</div></section>'}
+function tileC(s,j){const k=kOf(s),cls=j<S.i?"done":j===S.i?"cur":j<=S.max?"seen":"todo";
+  return '<button class="tile '+kc(k)+' '+cls+(s.t==="gate"?" g":"")+'" data-act="jump" data-arg="'+j+'"'+(j>S.max?" disabled":"")+' title="Step '+(j+1)+': '+esc(title(s))+'">'+(j<S.i?ic(s.t==="reviewFail"?"x":"check"):s.t==="gate"?ic("flag"):"")+esc(short(s))+'</button>'}
+function boardC(){
+  const lanes=["You"];S.steps.forEach(s=>who(s).forEach(a=>{if(!lanes.includes(a))lanes.push(a)}));
+  const head='<div class="corner">Who</div>'+COLS.map(([k,n])=>{const st=stageState(k);return '<div class="bh '+kc(k)+' is-'+st+'"><span class="bn">'+n+'</span><span class="bs">'+stWord(k,st)+'</span></div>'}).join("");
+  const rows=lanes.map(l=>'<div class="bl'+(S.agent===l?" hlrow":"")+'" title="'+esc(l==="You"?"You decide":l)+'">'+av(l,"s")+'<span class="ln">'+(l==="You"?"You decide":esc(l))+'</span></div>'+
+    COLS.map(([k])=>'<div class="bcell '+kc(k)+' is-'+stageState(k)+'">'+S.steps.map((s,j)=>[s,j]).filter(([s])=>colOf(s)===k&&who(s).includes(l)).map(([s,j])=>tileC(s,j)).join("")+'</div>').join("")).join("");
+  return '<div class="bscroll"><div class="bgridC" role="group" aria-label="Who works in which stage">'+head+rows+'</div></div>';
+}
+function flowC(){
+  const s=S.steps[S.i],k=kOf(s),w=who(s),skips=COLS.filter(([c])=>stageState(c)==="skip");
+  return topHTML(false)+followHTML()+'<div class="cgrid"><nav class="reqs" aria-label="Requests">'+reqList()+whatIf()+clockHTML()+'</nav>'+
+  '<main class="mid"><section class="card board">'+boardC()+'</section>'+
+  '<section class="card transport"><div class="tpt">'+(s.t==="end"?'<span class="pill k-ok">'+ic("check")+'Done</span>':gateWaiting()?'<span class="gc">'+ic("flag")+' Waiting for you</span>':"")+
+    '<span>Step '+(S.i+1)+' of '+S.steps.length+': <b>'+esc(title(s))+'</b></span>'+(skips.length?'<span class="sub">Skipped: '+skips.map(([c,n])=>n).join(", ")+'</span>':"")+'</div><div class="ticks">'+ticks()+'</div>'+controls()+'</section>'+
+  liveHTML()+legend()+'</main>'+
+  '<aside class="card insp '+kc(k)+'" aria-label="This step"><div class="whybig"><div class="wl">'+ic("bulb")+'Why this step</div><p>'+esc(s.why||"")+'</p></div>'+stepHead(s)+
+  (w.length?'<div class="whoC">'+w.map(n=>'<span class="agc">'+av(n,"s")+(n==="You"?"You decide":esc(n))+'</span>').join("")+'</div>':"")+'<div class="body">'+bodyHTML(s)+'</div></aside></div>';
+}
+
+/* ---------- Agents views ---------- */
+function teamGroups(){const g={},o=[];Object.entries(D.agents).forEach(([n,a])=>{if(!g[a.team]){g[a.team]=[];o.push(a.team)}g[a.team].push(n)});return o.map(t=>[t,g[t]])}
+function ensureAgent(){if(!S.agent||!D.agents[S.agent])S.agent="code-reviewer"}
+function sdots(n){const st=(D.agents[n]||{}).stages||[];return '<span class="sdots" title="Stages: '+esc(st.filter(k=>CK.includes(k)).map(k=>NAME[k]).join(", ")||"none in a task")+'">'+COLS.map(([k])=>'<i class="'+kc(k)+(st.includes(k)?" on":"")+'"></i>').join("")+'</span>'}
+const modelName=a=>a.model==="You"?"session":(a.model||D.defaultModel||"Opus");
+function budgetHTML(a){
+  const ks=(a.stages||[]).filter(k=>D.budgets.low[k]!=null);
+  return '<p>'+(a.model==="You"?"Your session: no turn limit.":"About "+(a.calls||20)+" tool calls, stops at "+a.turns+" turns"+(a.web?", at most 3 web lookups":"")+". Writes its file first, replies in 10 lines or fewer.")+'</p>'+
+  (ks.length?'<table class="bt"><thead><tr><th>Stage budget</th><th>low</th><th>medium</th><th>high</th></tr></thead><tbody>'+ks.map(k=>'<tr><td>'+pill(k,NAME[k])+'</td><td>'+D.budgets.low[k]+' min</td><td>'+D.budgets.medium[k]+' min</td><td>'+D.budgets.high[k]+' min</td></tr>').join("")+'</tbody></table><div class="sub">Minutes for the whole stage, shared with everyone on it.</div>'
+  :'<div class="sub">No task-stage budget: it works in product mode or before the stages start.</div>')}
+function agentDetail(n,mode){
+  const a=D.agents[n];if(!a)return "";
+  const ins=uses(n),outs=D.scenarios.map(sc=>[sc,(sc.notNeeded||[]).find(x=>x.agent===n)]).filter(x=>x[1]),st=a.stages||[];
+  const head='<div class="dh t-'+slug(a.team)+'">'+av(n,"l")+'<div><h2>'+esc(n)+'</h2><div class="dm"><span class="tpill">'+esc(a.team)+'</span><span class="m">'+esc(modelName(a))+'</span>'+(a.own?'<span class="pn">this repo\'s own agent</span>':"")+'</div></div></div>';
+  const track='<h4>Stages it joins in a task</h4><div class="mini">'+COLS.map(([k,nm])=>'<span class="mi '+kc(k)+(st.includes(k)?" on":"")+'"><i></i>'+nm+'</span>').join("")+'</div>';
+  const jw='<div class="jw"><div class="jbox in"><h4>'+ic("check")+'Joins when</h4><p>'+esc(a.joins)+'</p></div><div class="jbox out"><h4>'+ic("skip")+'Left out when</h4><p>'+esc(a.skipped)+'</p></div></div>';
+  const chain='<h4>How it works</h4><div class="chain"><div class="cl"><h4>'+ic("book")+'Reads</h4><p>'+esc(a.reads)+'</p></div><span class="ca">'+ic("arrow")+'</span><div class="cl"><h4>'+ic("file")+'Writes</h4><p>'+esc(a.writes)+'</p></div><span class="ca">'+ic("arrow")+'</span><div class="cl"><h4>'+ic("users")+'Hands to</h4><p>'+esc(a.hands)+'</p></div></div>';
+  const kv='<table class="kv"><tbody>'+[["Joins when",a.joins],["Left out when",a.skipped],["Reads",a.reads],["Writes",a.writes],["Hands to",a.hands]].map(r=>'<tr><th>'+r[0]+'</th><td>'+esc(r[1])+'</td></tr>').join("")+'</tbody></table>';
+  const works='<h4>Works on</h4>'+(ins.length?ins.map(sc=>'<button class="rq-chip" data-act="open" data-arg="'+sc.id+'"><span class="mark"></span><span><b>'+esc(sc.label)+'</b> <span class="sub">'+esc(stagesIn(sc,n).join(", "))+'</span></span>'+ic("next")+'</button>').join(""):
+    '<div class="empty">'+ic("users")+'<div><b>None of these requests use it.</b><div>It joins when: '+esc(a.joins)+'</div></div></div>');
+  const lo=outs.length?'<h4>Left out, and why</h4>'+outs.map(([sc,x])=>'<div class="lo"><b>'+esc(sc.label)+':</b> '+esc(x.why)+'</div>').join(""):"";
+  return head+'<p class="does">'+esc(a.does)+'</p>'+(mode==="kv"?kv:jw+chain)+track+works+lo+'<h4>'+ic("clock")+'Budget</h4>'+budgetHTML(a);
+}
+function agentsA(){ensureAgent();const g=teamGroups(),N=D.scenarios.length;
+  return topHTML(true)+'<p class="hint">'+ic("users")+Object.keys(D.agents).length+' agents in '+g.length+' teams. Pick one: the requests it works on get a <span class="mark"></span> dot. The dots on each row are the stages it joins.</p>'+
+  '<div class="am"><div class="teams">'+g.map(([t,ns])=>'<section class="card team t-'+slug(t)+'"><h3><span class="tdot"></span>'+esc(t)+'<span class="cnt">'+ns.length+'</span></h3>'+
+    ns.map(n=>{const u=uses(n).length;return '<button class="arow'+(n===S.agent?" sel":"")+(u?"":" none")+'" data-act="agent" data-arg="'+esc(n)+'" aria-pressed="'+(n===S.agent)+'">'+av(n)+'<span class="an"><span>'+esc(n)+'</span><span class="sub">'+(u?u+" of "+N+" requests":"in none of these requests")+'</span></span>'+sdots(n)+'</button>'}).join("")+'</section>').join("")+'</div>'+
+  '<aside class="card adet">'+agentDetail(S.agent)+'</aside></div>'+legend();
+}
+function agentsB(){ensureAgent();const g=teamGroups(),a=D.agents[S.agent];
+  return topHTML(true)+'<div class="bag"><nav class="card cast" aria-label="Agents">'+g.map(([t,ns])=>'<div class="cg t-'+slug(t)+'"><h3><span class="tdot"></span>'+esc(t)+'</h3>'+
+    ns.map(n=>{const u=uses(n).length;return '<button class="crow t-'+slug(t)+(n===S.agent?" sel":"")+'" data-act="agent" data-arg="'+esc(n)+'" aria-pressed="'+(n===S.agent)+'">'+av(n,"s")+'<span>'+esc(n)+'</span>'+(u?'<span class="cnt" title="works on '+u+' of these requests">'+u+'</span>':"")+'</button>'}).join("")+'</div>').join("")+'</nav>'+
+  '<main><div class="card pcard t-'+slug(a.team)+'">'+agentDetail(S.agent)+'</div>'+legendTeams()+'</main></div>';
+}
+function agentsC(){ensureAgent();const g=teamGroups(),all=Object.keys(D.agents),list=all.filter(n=>S.team==="all"||D.agents[n].team===S.team);
+  return topHTML(false)+'<div class="cgrid"><nav class="reqs" aria-label="Filters"><section class="card tfc"><h3>Teams</h3><div class="tf">'+
+    [["all","All teams",all.length]].concat(g.map(([t,ns])=>[t,t,ns.length])).map(([id,nm,c])=>'<button class="tfb t-'+slug(id)+'" data-act="team" data-arg="'+esc(id)+'" aria-pressed="'+(S.team===id)+'"><span class="tdot"></span>'+esc(nm)+'<span class="sub">'+c+'</span></button>').join("")+'</div></section>'+reqList()+'</nav>'+
+  '<main class="card tbl"><table class="at"><thead><tr><th>Agent</th><th>Model</th><th>Stages</th><th>Requests</th><th>Budget</th></tr></thead><tbody>'+
+    list.map(n=>{const a=D.agents[n],u=uses(n).length;return '<tr class="'+(n===S.agent?"sel":"")+'"><td><button class="alink" data-act="agent" data-arg="'+esc(n)+'" aria-pressed="'+(n===S.agent)+'">'+av(n,"s")+'<span><span>'+esc(n)+'</span><span class="sub">'+esc(a.team)+'</span></span></button></td><td><span class="m">'+esc(modelName(a))+'</span></td><td>'+sdots(n)+'</td><td>'+(u||'<span class="sub">none</span>')+'</td><td class="sub">'+(a.model==="You"?"no limit":(a.calls||20)+" calls, "+a.turns+" turns")+'</td></tr>'}).join("")+
+  '</tbody></table></main><aside class="card insp">'+agentDetail(S.agent,"kv")+'</aside></div>';
+}
+
+/* ---------- prototype strip ---------- */
+function protoHTML(){
+  const V=[["A","Journey map"],["B","Story timeline"],["C","Studio"]];
+  return '<div class="pin"><span class="pl">Prototype</span><div class="seg" role="group" aria-label="Variant">'+V.map(([v,n])=>'<button data-act="variant" data-arg="'+v+'" aria-pressed="'+(S.v===v)+'"><b>'+v+'</b> '+n+'</button>').join("")+'</div>'+
+  '<div class="seg sm" role="group" aria-label="Width"><button data-act="narrow" data-arg="0" aria-pressed="'+!S.narrow+'">Full width</button><button data-act="narrow" data-arg="1" aria-pressed="'+S.narrow+'">390 px</button></div>'+
+  '<div class="seg sm" role="group" aria-label="Jump to a state"><span class="sl">Show:</span>'+[["gate","Gate waiting"],["fail","Failed review"],["skip","Skipped stage"],["done","Done"]].map(([a,n])=>'<button data-act="demo" data-arg="'+a+'">'+n+'</button>').join("")+'</div>'+
+  '<div class="seg sm" role="group" aria-label="Live tracker state"><span class="sl">Live tracker:</span>'+[["live","Shown"],["loading","Loading"],["off","Not available"]].map(([a,n])=>'<button data-act="live" data-arg="'+a+'" aria-pressed="'+(S.live===a)+'">'+n+'</button>').join("")+'</div>'+
+  '<span class="sub">Not part of the page. Left and right arrow keys step.</span></div>'}
+
+/* ---------- actions ---------- */
+function start(){if(S.auto)return;S.auto=setInterval(()=>{if(gateWaiting()||S.i>=S.steps.length-1){stop();render();return}S.i++;S.max=Math.max(S.max,S.i);S.moved=true;render()},1600/S.speed)}
+function stop(){if(S.auto){clearInterval(S.auto);S.auto=null}}
+function act(a,arg){
+  const s=S.steps[S.i];
+  switch(a){
+    case "next":if(S.i<S.steps.length-1&&!gateWaiting()){S.i++;S.moved=true}break;
+    case "back":stop();if(S.i>0){S.i--;S.moved=true}break;
+    case "restart":stop();S.steps=expand(S.sc,S.tg);S.i=0;S.max=0;S.asked={};S.dec={};break;
+    case "ok":if(gateWaiting()){S.dec[S.i]="ok";S.i++;S.moved=true}break;
+    case "change":if(gateWaiting()){S.dec[S.i]="change";S.steps.splice(S.i+1,0,{t:"revise",stage:s.stage,by:s.by,agents:[s.by||"main session"],why:"You asked for changes: the live page marks the cards, the author changes only those and opens the gate again. Nothing goes ahead on a card you did not approve."},Object.assign({},s,{again:true}));S.max=S.i;S.i++;S.moved=true}break;
+    case "ask":S.asked[S.i]=true;break;
+    case "play":if(S.auto)stop();else start();break;
+    case "speed":S.speed=+arg;if(S.auto){stop();start()}break;
+    case "jump":{const j=+arg;if(j>=0&&j<=S.max){stop();S.i=j;S.moved=true}break}
+    case "load":load(arg);S.view="flow";break;
+    case "open":S.view="flow";load(arg);break;
+    case "view":stop();S.view=arg;break;
+    case "variant":S.v=arg;try{localStorage.setItem("simproto:v",arg)}catch(e){}break;
+    case "agent":S.agent=arg||null;break;
+    case "team":S.team=arg;break;
+    case "theme":S.theme={system:"light",light:"dark",dark:"system"}[S.theme];document.documentElement.dataset.theme=S.theme;break;
+    case "live":if(arg==="retry"){S.live="loading";setTimeout(()=>{if(S.live==="loading"){S.live="live";render()}},1500)}else S.live=arg;break;
+    case "narrow":S.narrow=arg==="1";break;
+    case "tg":S.tg[arg]=!S.tg[arg];S.steps=expand(S.sc,S.tg);S.i=Math.min(S.i,S.steps.length-1);S.max=Math.min(S.max,S.steps.length-1);break;
+    case "demo":{if(arg==="fail"&&S.sc.id!=="high")load("high");if(arg==="skip"&&S.sc.id!=="medium")load("medium");
+      const f={gate:x=>x.t==="gate",fail:x=>x.t==="reviewFail",done:x=>x.t==="end",skip:x=>colOf(x)==="design"}[arg];
+      if(arg==="fail"&&!S.steps.some(x=>x.t==="reviewFail"))load("high");
+      const j=S.steps.findIndex(f);if(j>=0){stop();S.steps.forEach((x,y)=>{if(y<j&&x.t==="gate")S.dec[y]="ok"});delete S.dec[j];S.i=j;S.max=Math.max(S.max,j);S.view="flow";S.moved=true}break}
+  }
+  S.max=Math.max(S.max,S.i);
+  render();
+}
+function after(){
+  if(S.view==="flow"){
+    const tr=document.querySelector(".A .track"),cur=tr&&(tr.querySelector(".is-cur")||tr.querySelector(".is-fail"));
+    if(tr&&cur)tr.scrollLeft=Math.max(0,cur.offsetLeft-tr.clientWidth/2+cur.clientWidth/2);
+    const t=document.querySelector(".C .tile.cur");if(t){const sc=t.closest(".bscroll");sc.scrollLeft=Math.max(0,t.closest(".bcell").offsetLeft-sc.clientWidth/2)}
+    if(S.moved&&S.v==="B"){const e=$("evcur");if(e){const r=e.getBoundingClientRect();if(r.top<60||r.top>innerHeight-160)e.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}}
+  }
+  S.moved=false;
+}
+function render(){
+  const ae=document.activeElement,fk=ae&&ae.dataset&&ae.dataset.act?[ae.dataset.act,ae.dataset.arg||""]:null;
+  const app=$("app");app.className="app"+(S.narrow?" narrow":"");
+  const html=S.view==="flow"?{A:flowA,B:flowB,C:flowC}[S.v]():{A:agentsA,B:agentsB,C:agentsC}[S.v]();
+  app.innerHTML='<div class="'+S.v+'">'+html+'</div>';
+  $("proto").innerHTML=protoHTML();
+  if(fk){const all=[...document.querySelectorAll("[data-act]")];
+    let el=all.find(e=>e.dataset.act===fk[0]&&(e.dataset.arg||"")===fk[1]&&!e.disabled);
+    if(!el&&fk[0]==="next")el=document.querySelector('[data-act="ok"]');
+    if(!el&&["ok","change"].includes(fk[0]))el=document.querySelector('[data-act="next"]:not([disabled])');
+    if(el)el.focus({preventScroll:true})}
+  after();
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled||b.tagName==="INPUT")return;act(b.dataset.act,b.dataset.arg)});
+document.addEventListener("change",e=>{const t=e.target;if(t.matches&&t.matches("input[data-act]"))act(t.dataset.act,t.dataset.arg)});
+document.addEventListener("keydown",e=>{if(S.view!=="flow"||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.key==="ArrowRight"){e.preventDefault();act("next")}else if(e.key==="ArrowLeft"){e.preventDefault();act("back")}});
+
+try{const v=localStorage.getItem("simproto:v");if(["A","B","C"].includes(v))S.v=v}catch(e){}
+const h=(location.hash||"").slice(1).toUpperCase();if(["A","B","C"].includes(h))S.v=h;
+load("medium");render();
+</script>
+</body>
+</html>

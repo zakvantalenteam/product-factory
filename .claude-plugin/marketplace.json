@@ -1,0 +1,13 @@
+{
+  "name": "talenteam",
+  "owner": {
+    "name": "TalenTeam engineering"
+  },
+  "plugins": [
+    {
+      "name": "agent-core",
+      "source": "./plugin",
+      "description": "Shared agent team and delivery flow: triage, task mode, product mode, decision cards, gates in chat, guard hooks and a live status page."
+    }
+  ]
+}

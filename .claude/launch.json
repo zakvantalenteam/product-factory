@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "live-status",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        ".claude/core/scripts/live_status.py",
+        "serve"
+      ],
+      "port": 8765,
+      "url": "http://localhost:8765"
+    }
+  ]
+}

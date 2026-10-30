@@ -1,0 +1,17 @@
+{
+  "id": "BASE",
+  "kind": "questions",
+  "title": "5 choices for the base build (S1) before code starts",
+  "detail": "The base builder copies the product shell from the reference repo. These five points differ from it or have no clear answer there. Accept the recommended answer or change it.",
+  "links": [
+    {"label": "Base spec", "href": "../../base/BASE-SPEC.md"},
+    {"label": "Decisions", "href": "decisions.md"}
+  ],
+  "items": [
+    {"id": "1", "q": "Error replies: the API standard wants plain problem details with no wrapper, the shell keeps its ApiResponse wrapper. Keep the split (wrapper for shell pages, problem details for /api/v1)?", "rec": "Keep the split: shell endpoints keep the wrapper, every DeskBook /api/v1 endpoint uses problem details."},
+    {"id": "2", "q": "Database changes: the source runs SQL scripts by hand. Use Flyway (a new dependency) instead?", "rec": "Use Flyway: numbered scripts run on start, same on every system."},
+    {"id": "3", "q": "Can any TTCommon jar (Jam, SFTP, Sharepoint, LMS) be dropped?", "rec": "Keep all of them until the base is built and tested, then drop the unused ones in one pass."},
+    {"id": "4", "q": "Sign-in roles: xs-security.json has no role templates today. Add them?", "rec": "Add two role templates, USER and ADMIN, so the BTP admin can assign DeskBook roles (ADR-7, Q69)."},
+    {"id": "5", "q": "Labels from the database: disableLoadMessages=true was set in an older commit and removed on dev. Which one?", "rec": "Follow dev: remove it, so custom labels load from the database."}
+  ]
+}

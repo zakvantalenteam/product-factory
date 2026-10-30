@@ -1,0 +1,86 @@
+id,epic,title,points,confidence,release,depends_on,fe,be,db,qa
+ST-BK-1,BK,"Find free desks by office, date and part of day",5,High,MVP,ST-OS-2;ST-OS-5;ST-OS-7;ST-OS-8;ST-OS-9;ST-EN-2,"S2 pickers (office, date, part), desk list with count, scroll paging, empty state","`listFreeDesks` (office, date, part, page)","index on booking (desk, date, part, status)","rule matrix: weekend, closed day, horizon, half days; 500 desks under 2 s; 360 px and keyboard"
+ST-BK-2,BK,"Filter by floor, zone and feature; remember last office and part of day",3,High,R1,ST-BK-1;ST-OS-4;ST-OS-6,"filter bar, preselected pickers, zone and floor beside each code","extend `listFreeDesks` with floor, zone, features; `getBookingPreferences`",last office and part on the employee preference row,filter combinations; preference survives sign-out
+ST-BK-3,BK,The free list refreshes by itself within 5 seconds,3,Medium,R1,ST-BK-1,"polling hook, stale banner, pause when hidden","reuse `listFreeDesks` (cheap, cacheable per office/date)",-,disconnect network test; two browsers; background tab
+ST-BK-4,BK,No free desk: show other days and offices,3,Medium,R1,ST-BK-1,empty state with suggestion list,`suggestFreeDesks`,-,none free; one other day; other office
+ST-BK-5,BK,Book a desk,5,High,MVP,ST-BK-1,S3 confirmation panel with deadline and how-release-works line,`createBooking`,"table booking (employee, desk, date, part, status, booked_by, group_id), audited; unique active booking per employee and day","rules: horizon, one per day, closed day, tampered request"
+ST-BK-6,BK,"Two people, one desk: just taken, double click, desk blocked a minute ago",3,Medium,MVP,ST-BK-5,'just taken' state with refreshed list,"same `createBooking`, unique constraint and conflict answer","unique index per desk, date and part",parallel booking test (two threads); double click
+ST-BK-7,BK,Book for today until the end of the day part,3,Medium,MVP,ST-BK-5;ST-EN-2;ST-CI-6,date picker allows today until the part has ended; message,extend `createBooking` and `listFreeDesks`,-,times around 10:00 and 14:00 in two timezones
+ST-BK-8,BK,Best desk for me (proposal with a reason),5,Medium,MVP,ST-BK-5;ST-BK-1;ST-BK-6;ST-OS-4;ST-OS-6,reason tag and zone/feature choices on S2 and S3,`bookBestDesk` (architect to name; not yet in 05-openapi.yaml),-,reason order; taken-in-between retry; no match
+ST-BK-9,BK,My bookings list,3,High,MVP,ST-BK-5,"S4 list with empty, loading, error states",`listMyBookings`,-,empty; 30-day window; 360 px
+ST-BK-10,BK,Cancel my booking,3,High,MVP,ST-BK-9,"cancel confirm, status refresh",`cancelBooking`,-,tampered request; stale page; checked-in
+ST-BK-11,BK,Today page,5,Medium,MVP,ST-BK-9;ST-CI-1,S1 page replacing the base dashboard cards,`getToday`,-,"empty, loaded, error; phone"
+ST-BK-12,BK,After a release: note and rebook,3,Medium,MVP,ST-CI-4;ST-BK-7;ST-BK-11,note on Today and Book a desk,`getToday` adds released info,-,10:05 case in two timezones
+ST-BK-13,BK,Plan my days: book several days in one action,5,Medium,MVP,ST-BK-5;ST-BK-6;ST-BK-8,"two-week calendar, per-day proposal rows, result list",`createBookings` (architect to name; reuses `createBooking` rules per day),-,all ok; one day fails; session expires halfway; tampered day; double click
+ST-BK-14,BK,Change a desk: picker per proposed day,2,Medium,MVP,ST-BK-1;ST-BK-13,"picker panel reused from the S2 list, grouped by zone",reuses `listFreeDesks`,-,grouping; taken meanwhile; phone
+ST-BK-15,BK,Your next two weeks strip with Add day tiles,3,Medium,MVP,ST-BK-11;ST-BK-13,"strip and tiles on S1, phone layout",extends `getToday`,-,closed days; phone 360 px
+ST-BK-16,BK,Your usual desk card on Today,2,Medium,R1,ST-BK-8;ST-BK-11,card on S1,extends `getToday` with the usual desk,-,no history; taken; retired
+ST-CI-1,CI,Check in by button,5,High,MVP,ST-BK-5;ST-EN-2,"Check in button on Today and My bookings, disabled reason",`checkIn`,check-in time on booking,"window edges 06:00, 12:00, deadline; double press"
+ST-CI-2,CI,Check in by scanning the desk QR,5,Medium,R1,ST-CI-1;ST-OS-14;ST-PP-5,"S5 desk page, return-after-login",`checkInByDesk`,-,real phone test of the sign-in loop
+ST-CI-3,CI,QR page: wrong desk and no booking,3,Medium,R1,ST-CI-2;ST-BK-7,variants on S5,`getDeskPage`,-,three variants
+ST-CI-4,CI,Release unchecked bookings at the check-in deadline,5,Medium,MVP,ST-BK-5;ST-OS-7;ST-EN-2,-,job `ReleaseBookingsJob` every 5 minutes,status values,per-office clock cases
+ST-CI-5,CI,"Release job survives downtime, repeats and races",3,Medium,MVP,ST-CI-4,-,"same job, conditional update",-,kill and restart job; two runs
+ST-CI-6,CI,Late booking: check in within 30 minutes or it is released again,3,Medium,MVP,ST-BK-7;ST-CI-4,-,extend release job with a deadline per booking,deadline column on booking,boundary at 30 minutes
+ST-CI-7,CI,Running late: keep my desk once,5,Low,MVP,ST-CI-4;ST-BK-11,"button on Today, My bookings, email link",`holdBooking`,hold used flag and hold deadline on booking,once per booking; email link
+ST-CI-8,CI,Mark checked-in bookings Completed at day end,2,High,R1,ST-CI-1,-,job `CompleteBookingsJob`,-,end of day in two timezones
+ST-CI-9,CI,Move my booking here (scanned desk is free),3,Medium,Later,ST-CI-3,button on S5,`moveMyBooking`,-,race
+ST-CI-10,CI,Leave early: Release desk after check-in,3,Medium,Later,ST-CI-1,button,`leaveEarly`,-,afternoon of a full day
+ST-OS-1,OS,"Offices: create, list and edit",5,High,MVP,ST-EN-1,"S10 list, S11 settings tab","`createOffice`, `updateOffice`, `listOffices`","table office (name, city, timezone, state, version), audited",duplicate name any case; stale save
+ST-OS-2,OS,"Office states: Draft, Open, Closed",3,High,MVP,ST-OS-1,state buttons on S10 and S11,"`openOffice`, `closeOffice`",state column,state paths
+ST-OS-3,OS,Floors: add and retire,3,High,MVP,ST-OS-1,Floors tab,"`createFloor`, `retireFloor`","table floor, audited",duplicate name
+ST-OS-4,OS,Zones per floor,3,High,MVP,ST-OS-3,zone list on Floors tab,"`createZone`, `renameZone`","table zone, audited",duplicate; delete with desks
+ST-OS-5,OS,"Desks: create, edit and retire",5,Medium,MVP,ST-OS-4;ST-OS-6,"S11 Desks tab, S12 dialog","`createDesk`, `updateDesk`, `retireDesk`","table desk, desk_feature link, audited",code unique; read-only after booking
+ST-OS-6,OS,Desk features list,2,High,MVP,ST-OS-1,small list screen,"`listFeatures`, `createFeature`","table feature, audited",delete refused
+ST-OS-7,OS,"Office settings: release times, midday and working days",5,High,MVP,ST-OS-1,S11 Settings tab,`updateOfficeSettings`,release and midday columns,cross-field rules; next-day effect
+ST-OS-8,OS,Closed days,3,High,MVP,ST-OS-7,S11 Calendar tab,"`addClosedDay`, `removeClosedDay`","table closed_day, audited",date picker
+ST-OS-9,OS,Company booking horizon setting,2,High,MVP,ST-EN-1,S19 Settings tab,"`getBookingRules`, `updateBookingRules`",uses base settings storage,validation
+ST-OS-10,OS,Block a desk for dates,5,Medium,R1,ST-OS-5,"S14 dialog, Blocks tab","`createBlock`, `removeBlock`","table desk_block, audited",overlap
+ST-OS-11,OS,"A block that hits bookings: confirm, cancel, tell",5,Medium,R1,ST-OS-10;ST-NT-5,count in dialog,`createBlock` with confirm token,-,race
+ST-OS-12,OS,Same rule for closing an office or floor and adding a closed day,3,Medium,R1,ST-OS-11;ST-OS-3;ST-OS-8,same dialog,reuse `createBlock` rule engine,-,four entry points
+ST-OS-13,OS,Desk CSV import,5,Medium,R1,ST-OS-5,S13 dialog with preview,`importDesks`,-,bad rows; big file
+ST-OS-14,OS,QR print sheet per floor,5,Medium,R1,ST-OS-5,S15 print page,`getQrSheet`,-,print preview
+ST-OS-15,OS,Admin cancels a booking with a reason,5,Medium,R1,ST-BK-5;ST-NT-5,action dialog,`adminCancelBooking`,reason on history,permission
+ST-OS-16,OS,Admin moves a booking to another free desk,3,Medium,R1,ST-OS-15,move dialog,`adminMoveBooking`,-,race
+ST-PP-1,PP,Nightly copy of people from SuccessFactors,5,Low,MVP,ST-EN-1,-,job `PeopleSyncJob` on the base job framework,"table sync_run, employee fields home office, manager",failure paths
+ST-PP-2,PP,Direct manager and manager status,3,Medium,MVP,ST-PP-1,-,extend sync; `getManagerStatus`,manager column,change cases
+ST-PP-3,PP,Leavers: future bookings cancelled silently,3,Medium,MVP,ST-PP-1;ST-BK-10,-,step in sync,-,leaver with and without bookings
+ST-PP-4,PP,Profile not ready for people missing from the copy,2,High,MVP,ST-BK-5;ST-PP-1,S6 message,check in `createBooking`,-,new hire case
+ST-PP-5,PP,"Roles and access checks, No access page",3,Medium,MVP,ST-EN-1,"S6 pages, menu rules",role guards on all endpoints,-,role matrix across endpoints
+ST-PP-6,PP,People sync status page,3,High,R1,ST-PP-1,S18 Settings tab,`getSyncStatus`,-,failed run; banner
+ST-PP-7,PP,Run sync now,2,High,R1,ST-PP-6,button,`runSyncNow`,-,overlap
+ST-PP-8,PP,Admin adds a person now,3,Medium,R1,ST-PP-1,Add person dialog,`addPerson`,source flag on employee,match by email
+ST-PP-9,PP,Access list for reserved desks,5,High,R1,ST-EN-1,S16 page,"`listAccess`, `addAccess`, `removeAccess`","table access_list_entry, audited",no reason field
+ST-PP-10,PP,Reserved desks only for people on the list,3,Medium,R1,ST-PP-9;ST-BK-1,flag field on desk dialog,filter in `listFreeDesks` and `createBooking`,flag on desk,tampered booking of a reserved desk
+ST-NT-1,NT,"Enabler: send an email once, retry, log",5,Low,MVP,,-,"`MailService`, retry job",table notification_log,retry; duplicate prevention
+ST-NT-2,NT,Reminder 15 minutes before the deadline,3,Medium,MVP,ST-NT-1;ST-CI-7,-,job `PreReleaseReminderJob`,-,timing in two timezones
+ST-NT-3,NT,Email when a booking was released,2,High,MVP,ST-NT-1;ST-CI-4,-,template + send,-,once per booking
+ST-NT-4,NT,Evening reminder the day before,5,Medium,R1,ST-NT-1;ST-EN-2,-,job `EveningReminderJob`,-,weekend and holiday cases
+ST-NT-5,NT,"Email when a block, closure or Facilities action cancels or moves a booking",2,High,R1,ST-NT-1,-,templates,-,"block, closure, admin action"
+ST-NT-6,NT,Email when a manager books or cancels for you,2,High,R1,ST-NT-1,-,templates,-,both events
+ST-NT-7,NT,No-show reminder after three in a month,3,Medium,Later,ST-NT-1;ST-CI-4,-,monthly counter and send,counter,month boundary
+ST-RP-1,RP,"Occupancy per office, floor and day",5,Medium,MVP,ST-BK-5;ST-EN-2,S17 filters and table,`getOccupancyReport`,report indexes,timezone days
+ST-RP-2,RP,No-show rate,3,High,MVP,ST-RP-1;ST-CI-4,rate column,extend report,-,worked example
+ST-RP-3,RP,"Capacity rules: blocked and retired desks, half days",3,Medium,MVP,ST-RP-1;ST-OS-5,-,extend report,-,worked examples
+ST-RP-4,RP,Excel export,5,Medium,MVP,ST-RP-1,Export button,`exportReport`,-,"30,000 rows; over limit"
+ST-RP-5,RP,Speed and load check at 500 users,5,Low,R1,ST-BK-3;ST-RP-1,-,"indexes, caching where needed",indexes,load test script
+ST-RP-6,RP,Record search results for the success number,5,Medium,R1,ST-BK-1,share on S17,"`logSearch`, `getSuccessShare`",table search_log,measure on sample data
+ST-RP-7,RP,Busiest days (top 5),3,High,R2,ST-RP-1,section on S17,`getBusiestDays`,-,tie
+ST-RP-8,RP,Desk use per week and zone; days with no desk found,3,Medium,R2,ST-RP-6,two views,"`getWeeklyUse`, `getMissedSearches`",-,sample data
+ST-RP-9,RP,Anonymise old booking data after 2 years,5,Medium,R2,ST-BK-5;ST-RP-1,-,job `AnonymiseJob`,-,numbers before and after
+ST-RP-10,RP,Occupancy heat grid by zone and day,5,Medium,R1,ST-RP-1;ST-RP-3;ST-OS-4,heat grid above the table on S17,extends `getOccupancyReport` with a zone level (Q99),report index by zone,past and future cells; empty zone; timezone; keyboard
+ST-TM-1,TM,Team week for direct reports,5,Medium,R1,ST-BK-9;ST-PP-2;ST-PP-5,S7 grid,`getTeamWeek`,-,40 rows; tampered request
+ST-TM-2,TM,"Team week: other weeks, office filter, other-office cells",2,High,R1,ST-TM-1,"arrows, filter",extend `getTeamWeek`,-,week edges
+ST-TM-3,TM,Team on a phone: one day at a time,3,Medium,R1,ST-TM-1,phone layout,-,-,360 px
+ST-TM-4,TM,Team menu only for managers,2,High,R1,ST-TM-1,menu rule,uses manager status,-,both cases
+ST-TM-5,TM,Book for a direct report,5,Medium,R1,ST-TM-1;ST-BK-5;ST-NT-6,S8 dialog,`createBookingForReport`,-,tampered; race
+ST-TM-6,TM,Manager cancels a report's booking,3,High,R1,ST-TM-5,cell action,`cancelBookingForReport`,-,checked-in case
+ST-TM-7,TM,Managers of managers see everyone below,5,Medium,R1,ST-TM-1;ST-PP-2,"same grid, grouped",extend `getTeamWeek`,-,tree depth cases
+ST-TM-8,TM,Manager names a delegate,5,Medium,R1,ST-TM-1;ST-TM-5,delegate field on Team,`setDelegate`,"table manager_delegate, audited",permission checks
+ST-TM-9,TM,"Group booking in one zone, all or nobody",5,Medium,R2,ST-TM-5;ST-OS-4,S9 screen,`createGroupBooking`,group id use,all-or-nobody
+ST-TM-10,TM,"Group booking: skipped people, limit 20 and races",5,Medium,R2,ST-TM-9,"skipped list, limit message",extend `createGroupBooking`,-,race; tampered
+ST-TM-11,TM,Manager sees direct reports' no-show count,3,Low,Later,ST-TM-1;ST-CI-4,column,extend `getTeamWeek`,-,privacy check
+ST-TM-12,TM,Admin marks a no-show as excused,3,Low,Later,ST-CI-4,action,`markExcused`,excused flag,permission
+ST-EN-1,EN,"Enabler: DeskBook shell - menu, routes and texts",3,High,MVP,,"sidebar, routes, keys",-,-,menu per role
+ST-EN-2,EN,Enabler: office time and part-of-day rules in one place,5,Medium,MVP,,-,`OfficeClock` service,-,"case table, DST"
+ST-EN-3,EN,Enabler: phone menu as a slide-over,3,Medium,R1,ST-EN-1,shell layout,-,-,360 px; keyboard
+ST-EN-4,EN,German and French texts,5,Medium,R2,ST-EN-1,locale files,email templates,-,visual check in 2 locales

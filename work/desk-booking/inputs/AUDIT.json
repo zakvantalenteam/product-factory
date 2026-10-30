@@ -1,0 +1,18 @@
+{
+  "id": "AUDIT",
+  "kind": "questions",
+  "gate": "",
+  "title": "3 decisions from the audit (S8) only you can make",
+  "detail": "The audit failed on items the team is fixing now, plus three that need you. Accept the recommended answer or change it.",
+  "links": [
+    {"label": "Audit", "href": "08-audit.md"},
+    {"label": "Decisions", "href": "decisions.md"},
+    {"label": "Test report", "href": "07-test-report.md"},
+    {"label": "Ops and dev checklist", "href": "05-ops.md"}
+  ],
+  "items": [
+    {"id": "1", "q": "Gates G0 (plan), G1 (owner answers) and G2 (scope) were approved by me playing you in the demo (D1-D4). Do you confirm them as your own?", "rec": "Yes, I confirm G0, G1 and G2 as recorded in D1-D4."},
+    {"id": "2", "q": "Four MVP acceptance criteria describe features that are R1, not built: reserved desks (BK-8 c6, RP-3 c3), blocking a desk (RP-3 c1), a booking made by a manager (BK-10 c2). Move them or build them?", "rec": "Move these 4 criteria to the R1 stories; MVP scope and points stay as they are."},
+    {"id": "3", "q": "The contract lint (Redocly) and the dependency vulnerability scan (npm audit, OWASP dependency-check) need the internet and were blocked here. Who runs them?", "rec": "You run them once on your machine or in Jenkins with the commands in 05-ops.md; the team fixes whatever they report before go-live."}
+  ]
+}

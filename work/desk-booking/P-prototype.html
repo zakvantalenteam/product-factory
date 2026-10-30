@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeskBook prototype</title>
+<style>
+:root{
+  --db-accent:#2563EB;
+  --db-background:#F7F8FA; --db-surface:#FFFFFF; --db-border:#E7E9EE; --db-border-strong:#D3D8E0;
+  --db-text-primary:#1E2330; --db-text-secondary:#566070; --db-text-muted:#8B94A3;
+  --db-danger:#C2410C;
+  --db-accent-hover:color-mix(in srgb,var(--db-accent) 86%,#000);
+  --db-accent-soft:color-mix(in srgb,var(--db-accent) 7%,#fff);
+  --db-accent-tint:color-mix(in srgb,var(--db-accent) 15%,#fff);
+  --db-accent-border:color-mix(in srgb,var(--db-accent) 45%,#fff);
+  --db-badge-bg:var(--db-accent-soft); --db-badge-text:var(--db-accent);
+  --db-danger-soft:color-mix(in srgb,var(--db-danger) 8%,#fff);
+  --db-sidebar-bg:#FFFFFF; --db-sidebar-active-bg:var(--db-accent-soft); --db-sidebar-active-text:var(--db-accent);
+  --db-sidebar-hover-bg:#F2F4F7; --db-icon-muted:#98A1AF; --db-topnav-border:var(--db-border);
+  --db-radius-sm:6px; --db-radius-md:8px; --db-radius-lg:12px;
+  --db-sidebar-width:272px; --db-sidebar-collapsed-width:72px; --db-topnav-height:56px;
+  --db-font:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  --db-mono:"JetBrains Mono","Cascadia Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px/1.45 var(--db-font);background:var(--db-background);color:var(--db-text-primary);font-weight:400}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--db-accent);outline-offset:2px}
+h1{font-size:20px;font-weight:500;margin:0 0 2px;letter-spacing:-.01em}
+h2{font-size:14px;font-weight:500;margin:0 0 10px}
+h3{font-size:13px;font-weight:500;margin:0}
+.sub{color:var(--db-text-secondary)}
+.muted{color:var(--db-text-muted)}
+.mono{font-family:var(--db-mono);font-size:12.5px;letter-spacing:.01em}
+.row{display:flex;gap:8px;align-items:center}
+.wrap{flex-wrap:wrap}
+.sp{flex:1}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+
+/* prototype bar (not part of the product) */
+.proto{position:sticky;top:0;z-index:30;background:#EDEFF3;border-bottom:1px solid var(--db-border-strong);padding:8px 16px 6px}
+.proto .l1{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.proto .tag{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--db-text-muted);font-weight:500}
+.otab{border:1px solid var(--db-border-strong);background:#fff;border-radius:999px;padding:5px 12px;font-weight:500;color:var(--db-text-secondary)}
+.otab b{font-weight:500;color:var(--db-text-primary);margin-right:4px}
+.otab.on{background:var(--db-accent);border-color:var(--db-accent);color:#fff}
+.otab.on b{color:#fff}
+.idea{margin:6px 0 4px;color:var(--db-text-secondary)}
+.steps{display:flex;gap:4px;flex-wrap:wrap}
+.step{border:0;background:transparent;padding:4px 9px;border-radius:6px;color:var(--db-text-secondary)}
+.step.on{background:#fff;color:var(--db-text-primary);font-weight:500;border:1px solid var(--db-border-strong)}
+.sw{width:18px;height:18px;border-radius:50%;border:2px solid #fff;outline:1px solid var(--db-border-strong);padding:0}
+.sw.on{outline:2px solid var(--db-text-primary)}
+
+/* base shell */
+.app{display:flex;min-height:calc(100vh - 88px)}
+.side{width:var(--db-sidebar-width);flex:none;background:var(--db-sidebar-bg);border-right:1px solid var(--db-border);padding:14px 12px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 8px 14px}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--db-accent);color:#fff;display:grid;place-items:center;font-weight:500;font-size:15px;flex:none}
+.brand .nm{font-weight:500;font-size:14px}.brand .tl{font-size:11.5px;color:var(--db-text-muted)}
+.sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--db-text-muted);padding:12px 10px 4px;font-weight:500}
+.nav{display:flex;gap:10px;align-items:center;border:0;background:transparent;width:100%;text-align:left;padding:7px 10px;border-radius:8px;color:var(--db-text-secondary)}
+.nav:hover{background:var(--db-sidebar-hover-bg)}
+.nav svg{color:var(--db-icon-muted);flex:none}
+.nav.on{background:var(--db-sidebar-active-bg);color:var(--db-sidebar-active-text);font-weight:500}
+.nav.on svg{color:var(--db-sidebar-active-text)}
+.nav.off{opacity:.55;cursor:default}
+.who{margin-top:auto;display:flex;gap:10px;align-items:center;padding:10px 8px 2px;border-top:1px solid var(--db-border)}
+.side.col{width:var(--db-sidebar-collapsed-width);padding:14px 10px}
+.side.col .nm,.side.col .tl,.side.col .lbl,.side.col .sec,.side.col .who .txt{display:none}
+.side.col .nav{justify-content:center;padding:9px}
+.side.col .brand{justify-content:center;padding:4px 0 14px}
+.col-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:var(--db-topnav-height);border-bottom:1px solid var(--db-topnav-border);background:var(--db-surface);display:flex;align-items:center;gap:12px;padding:0 20px}
+.ibtn{border:0;background:transparent;border-radius:8px;padding:6px;color:var(--db-text-secondary);display:grid;place-items:center}
+.ibtn:hover{background:var(--db-sidebar-hover-bg)}
+.crumb{color:var(--db-text-muted)}.crumb b{color:var(--db-text-primary);font-weight:500}
+.av{width:28px;height:28px;border-radius:50%;background:var(--db-accent-tint);color:var(--db-accent);display:grid;place-items:center;font-size:11px;font-weight:500;flex:none}
+.av.sm{width:22px;height:22px;font-size:10px}
+main{padding:20px 24px 48px;width:100%;max-width:1280px}
+
+/* components */
+.card{background:var(--db-surface);border:1px solid var(--db-border);border-radius:var(--db-radius-lg);padding:16px}
+.card.tint{background:var(--db-accent-soft);border-color:var(--db-accent-tint)}
+.btn{border:1px solid var(--db-border-strong);background:#fff;border-radius:8px;padding:7px 13px;font-weight:500;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.btn:hover{background:#F6F7F9}
+.btn.pri{background:var(--db-accent);border-color:var(--db-accent);color:#fff}
+.btn.pri:hover{background:var(--db-accent-hover)}
+.btn.soft{background:var(--db-accent-soft);border-color:var(--db-accent-tint);color:var(--db-accent)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--db-accent)}
+.btn.ghost:hover{background:var(--db-accent-soft)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.lg{padding:10px 16px;font-size:14px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.link{border:0;background:none;padding:0;color:var(--db-accent);font-weight:500}
+.chip{border:1px solid var(--db-border-strong);background:#fff;border-radius:999px;padding:4px 10px;color:var(--db-text-secondary)}
+.chip.on{background:var(--db-accent-soft);border-color:var(--db-accent-border);color:var(--db-accent);font-weight:500}
+.seg{display:inline-flex;border:1px solid var(--db-border-strong);border-radius:8px;overflow:hidden;background:#fff}
+.seg button{border:0;background:transparent;padding:6px 12px;color:var(--db-text-secondary)}
+.seg button+button{border-left:1px solid var(--db-border)}
+.seg button.on{background:var(--db-accent-soft);color:var(--db-accent);font-weight:500}
+.sel{border:1px solid var(--db-border-strong);background:#fff;border-radius:8px;padding:6px 28px 6px 10px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,#8B94A3 50%),linear-gradient(135deg,#8B94A3 50%,transparent 50%);background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.field{display:flex;flex-direction:column;gap:4px}
+.field>span{font-size:11.5px;color:var(--db-text-muted);font-weight:500}
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:500;background:var(--db-badge-bg);color:var(--db-badge-text);white-space:nowrap}
+.badge.in{background:var(--db-accent);color:#fff}
+.badge.grey{background:#EEF0F3;color:var(--db-text-secondary)}
+.badge.warn{background:var(--db-danger-soft);color:var(--db-danger)}
+.badge.line{background:#fff;border:1px solid var(--db-border-strong);color:var(--db-text-secondary)}
+.ftag{display:inline-block;border:1px solid var(--db-border);border-radius:6px;padding:0 6px;font-size:11.5px;color:var(--db-text-secondary);background:#FAFBFC}
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.head{display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.kpi .v{font-size:22px;font-weight:500;letter-spacing:-.01em}
+.kpi .k{color:var(--db-text-muted);font-size:12px}
+.note{display:flex;gap:10px;align-items:flex-start;border-radius:10px;padding:10px 12px;background:var(--db-accent-soft);border:1px solid var(--db-accent-tint);color:var(--db-text-primary)}
+.note.warn{background:var(--db-danger-soft);border-color:color-mix(in srgb,var(--db-danger) 22%,#fff)}
+.note svg{flex:none;margin-top:1px;color:var(--db-accent)}
+.note.warn svg{color:var(--db-danger)}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-weight:500;color:var(--db-text-muted);font-size:12px;padding:8px 10px;border-bottom:1px solid var(--db-border);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--db-border);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:3px;background:#EEF0F3;overflow:hidden;min-width:80px}
+.bar i{display:block;height:100%;background:var(--db-accent)}
+.divider{height:1px;background:var(--db-border);margin:12px 0}
+
+/* option A */
+.today-card{display:flex;gap:18px;align-items:center}
+.deskbig{font-family:var(--db-mono);font-size:26px;font-weight:500;letter-spacing:.01em}
+.week{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+.dtile{border:1px solid var(--db-border);background:#fff;border-radius:10px;padding:9px 10px;text-align:left;min-height:78px;display:flex;flex-direction:column;gap:3px}
+.dtile .dl{font-size:12px;color:var(--db-text-muted)}
+.dtile.booked{background:var(--db-accent-soft);border-color:var(--db-accent-tint)}
+.dtile.add{border-style:dashed;color:var(--db-accent)}
+.dtile.add:hover{background:var(--db-accent-soft)}
+.cal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.cday{border:1px solid var(--db-border);background:#fff;border-radius:9px;padding:7px 8px;text-align:left;min-height:58px;display:flex;flex-direction:column;gap:2px}
+.cday .n{font-weight:500}
+.cday.on{background:var(--db-accent);border-color:var(--db-accent);color:#fff}
+.cday.on .muted{color:#fff;opacity:.85}
+.cday.dis{background:#F4F5F7;color:var(--db-text-muted);cursor:default}
+.cday.mine{background:var(--db-accent-soft);border-color:var(--db-accent-tint);cursor:default}
+.prop{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--db-border)}
+.prop:last-child{border-bottom:0}
+.alts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 2px}
+.alt{border:1px solid var(--db-border-strong);background:#fff;border-radius:8px;padding:5px 9px;text-align:left}
+.alt:hover{border-color:var(--db-accent-border);background:var(--db-accent-soft)}
+.heat td{padding:4px;border:0}
+.hc{border-radius:8px;height:44px;display:flex;flex-direction:column;justify-content:center;align-items:center;font-variant-numeric:tabular-nums;font-weight:500}
+.hc small{font-weight:400;font-size:11px;opacity:.8}
+.hc.fut{border:1px dashed var(--db-accent-border)}
+
+/* option B */
+.toolbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.zhead{display:flex;gap:8px;align-items:center;padding:12px 10px 6px;color:var(--db-text-secondary)}
+.drow{display:grid;grid-template-columns:120px 150px 1fr auto;gap:12px;align-items:center;padding:9px 10px;border-top:1px solid var(--db-border)}
+.drow:hover{background:#FAFBFC}
+
+/* option C */
+.floor{margin-bottom:14px}
+.zones{display:flex;gap:10px;flex-wrap:wrap}
+.zone{border:1px solid var(--db-border);background:#fff;border-radius:12px;padding:10px 12px;text-align:left;min-width:180px}
+.zone.on{border-color:var(--db-accent-border);background:var(--db-accent-soft)}
+.seats{display:grid;grid-template-columns:repeat(8,18px);gap:5px;margin-top:8px}
+.seat{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--db-accent-border);background:#fff;padding:0}
+.seat.t{background:#E3E6EB;border-color:#E3E6EB;cursor:default}
+.seat.blk{background:repeating-linear-gradient(45deg,#E3E6EB 0 3px,#fff 3px 6px);border-color:#D3D8E0;cursor:default}
+.seat.mine{background:var(--db-accent);border-color:var(--db-accent)}
+.seat.sel{background:var(--db-accent-tint);border:2px solid var(--db-accent)}
+.seat.scan{border:2px dashed var(--db-danger);background:#fff}
+.seat.half{background:linear-gradient(135deg,#E3E6EB 50%,#fff 50%)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--db-text-secondary);font-size:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:5px;border:1.5px solid var(--db-accent-border);background:#fff}
+.zmeter{height:5px;border-radius:3px;background:#EEF0F3;margin-top:6px;overflow:hidden}
+.zmeter i{display:block;height:100%;background:var(--db-accent)}
+.dchips{display:flex;gap:6px;flex-wrap:wrap}
+.dchip{border:1px solid var(--db-border-strong);background:#fff;border-radius:10px;padding:5px 10px;text-align:left;min-width:84px}
+.dchip.on{border-color:var(--db-accent);background:var(--db-accent-soft)}
+.dchip .c{font-size:11.5px;color:var(--db-text-muted)}
+
+/* team */
+.tw{width:100%;border-collapse:separate;border-spacing:0}
+.tw th{border-bottom:1px solid var(--db-border);padding:8px}
+.tw td{border-bottom:1px solid var(--db-border);padding:6px;vertical-align:top}
+.tw td.p{padding:10px 8px;vertical-align:middle;width:200px}
+.tcell{border-radius:9px;background:var(--db-accent-soft);border:1px solid var(--db-accent-tint);padding:6px 8px;min-height:50px}
+.tcell.in{background:var(--db-accent-tint)}
+.tcell.away{background:#fff;border-color:var(--db-accent-border)}
+.tadd{width:100%;min-height:50px;border:1px dashed var(--db-border-strong);background:transparent;border-radius:9px;color:var(--db-text-muted)}
+.tadd:hover{border-color:var(--db-accent-border);color:var(--db-accent);background:var(--db-accent-soft)}
+.stack{display:flex}
+.stack .av{border:2px solid #fff;margin-left:-6px}
+.stack .av:first-child{margin-left:0}
+.today-col{background:color-mix(in srgb,var(--db-accent) 3%,#fff)}
+
+/* phone */
+.phone-wrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:28px;align-items:start}
+.phone{width:380px;border:1px solid var(--db-border-strong);border-radius:36px;padding:10px;background:#fff}
+.pscreen{width:358px;max-width:100%;height:700px;border-radius:28px;background:var(--db-background);overflow:auto;border:1px solid var(--db-border)}
+.pbar{display:flex;justify-content:space-between;padding:10px 20px 4px;font-size:12px;font-weight:500}
+.papp{display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border-bottom:1px solid var(--db-border)}
+.pbody{padding:14px}
+.bigcheck{width:56px;height:56px;border-radius:50%;background:var(--db-accent);color:#fff;display:grid;place-items:center;margin:6px auto 10px}
+.sc{display:flex;flex-direction:column;gap:6px}
+.scbtn{border:1px solid var(--db-border-strong);background:#fff;border-radius:10px;padding:9px 12px;text-align:left}
+.scbtn.on{border-color:var(--db-accent);background:var(--db-accent-soft)}
+.mail{background:#fff;border:1px solid var(--db-border);border-radius:12px;padding:12px}
+
+/* overlay */
+.ov{position:fixed;inset:0;background:rgba(30,35,48,.28);display:grid;place-items:center;z-index:50;padding:16px}
+.dlg{background:#fff;border-radius:14px;border:1px solid var(--db-border);width:440px;max-width:100%;padding:18px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--db-text-primary);color:#fff;border-radius:10px;padding:10px 14px;z-index:60;max-width:560px}
+
+@media (max-width:980px){
+  .grid2,.phone-wrap{grid-template-columns:1fr}
+  .week{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .drow{grid-template-columns:110px 1fr auto}
+  .drow .zf{display:none}
+}
+@media (max-width:760px){
+  .side{width:var(--db-sidebar-collapsed-width);padding:14px 10px}
+  .side .nm,.side .tl,.side .lbl,.side .sec,.side .who .txt{display:none}
+  .side .nav{justify-content:center;padding:9px}
+  main{padding:16px}
+  .phone{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="proto" id="proto"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="col-main">
+    <header class="top" id="top"></header>
+    <main id="view"></main>
+  </div>
+</div>
+<div id="layer"></div>
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+const pad=n=>String(n).padStart(2,'0');
+const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WDL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const P=['M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'];
+const ICONS={
+ home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+ list:'<path d="'+P[0]+'"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2 .6 3.2 2.4 3.6 5.5"/>',
+ building:'<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2M10 21v-3h4v3"/>',
+ shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/>',
+ chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+ menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+ qr:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v7M14 20h3"/>',
+ l:'<path d="M15 6l-6 6 6 6"/>', r:'<path d="M9 6l6 6-6 6"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ spark:'<path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>',
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+ pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+ down:'<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>'
+};
+const ic=(n,s=18)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+const fmt=v=>Number.isInteger(v)?String(v):v.toFixed(1);
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+/* ---------- calendar ---------- */
+const DAYS=[];(function(){const d=new Date(2026,9,19);for(let i=0;i<28;i++){const w=d.getDay();if(w>0&&w<6){const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;DAYS.push({k,wd:WD[w],wdl:WDL[w],n:d.getDate(),m:MON[d.getMonth()],label:`${WD[w]} ${d.getDate()} ${MON[d.getMonth()]}`})}d.setDate(d.getDate()+1)}})();
+const DAY=Object.fromEntries(DAYS.map(d=>[d.k,d]));
+const TODAY='2026-10-28', HORIZON='2026-11-11';
+const WEEKS=[0,1,2,3].map(i=>DAYS.slice(i*5,i*5+5));
+const bookable=k=>k>=TODAY&&k<=HORIZON;
+
+/* ---------- offices and desks ---------- */
+const OFF={
+ Pune:{pre:'PUN',city:'Pune',tz:'Asia/Kolkata',now:'08:35',dl:'10:00',hold:'11:30',floors:[[2,[['Project area',14]]],[3,[['3rd floor east',16],['Quiet zone',10],['Window row',12]]],[4,[['Main',8]]]],closed:[]},
+ Berlin:{pre:'BER',city:'Berlin',tz:'Europe/Berlin',now:'05:05',dl:'10:00',hold:'11:30',floors:[[1,[['Spree side',14],['Main',10]]],[2,[['Quiet zone',16]]]],closed:[]},
+ Paris:{pre:'PAR',city:'Paris',tz:'Europe/Paris',now:'05:05',dl:'09:30',hold:'11:00',floors:[[1,[['Atelier',12],['Main',18]]]],closed:['2026-11-11']},
+ London:{pre:'LON',city:'London',tz:'Europe/London',now:'04:05',dl:'10:00',hold:'11:30',floors:[[4,[["King's Cross wing",20],['Quiet zone',8]]],[5,[['Main',8]]]],closed:[]}
+};
+const OFFICES=Object.keys(OFF);
+const FEATS=['Monitor','Docking station','Standing desk','Dual monitor'];
+const DESKS=[];
+for(const o of OFFICES){for(const [fl,zones] of OFF[o].floors){let n=1;for(const [z,c] of zones){for(let i=0;i<c;i++,n++){const code=`${OFF[o].pre}-${fl}-${pad(n)}`;const h=hash(code);const f=[];if(h%10<8)f.push('Monitor');if((h>>4)%10<6)f.push('Docking station');if((h>>8)%10<3)f.push('Standing desk');if((h>>12)%10<2)f.push('Dual monitor');DESKS.push({code,office:o,floor:fl,zone:z,f})}}}}
+const DESK=Object.fromEntries(DESKS.map(d=>[d.code,d]));
+DESK['PUN-3-14'].f=['Monitor','Docking station','Standing desk'];
+DESK['PUN-3-02'].reserved=true;
+DESK['PUN-3-07'].blocked=['2026-10-26','2026-11-06'];
+const zonesOf=o=>OFF[o].floors.flatMap(([fl,zs])=>zs.map(([z,c])=>({floor:fl,zone:z,cap:c})));
+const OCC={Mon:52,Tue:78,Wed:86,Thu:80,Fri:36};
+const USUAL='PUN-3-14';
+function takenBy(d,k){
+  if(d.code===USUAL)return k==='2026-11-03'?'full':null;
+  const r=hash(d.code+k)%100;if(r<OCC[DAY[k].wd])return 'full';
+  const r2=hash(d.code+k+'h')%100;if(r2<6)return 'morning';if(r2<11)return 'afternoon';return null;
+}
+const isBlocked=(d,k)=>d.blocked&&k>=d.blocked[0]&&k<=d.blocked[1];
+
+/* ---------- people ---------- */
+const PEOPLE=[
+ {id:'asha',name:'Asha Kulkarni',ini:'AK',home:'Pune'},
+ {id:'ravi',name:'Ravi Deshpande',ini:'RD',home:'Pune'},
+ {id:'nisha',name:'Nisha Rao',ini:'NR',home:'Pune'},
+ {id:'jonas',name:'Jonas Weber',ini:'JW',home:'Berlin'},
+ {id:'claire',name:'Claire Martin',ini:'CM',home:'Paris'},
+ {id:'tom',name:'Tom Hughes',ini:'TH',home:'London'}];
+const PERSON=Object.fromEntries(PEOPLE.map(p=>[p.id,p]));
+const PERSONAS={
+ emp:{name:'Asha Kulkarni',ini:'AK',role:'Employee',office:'Pune'},
+ mgr:{name:'Meera Iyer',ini:'MI',role:'Manager',office:'Pune'},
+ admin:{name:'Imran Shaikh',ini:'IS',role:'Facilities admin',office:'Pune'}};
+const BASE_BOOKINGS={
+ '2026-10-26':{desk:'PUN-3-14',part:'Full day',status:'Checked in',at:'08:51'},
+ '2026-10-28':{desk:'PUN-3-14',part:'Full day',status:'Booked'},
+ '2026-10-30':{desk:'PUN-3-09',part:'Morning',status:'Booked'}};
+function genTeam(){
+  const t={};
+  for(const p of PEOPLE){if(p.id==='asha')continue;t[p.id]={};
+    for(const d of DAYS){const r=hash(p.id+d.k)%100;const chance=p.id==='nisha'?38:58;if(r>=chance)continue;
+      let o=p.home;if(p.id==='tom'&&d.k==='2026-11-05')o='Berlin';
+      const zs=zonesOf(o);let z=zs[hash(p.id+d.k+'z')%zs.length].zone;if(o==='Pune'&&hash(p.id+d.k+'q')%10<7)z='3rd floor east';
+      const pool=DESKS.filter(x=>x.office===o&&x.zone===z&&!x.reserved&&x.code!==USUAL);const desk=pool[hash(p.id+d.k+'d')%pool.length].code;
+      let status='Booked';if(d.k<TODAY){if(hash(p.id+d.k+'n')%7===0)continue;status='Checked in'}
+      else if(d.k===TODAY&&o==='Pune'&&r%2===0)status='Checked in';
+      t[p.id][d.k]={desk,part:r%9===0?'Morning':'Full day',status};}
+  }
+  delete t.ravi['2026-10-29'];delete t.ravi['2026-11-04'];delete t.nisha['2026-11-04'];delete t.nisha['2026-10-29'];
+  t.jonas['2026-11-04']={desk:'BER-1-05',part:'Full day',status:'Booked'};
+  return t;
+}
+const BASE_TEAM=genTeam();
+
+/* ---------- state ---------- */
+const OPTS={
+ A:{name:'Plan my week',book:'Plan my days',idea:'Pick the days you come in; the app picks the best free desk for each day (your usual desk first). Check in from the Today card or by scanning the desk.'},
+ B:{name:'Pick from the list',book:'Book a desk',idea:'Choose office, day and part of the day, filter, then pick one desk from a list grouped by zone. Check in on the desk page the QR code opens.'},
+ C:{name:'Zone board',book:'Zone board',idea:'See each floor as zones with their seats (no names), tap a free seat to book. The desk page shows the zone with your seat marked.'}};
+const SCREENS=[['today','Today'],['book',null],['done','Booked'],['checkin','Check-in on a phone'],['team','Manager: team week'],['occ','Facilities: occupancy']];
+let OPT='A',SCR='today',COLLAPSED=false;const ST={};
+function initState(){return{bookings:clone(BASE_BOOKINGS),team:clone(BASE_TEAM),office:'Pune',part:'Full day',zone:'Any zone',floor:'All floors',feats:[],
+ picked:['2026-11-03','2026-11-04','2026-11-05'],choice:{},changing:null,last:[],day:'2026-10-29',sel:null,czone:'3rd floor east',
+ checked:false,held:false,phone:'arrive',pChecked:false,pHeld:false,week:1,tOffice:'All offices',modal:null,occOffice:'Pune',occDay:'2026-10-26',ago:2}}
+const st=()=>ST[OPT]||(ST[OPT]=initState());
+const personaOf=s=>s==='team'?'mgr':s==='occ'?'admin':'emp';
+
+/* ---------- booking logic ---------- */
+function isFree(s,d,k,part){
+  if(isBlocked(d,k)||d.reserved)return false;
+  const mine=s.bookings[k];if(mine&&mine.desk===d.code)return false;
+  for(const pid in s.team){const b=s.team[pid][k];if(b&&b.by==='you'&&b.desk===d.code)return false}
+  const t=takenBy(d,k);if(!t)return true;if(t==='full'||part==='Full day')return false;
+  return part==='Morning'?t!=='morning':t!=='afternoon';
+}
+const freeDesks=(s,o,k,part)=>DESKS.filter(d=>d.office===o&&isFree(s,d,k,part));
+function propose(s,k){
+  const list=freeDesks(s,s.office,k,s.part);
+  const ok=d=>(s.zone==='Any zone'||d.zone===s.zone)&&s.feats.every(f=>d.f.includes(f));
+  if(s.choice[k]&&list.find(d=>d.code===s.choice[k]))return{d:DESK[s.choice[k]],why:'Your choice'};
+  const u=list.find(d=>d.code===USUAL&&ok(d));if(u)return{d:u,why:'Your usual desk'};
+  const m=list.filter(ok);const same=m.find(d=>d.zone==='3rd floor east');
+  if(same)return{d:same,why:'Same zone as usual'};if(m.length)return{d:m[0],why:'Matches your choices'};
+  if(list.length)return{d:list[0],why:'Closest free desk'};return null;
+}
+function placeOf(code){const d=DESK[code];return `${d.zone} · Floor ${d.floor} · ${d.office}`}
+function statusBadge(b){
+  if(!b)return '';
+  if(b.status==='Checked in')return `<span class="badge in">${ic('check',12)} Checked in${b.at?' '+b.at:''}</span>`;
+  if(b.held)return `<span class="badge warn">Kept until ${OFF.Pune.hold}</span>`;
+  return `<span class="badge">Booked</span>`;
+}
+const featTags=f=>f.map(x=>`<span class="ftag">${x}</span>`).join(' ');
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3800)}
+
+/* ---------- shell ---------- */
+function renderProto(){
+  const o=OPTS[OPT];
+  $('#proto').innerHTML=`<div class="l1"><span class="tag">DeskBook prototype</span>
+   ${Object.keys(OPTS).map(k=>`<button class="otab ${k===OPT?'on':''}" data-a="opt" data-v="${k}"><b>${k}</b>${OPTS[k].name}</button>`).join('')}
+   <span class="sp"></span><span class="tag">Tenant colour</span>
+   ${['#2563EB','#0F766E','#7C3AED','#BE185D'].map(c=>`<button class="sw ${getComputedStyle(document.documentElement).getPropertyValue('--db-accent').trim().toLowerCase()===c.toLowerCase()?'on':''}" style="background:${c}" data-a="theme" data-v="${c}" aria-label="Primary colour ${c}"></button>`).join('')}</div>
+   <div class="idea">${o.idea}</div>
+   <div class="steps">${SCREENS.map(([k,l],i)=>`<button class="step ${k===SCR?'on':''}" data-a="scr" data-v="${k}">${i+1} ${l||o.book}</button>`).join('')}</div>`;
+}
+const NAV=[
+ {sec:'Overview',items:[['Today','home','today','all']]},
+ {sec:'Workspace',items:[['Book a desk','cal','book','all'],['My bookings','list','mybk','all'],['Team','users','team','mgr']]},
+ {sec:'Facilities',who:'admin',items:[['Offices and desks','building',null],['Access list','shield',null],['Reports','chart','occ']]},
+ {sec:'Admin',who:'admin',items:[['Background Jobs','clock',null],['Settings','gear',null]]}];
+function renderShell(){
+  const pk=personaOf(SCR),pe=PERSONAS[pk];
+  const active=SCR==='done'||SCR==='book'?'book':SCR==='checkin'?'today':SCR;
+  let h=`<div class="brand"><div class="logo">D</div><div><div class="nm">DeskBook</div><div class="tl">Book a desk, find your team</div></div></div>`;
+  for(const s of NAV){if(s.who&&pk!=='admin')continue;h+=`<div class="sec">${s.sec}</div>`;
+    for(const [t,i,scr,who] of s.items){if(who==='mgr'&&pk!=='mgr')continue;
+      const on=scr===active;const off=!scr||scr==='mybk';
+      h+=`<button class="nav ${on?'on':''} ${off?'off':''}" ${off?'title="Not part of this prototype"':`data-a="scr" data-v="${scr}"`}>${ic(i)}<span class="lbl">${t}</span></button>`}}
+  h+=`<div class="who"><div class="av">${pe.ini}</div><div class="txt"><div style="font-weight:500">${pe.name}</div><div class="muted" style="font-size:12px">${pe.role} · ${pe.office}</div></div></div>`;
+  const side=$('#side');side.innerHTML=h;side.classList.toggle('col',COLLAPSED);
+  const crumb={today:'Today',book:OPTS[OPT].book,done:OPTS[OPT].book,checkin:'Today',team:'Team',occ:'Reports'}[SCR];
+  $('#top').innerHTML=`<button class="ibtn" data-a="side" title="${COLLAPSED?'Expand sidebar':'Collapse sidebar'}" aria-label="${COLLAPSED?'Expand sidebar':'Collapse sidebar'}">${ic('menu')}</button>
+   <div class="crumb">DeskBook &rsaquo; <b>${crumb}</b></div><span class="sp"></span>
+   <span class="muted">Wed 28 Oct · Pune 08:35</span><div class="row" style="gap:8px"><div class="av">${pe.ini}</div><span>${pe.name}</span></div>`;
+}
+
+/* ---------- TODAY ---------- */
+function todayCardA(s){
+  const b=s.bookings[TODAY];const d=b&&DESK[b.desk];
+  if(!b)return `<div class="card"><h2>Today</h2><p class="sub">No desk today.</p><button class="btn pri" data-a="addDay" data-v="${TODAY}">Book a desk for today</button></div>`;
+  const checked=b.status==='Checked in';
+  return `<div class="card ${checked?'tint':''}"><div class="row"><h2 style="margin:0">Today, Wednesday 28 October</h2><span class="sp"></span>${statusBadge(b)}</div>
+  <div class="today-card mt12"><div><div class="deskbig">${b.desk}</div><div class="sub">${placeOf(b.desk)}</div><div class="mt8">${featTags(d.f)}</div></div><span class="sp"></span>
+  ${checked?`<div class="row" style="color:var(--db-accent)">${ic('check',22)}<span>You are checked in. Enjoy your day.</span></div>`:
+   `<div class="sc" style="min-width:250px"><button class="btn pri lg" data-a="checkin">${ic('check')} Check in</button>${b.held?`<span class="muted" style="text-align:center">Kept until ${OFF.Pune.hold}. Check in when you arrive.</span>`:`<button class="btn" data-a="hold">${ic('clock')} Running late, keep until ${OFF.Pune.hold}</button>`}</div>`}</div>
+  ${checked?'':`<div class="note mt12">${ic('info',16)}<div><b style="font-weight:500">Check-in deadline ${b.held?OFF.Pune.hold:OFF.Pune.dl}.</b> Scan the QR on the desk or press Check in. If you don't, the desk goes to someone else. We remind you 15 minutes before.</div></div>`}</div>`;
+}
+function weekStrip(s){
+  const days=DAYS.filter(d=>d.k>=TODAY).slice(0,8);
+  return `<div class="week">${days.map(d=>{const b=s.bookings[d.k];
+    if(b)return `<div class="dtile booked"><span class="dl">${d.k===TODAY?'Today':d.label}</span><span class="mono" style="font-weight:500">${b.desk}</span><span class="muted" style="font-size:12px">${b.part}</span></div>`;
+    return `<button class="dtile add" data-a="addDay" data-v="${d.k}"><span class="dl">${d.label}</span><span class="row" style="gap:4px;margin-top:auto">${ic('plus',14)} Add day</span></button>`}).join('')}</div>`;
+}
+function rTodayA(s){
+  const tom=freeDesks(s,'Pune','2026-10-29','Full day').length;const cap=DESKS.filter(d=>d.office==='Pune'&&!isBlocked(d,'2026-10-29')&&!d.reserved).length;
+  return `<div class="head"><div><h1>Good morning, Asha</h1><div class="sub">Wednesday 28 October · Pune office, 08:35</div></div><span class="sp"></span><button class="btn pri" data-a="scr" data-v="book">${ic('cal',16)} Plan my days</button></div>
+  ${todayCardA(s)}
+  <div class="card mt16"><div class="row"><h2 style="margin:0">Your next two weeks</h2><span class="sp"></span><span class="muted">Each day is its own booking</span></div><div class="mt12">${weekStrip(s)}</div></div>
+  <div class="grid2 mt16"><div class="card"><h2>Your usual desk</h2><div class="row"><span class="mono" style="font-weight:500">${USUAL}</span><span class="sub">· ${placeOf(USUAL)}</span></div><div class="mt8">${featTags(DESK[USUAL].f)}</div><p class="muted" style="margin:10px 0 0">We offer this desk first when it is free. Otherwise a free desk in the same zone with the same features.</p></div>
+  <div class="card"><h2>Pune tomorrow</h2><div class="kpi"><span class="v">${tom}</span> <span class="k">of ${cap} desks free, Thursday 29 Oct</span></div><div class="bar mt8"><i style="width:${Math.round((cap-tom)/cap*100)}%"></i></div></div></div>`;
+}
+function bookingRows(s,actions){
+  const ks=Object.keys(s.bookings).filter(k=>k>=TODAY).sort();
+  return ks.map(k=>{const b=s.bookings[k];return `<tr><td>${k===TODAY?'<b style="font-weight:500">Today</b>':DAY[k].label}</td><td class="mono">${b.desk}</td><td class="sub">${placeOf(b.desk)}</td><td>${b.part}</td><td>${statusBadge(b)}</td>
+   <td class="num">${actions?(k===TODAY&&b.status!=='Checked in'?`<button class="btn pri sm" data-a="checkin">Check in</button> `:'')+(b.status!=='Checked in'?`<button class="btn sm" data-a="cancel" data-v="${k}">Cancel</button>`:''):''}</td></tr>`}).join('');
+}
+function rTodayB(s){
+  return `<div class="head"><div><h1>Today</h1><div class="sub">Wednesday 28 October · Pune office, 08:35</div></div><span class="sp"></span><button class="btn pri" data-a="scr" data-v="book">${ic('cal',16)} Book a desk</button></div>
+  ${s.bookings[TODAY]&&s.bookings[TODAY].status!=='Checked in'?`<div class="note">${ic('info',16)}<div>Your desk today is <b class="mono" style="font-weight:500">${s.bookings[TODAY].desk}</b>. Check in by ${s.bookings[TODAY].held?OFF.Pune.hold:OFF.Pune.dl} (check-in deadline) or the desk goes to someone else. ${s.bookings[TODAY].held?'':`<button class="link" data-a="hold">Running late, keep until ${OFF.Pune.hold}</button>`}</div></div>`:''}
+  <div class="card mt16" style="padding:6px 6px 2px"><div class="row" style="padding:10px 10px 2px"><h2 style="margin:0">Upcoming bookings</h2></div>
+  <table><thead><tr><th>Day</th><th>Desk</th><th>Where</th><th>Part of day</th><th>Status</th><th></th></tr></thead><tbody>${bookingRows(s,true)}</tbody></table></div>
+  <div class="card mt16" style="padding:6px"><div style="padding:10px 10px 2px"><h2 style="margin:0">Last 30 days</h2></div><table><tbody><tr><td>Mon 26 Oct</td><td class="mono">PUN-3-14</td><td class="sub">${placeOf('PUN-3-14')}</td><td>Full day</td><td><span class="badge grey">Checked in 08:51</span></td></tr><tr><td>Thu 22 Oct</td><td class="mono">PUN-3-11</td><td class="sub">${placeOf('PUN-3-11')}</td><td>Full day</td><td><span class="badge grey">Checked in 09:12</span></td></tr></tbody></table></div>`;
+}
+function rTodayC(s){
+  const b=s.bookings[TODAY];
+  return `<div class="head"><div><h1>Today</h1><div class="sub">Wednesday 28 October · Pune office, 08:35</div></div><span class="sp"></span><button class="btn pri" data-a="scr" data-v="book">${ic('cal',16)} Open zone board</button></div>
+  <div class="grid2"><div class="card">${b?`<div class="row"><h2 style="margin:0">Your desk today</h2><span class="sp"></span>${statusBadge(b)}</div>
+   <div class="row mt12" style="align-items:flex-start;gap:20px"><div><div class="deskbig">${b.desk}</div><div class="sub">${placeOf(b.desk)}</div>
+   <div class="mt12">${b.status==='Checked in'?'':`<button class="btn pri" data-a="checkin">${ic('check',16)} Check in</button> ${b.held?'':`<button class="btn" data-a="hold">Running late</button>`}`}</div>
+   <p class="muted" style="margin:10px 0 0">${b.status==='Checked in'?'You are checked in.':`Check-in deadline ${b.held?OFF.Pune.hold:OFF.Pune.dl}.`}</p></div>
+   <div><div class="muted" style="font-size:12px">${DESK[b.desk].zone}, Floor ${DESK[b.desk].floor}</div>${seatGrid(s,'Pune',DESK[b.desk].zone,TODAY,'Full day',{mine:b.desk,small:true})}</div></div>`:'<p>No desk today.</p>'}</div>
+   <div class="card"><h2>Coming up</h2>${Object.keys(s.bookings).filter(k=>k>TODAY).sort().map(k=>`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--db-border)"><span style="width:90px">${DAY[k].label}</span><span class="mono">${s.bookings[k].desk}</span><span class="sp"></span><span class="muted">${s.bookings[k].part}</span></div>`).join('')}
+   <button class="btn soft mt12" data-a="scr" data-v="book">${ic('plus',14)} Book another day</button></div></div>`;
+}
+
+/* ---------- BOOK: option A ---------- */
+function rBookA(s){
+  const zs=['Any zone',...zonesOf(s.office).map(z=>z.zone)];
+  const cal=WEEKS.slice(1).map(w=>w.map(d=>{const k=d.k,b=s.bookings[k];
+     if(k<TODAY)return `<div class="cday dis"><span class="n">${d.label}</span><span style="font-size:11.5px">Past</span></div>`;
+     if(k>HORIZON)return `<div class="cday dis"><span class="n">${d.label}</span><span style="font-size:11.5px">Opens ${k==='2026-11-12'?'tomorrow':'Fri'}</span></div>`;
+     if(OFF[s.office].closed.includes(k))return `<div class="cday dis"><span class="n">${d.label}</span><span style="font-size:11.5px">Office closed</span></div>`;
+     if(b)return `<div class="cday mine"><span class="n">${d.label}</span><span class="mono" style="font-size:11.5px">${b.desk}</span></div>`;
+     const on=s.picked.includes(k);const fr=freeDesks(s,s.office,k,s.part).length;
+     return `<button class="cday ${on?'on':''}" data-a="pick" data-v="${k}" aria-pressed="${on}"><span class="n">${d.label}</span><span class="${on?'':'muted'}" style="font-size:11.5px">${on?ic('check',12)+' Coming in':fr+' free'}</span></button>`}).join('')).join('');
+  const picked=[...s.picked].sort();
+  const rows=picked.map(k=>{const p=propose(s,k);
+    let h=`<div class="prop"><div><div style="font-weight:500">${DAY[k].label}</div><div class="muted" style="font-size:12px">${s.part}</div></div>`;
+    if(!p)h+=`<div class="sub">No free desk in ${s.office} that day. Try another office.</div><div></div>`;
+    else h+=`<div><div class="row"><span class="mono" style="font-weight:500">${p.d.code}</span><span class="badge ${p.why==='Your usual desk'?'':'line'}">${p.why==='Your usual desk'?ic('spark',11)+' ':''}${p.why}</span></div><div class="muted" style="font-size:12px">${p.d.zone} · Floor ${p.d.floor} · ${p.d.f.join(', ')||'No extras'}</div></div><button class="btn ghost sm" data-a="chg" data-v="${k}">${s.changing===k?'Close':'Change'}</button>`;
+    if(s.changing===k){const alts=freeDesks(s,s.office,k,s.part).filter(d=>!p||d.code!==p.d.code).slice(0,8);
+      h+=`<div class="alts">${alts.map(d=>`<button class="alt" data-a="choose" data-v="${k}|${d.code}"><span class="mono" style="font-weight:500">${d.code}</span><div class="muted" style="font-size:11.5px">${d.zone}${d.f.includes('Standing desk')?' · standing':''}</div></button>`).join('')||'<span class="muted">No other free desks.</span>'}</div>`}
+    return h+'</div>'}).join('');
+  const n=picked.filter(k=>propose(s,k)).length;
+  return `<div class="head"><div><h1>Plan my days</h1><div class="sub">Pick the days you come in. We pick the best free desk for each day; change any of them.</div></div></div>
+  <div class="grid2"><div class="card"><div class="row wrap" style="gap:12px;align-items:flex-end">
+     <label class="field"><span>Office</span><select class="sel" data-c="office">${OFFICES.map(o=>`<option ${o===s.office?'selected':''}>${o}</option>`).join('')}</select></label>
+     <div class="field"><span>Part of the day</span><div class="seg">${['Full day','Morning','Afternoon'].map(p=>`<button class="${p===s.part?'on':''}" data-a="part" data-v="${p}">${p}</button>`).join('')}</div></div>
+     <label class="field"><span>Zone</span><select class="sel" data-c="zone">${zs.map(z=>`<option ${z===s.zone?'selected':''}>${z}</option>`).join('')}</select></label></div>
+     <div class="field mt12"><span>Must have</span><div class="row wrap">${FEATS.map(f=>`<button class="chip ${s.feats.includes(f)?'on':''}" data-a="feat" data-v="${f}">${f}</button>`).join('')}</div></div>
+     <div class="divider"></div><div class="row" style="margin-bottom:8px"><h3>Days</h3><span class="sp"></span><span class="muted">You can book up to 14 days ahead</span></div>
+     <div class="cal">${['Mon','Tue','Wed','Thu','Fri'].map(x=>`<div class="muted" style="font-size:11.5px;padding-left:4px">${x}</div>`).join('')}${cal}</div></div>
+   <div class="card"><div class="row"><h2 style="margin:0">Your desks</h2><span class="sp"></span><span class="muted">${s.office}</span></div>
+     ${picked.length?rows:`<p class="sub">Pick one or more days on the left.</p>`}
+     <div class="divider"></div><button class="btn pri lg" style="width:100%;justify-content:center" data-a="bookMany" ${n?'':'disabled'}>Book ${n} day${n===1?'':'s'}</button>
+     <p class="muted" style="margin:8px 0 0;text-align:center">Each day is a separate booking you can cancel on its own.</p></div></div>`;
+}
+/* ---------- BOOK: option B ---------- */
+function rBookB(s,modal){
+  const o=s.office,zs=zonesOf(o);const fls=['All floors',...new Set(zs.map(z=>'Floor '+z.floor))];
+  const days=DAYS.filter(d=>bookable(d.k));
+  let list=freeDesks(s,o,s.day,s.part).filter(d=>(s.floor==='All floors'||'Floor '+d.floor===s.floor)&&(s.zone==='Any zone'||d.zone===s.zone)&&s.feats.every(f=>d.f.includes(f)));
+  const groups={};list.forEach(d=>(groups[d.zone+'|'+d.floor]=groups[d.zone+'|'+d.floor]||[]).push(d));
+  const closed=OFF[o].closed.includes(s.day);const has=s.bookings[s.day];
+  let body='';
+  if(closed)body=`<div style="padding:28px;text-align:center" class="sub">${o} office is closed on ${DAY[s.day].label}.</div>`;
+  else if(!list.length)body=`<div style="padding:28px;text-align:center"><div style="font-weight:500">No free desks for this day.</div><div class="sub">Try another date or office.</div><div class="row mt12" style="justify-content:center">${['2026-11-02','2026-11-06'].map(k=>`<button class="chip" data-c2="day" data-v="${k}">${DAY[k].label} · ${freeDesks(s,o,k,s.part).length} free</button>`).join('')}</div></div>`;
+  else body=Object.entries(groups).map(([g,ds])=>{const [z,f]=g.split('|');return `<div class="zhead"><h3>${z}</h3><span class="muted">Floor ${f} · ${ds.length} free</span></div>`+ds.map(d=>`<div class="drow"><span class="mono" style="font-weight:500">${d.code}${d.code===USUAL?' <span class="badge" style="font-family:var(--db-font)">Usual</span>':''}</span><span class="sub zf">${d.zone}, Floor ${d.floor}</span><span>${featTags(d.f)}</span><button class="btn soft sm" data-a="bookB" data-v="${d.code}" ${has?'disabled title="You already have a desk that day"':''}>Book</button></div>`).join('')}).join('');
+  return `<div class="head"><div><h1>Book a desk</h1><div class="sub">No names are shown on desks.</div></div></div>
+  <div class="card"><div class="toolbar">
+   <label class="field"><span>Office</span><select class="sel" data-c="office">${OFFICES.map(x=>`<option ${x===o?'selected':''}>${x}</option>`).join('')}</select></label>
+   <label class="field"><span>Day</span><select class="sel" data-c="day">${days.map(d=>{const c=OFF[o].closed.includes(d.k);return `<option value="${d.k}" ${d.k===s.day?'selected':''} ${c?'disabled':''}>${d.k===TODAY?'Today, ':''}${d.label}${c?' (office closed)':''}</option>`}).join('')}</select></label>
+   <div class="field"><span>Part of the day</span><div class="seg">${['Full day','Morning','Afternoon'].map(p=>`<button class="${p===s.part?'on':''}" data-a="part" data-v="${p}">${p}</button>`).join('')}</div></div>
+   <label class="field"><span>Floor</span><select class="sel" data-c="floor">${fls.map(x=>`<option ${x===s.floor?'selected':''}>${x}</option>`).join('')}</select></label>
+   <label class="field"><span>Zone</span><select class="sel" data-c="zone">${['Any zone',...zs.map(z=>z.zone)].map(x=>`<option ${x===s.zone?'selected':''}>${x}</option>`).join('')}</select></label></div>
+   <div class="row wrap mt12">${FEATS.map(f=>`<button class="chip ${s.feats.includes(f)?'on':''}" data-a="feat" data-v="${f}">${f}</button>`).join('')}</div></div>
+  ${has?`<div class="note mt12">${ic('info',16)}<div>You already have a desk on ${DAY[s.day].label}: <b class="mono" style="font-weight:500">${has.desk}</b>. <button class="link" data-a="scr" data-v="today">Go to it</button></div></div>`:''}
+  <div class="card mt12" style="padding:4px 6px 6px"><div class="row" style="padding:10px 10px 4px"><span style="font-size:15px;font-weight:500">${closed?0:list.length} free desks</span><span class="sub">· ${o} · ${DAY[s.day].label} · ${s.part}</span><span class="sp"></span><span class="muted" id="ago">Updated ${s.ago} seconds ago</span></div>${body}</div>`;
+}
+/* ---------- BOOK: option C ---------- */
+function seatGrid(s,o,zone,k,part,opt={}){
+  const ds=DESKS.filter(d=>d.office===o&&d.zone===zone);const cols=opt.small?6:8;
+  return `<div class="seats" style="grid-template-columns:repeat(${Math.min(cols,ds.length)},18px)">${ds.map(d=>{
+    let c='',t=d.code,click=false;
+    if(opt.mine===d.code){c='mine';t+=' · your desk'}
+    else if(opt.scan===d.code){c='scan';t+=' · the desk you scanned'}
+    else if(opt.sel===d.code){c='sel'}
+    else if(isBlocked(d,k)){c='blk';t+=' · maintenance'}
+    else if(opt.occ){const tb=d.code===USUAL&&s.bookings[k]?'full':takenBy(d,k);c=tb?(tb==='full'?'t':'half'):'';}
+    else if(!isFree(s,d,k,part)){const tb=takenBy(d,k);c=(tb&&tb!=='full')?'half t':'t';t+=' · taken'}
+    else{click=!opt.small&&!opt.occ;t+=' · free'}
+    return `<button class="seat ${c}" title="${t}" aria-label="${t}" ${click?`data-a="seat" data-v="${d.code}"`:'tabindex="-1"'}></button>`}).join('')}</div>`;
+}
+function rBookC(s,done){
+  const o=s.office;const days=DAYS.filter(d=>bookable(d.k)).slice(0,9);
+  const zs=zonesOf(o);const fl=[...new Set(zs.map(z=>z.floor))];
+  const floors=fl.map(f=>`<div class="floor"><div class="row" style="margin-bottom:6px"><h3>Floor ${f}</h3></div><div class="zones">${zs.filter(z=>z.floor===f).map(z=>{
+    const free=DESKS.filter(d=>d.office===o&&d.zone===z.zone&&isFree(s,d,s.day,s.part)).length;
+    return `<div class="zone ${s.czone===z.zone?'on':''}"><button class="link" style="color:inherit" data-a="czone" data-v="${z.zone}"><b style="font-weight:500">${z.zone}</b></button><div class="muted" style="font-size:12px">${free} of ${z.cap} free</div><div class="zmeter"><i style="width:${Math.round((z.cap-free)/z.cap*100)}%"></i></div>${seatGrid(s,o,z.zone,s.day,s.part,{sel:s.sel,mine:s.bookings[s.day]&&s.bookings[s.day].desk})}</div>`}).join('')}</div></div>`).join('');
+  const sel=s.sel&&DESK[s.sel];const has=s.bookings[s.day];
+  let panel;
+  if(done&&has){panel=`<div class="bigcheck">${ic('check',28)}</div><div style="text-align:center"><div style="font-size:15px;font-weight:500">Booked</div><div class="deskbig mt8">${has.desk}</div><div class="sub">${placeOf(has.desk)}</div><div class="mt8">${DAY[s.day].label} · ${has.part}</div></div>${howCheckin()}<div class="row mt12"><button class="btn" data-a="scr" data-v="today">Back to Today</button><span class="sp"></span><button class="btn soft" data-a="again">Book another day</button></div>`}
+  else if(has)panel=`<h2>${DAY[s.day].label}</h2><p class="sub">You already have <b class="mono" style="font-weight:500">${has.desk}</b> that day (dark seat on the board).</p>`;
+  else if(sel)panel=`<h2>${sel.code}</h2><div class="sub">${placeOf(sel.code)}</div><div class="mt8">${featTags(sel.f)}</div><div class="divider"></div><div>${DAY[s.day].label} · ${s.part}</div><button class="btn pri lg mt12" style="width:100%;justify-content:center" data-a="bookC">Book ${sel.code}</button>`;
+  else panel=`<h2>Pick a free seat</h2><p class="sub">Outlined seats are free. Grey seats are taken; nobody's name is shown. Hover a seat to see its code.</p>`;
+  return `<div class="head"><div><h1>Zone board</h1><div class="sub">${o} · tap a free seat to book it</div></div><span class="sp"></span>
+   <label class="field"><span>Office</span><select class="sel" data-c="office">${OFFICES.map(x=>`<option ${x===o?'selected':''}>${x}</option>`).join('')}</select></label>
+   <div class="field"><span>Part of the day</span><div class="seg">${['Full day','Morning','Afternoon'].map(p=>`<button class="${p===s.part?'on':''}" data-a="part" data-v="${p}">${p}</button>`).join('')}</div></div></div>
+  <div class="dchips">${days.map(d=>{const c=OFF[o].closed.includes(d.k);const f=c?0:freeDesks(s,o,d.k,s.part).length;return `<button class="dchip ${d.k===s.day?'on':''}" data-a="cday" data-v="${d.k}" ${c?'disabled':''}><div style="font-weight:500">${d.k===TODAY?'Today':d.label}</div><div class="c">${c?'Office closed':s.bookings[d.k]?'Booked '+s.bookings[d.k].desk:f+' free'}</div></button>`}).join('')}</div>
+  <div class="grid2 mt16" style="grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)"><div class="card">${floors}<div class="legend"><span><i></i>Free</span><span><i style="background:#E3E6EB;border-color:#E3E6EB"></i>Taken</span><span><i style="background:var(--db-accent);border-color:var(--db-accent)"></i>Yours</span><span><i style="background:repeating-linear-gradient(45deg,#E3E6EB 0 3px,#fff 3px 6px);border-color:#D3D8E0"></i>Maintenance</span></div></div>
+  <div class="card">${panel}</div></div>`;
+}
+function howCheckin(){return `<div class="note mt16">${ic('info',16)}<div><b style="font-weight:500">How check-in works.</b> On the day, scan the QR code on the desk or press Check in by the check-in deadline (Pune: ${OFF.Pune.dl}). We remind you 15 minutes before. Running late? Tap once to keep the desk until ${OFF.Pune.hold}. If you don't check in, the desk goes to someone else.</div></div>`}
+
+/* ---------- DONE ---------- */
+function rDoneA(s){
+  if(!s.last.length&&s.picked.length){[...s.picked].sort().forEach(k=>{const p=propose(s,k);if(p){s.bookings[k]={desk:p.d.code,part:s.part,status:'Booked'};s.last.push(k)}});s.picked=[];s.choice={}}
+  const ks=s.last;
+  if(!ks.length){return `<div class="card"><p class="sub">Nothing booked yet in this run.</p><button class="btn pri" data-a="scr" data-v="book">Plan my days</button></div>`}
+  return `<div class="card" style="max-width:640px"><div class="row"><div class="bigcheck" style="margin:0;width:44px;height:44px">${ic('check',22)}</div><div><h1>You're booked for ${ks.length} day${ks.length>1?'s':''}</h1><div class="sub">You can cancel any day on its own in My bookings.</div></div></div>
+  <table class="mt16"><tbody>${ks.map(k=>{const b=s.bookings[k];return `<tr><td style="font-weight:500">${DAY[k].label}</td><td class="mono">${b.desk}</td><td class="sub">${placeOf(b.desk)}</td><td>${b.part}</td></tr>`}).join('')}</tbody></table>
+  ${howCheckin()}<div class="row mt16"><button class="btn pri" data-a="scr" data-v="today">Back to Today</button><button class="btn" data-a="scr" data-v="book">Plan more days</button></div></div>`;
+}
+function rDoneB(s){
+  let k=s.last[0];
+  if(!k||!s.bookings[k]){k=s.day;if(!s.bookings[k]){const d=freeDesks(s,s.office,k,s.part)[0];if(d)s.bookings[k]={desk:d.code,part:s.part,status:'Booked'}}s.last=[k]}
+  if(!s.modal&&s.bookings[k])s.modal={type:'doneB',k};
+  return rBookB(s);
+}
+
+/* ---------- CHECK-IN on phone ---------- */
+function phoneShell(inner){return `<div class="phone"><div class="pscreen"><div class="pbar"><span>${st().phone==='late'?'09:45':'08:42'}</span><span>5G ▮▮▮</span></div><div class="papp">${ic('menu',18)}<div class="logo" style="width:24px;height:24px;font-size:12px;border-radius:6px">D</div><b style="font-weight:500">DeskBook</b><span class="sp"></span><div class="av sm">AK</div></div><div class="pbody">${inner}</div></div></div>`}
+function rCheckin(s){
+  const steps=[['arrive','Asha arrives at 08:42 and scans the QR on her desk PUN-3-14'],['late',"09:45: she has not checked in yet; the 15-minute reminder comes"],['wrong','She scans the QR on PUN-3-15 by mistake']];
+  const expl={A:'The desk QR opens DeskBook on the Today card. If it is your desk and the window is open, you are checked in at once, no extra tap.',B:'The desk QR opens a desk page. One tap on Check in confirms; nothing happens by accident if a colleague scans for fun.',C:'The desk QR opens the zone with your seat marked and checks you in at once. A wrong desk shows both seats.'}[OPT];
+  const d=DESK[USUAL];let inner='';const ph=s.phone;
+  const checkedView=`<div class="card" style="text-align:center;padding:22px 14px"><div class="bigcheck">${ic('check',28)}</div><div style="font-size:16px;font-weight:500">Checked in at ${USUAL}</div><div class="sub">${placeOf(USUAL)} · ${s.pHeld?'10:58':'08:42'}</div>${OPT==='C'?`<div style="display:flex;justify-content:center" class="mt12">${seatGrid(s,'Pune',d.zone,TODAY,'Full day',{mine:USUAL,small:true})}</div>`:''}<p class="muted" style="margin:12px 0 0">Nothing else to do today.</p></div>`;
+  if(ph==='arrive'){
+    if(OPT==='B'&&!s.pChecked)inner=`<div class="card"><div class="muted" style="font-size:12px">${ic('qr',14)} Desk</div><div class="deskbig">${USUAL}</div><div class="sub">${placeOf(USUAL)}</div><div class="note mt12">${ic('check',16)}<div>This is your desk for today, full day.</div></div><button class="btn pri lg mt12" style="width:100%;justify-content:center" data-a="pCheck">Check in</button><p class="muted" style="margin:8px 0 0;text-align:center">Check-in deadline 10:00</p></div>`;
+    else inner=checkedView;
+  }else if(ph==='late'){
+    if(s.pChecked)inner=checkedView;
+    else{const head=OPT==='B'?`<div class="mail"><div class="muted" style="font-size:12px">Email · 09:45</div><div style="font-weight:500;margin-top:2px">Check in by 10:00 or your desk goes to someone else</div><p class="sub" style="margin:6px 0 0">Desk ${USUAL}, ${d.zone}, Pune. Tap below if you are on your way.</p></div>`:`<div class="note warn">${ic('clock',16)}<div><b style="font-weight:500">15 minutes left.</b> Check in by 10:00 or your desk goes to someone else.</div></div>`;
+      inner=`${head}<div class="card mt12"><div class="row"><span class="mono" style="font-weight:500;font-size:16px">${USUAL}</span><span class="sp"></span>${s.pHeld?`<span class="badge warn">Kept until 11:30</span>`:`<span class="badge">Booked</span>`}</div><div class="sub">${placeOf(USUAL)}</div>${OPT==='C'?`<div class="mt8">${seatGrid(s,'Pune',d.zone,TODAY,'Full day',{mine:USUAL,small:true})}</div>`:''}
+       <div class="sc mt12"><button class="btn pri lg" style="justify-content:center" data-a="pCheck">${ic('check',16)} I'm here, check in</button>${s.pHeld?`<p class="muted" style="margin:0;text-align:center">Kept until 11:30. You can use this once per booking.</p>`:`<button class="btn lg" style="justify-content:center" data-a="pHold">${ic('clock',16)} Running late, keep until 11:30</button>`}</div></div>`}
+  }else{
+    inner=`<div class="card"><div class="muted" style="font-size:12px">${ic('qr',14)} You scanned</div><div class="deskbig">PUN-3-15</div><div class="note warn mt12">${ic('info',16)}<div><b style="font-weight:500">This is not your desk.</b> Your desk today is <b class="mono" style="font-weight:500">${USUAL}</b>, ${d.zone}, Floor 3.</div></div>${OPT==='C'?`<div class="mt12">${seatGrid(s,'Pune',d.zone,TODAY,'Full day',{mine:USUAL,scan:'PUN-3-15',small:true})}<div class="legend mt8"><span><i style="background:var(--db-accent);border-color:var(--db-accent)"></i>Your desk</span><span><i style="border:2px dashed var(--db-danger)"></i>Scanned</span></div></div>`:''}<p class="muted" style="margin:10px 0 0">You are not checked in yet. Scan the QR on ${USUAL}${OPT==='B'?'':' or press Check in at your desk'}.</p></div>`;
+  }
+  return `<div class="head"><div><h1>Check-in on a phone</h1><div class="sub">Phone width 358 px. ${expl}</div></div></div>
+  <div class="phone-wrap"><div class="card"><h2>Try a moment of the day</h2><div class="sc">${steps.map(([k,l])=>`<button class="scbtn ${ph===k?'on':''}" data-a="phone" data-v="${k}">${l}</button>`).join('')}</div>
+   <div class="divider"></div><div class="sub">Rules shown: check-in opens at 06:00, deadline 10:00 in Pune time, a 15-minute reminder, one "running late" hold per booking until 11:30. A booking made after the deadline must be checked in within 30 minutes.</div>
+   <button class="btn mt12" data-a="pReset">Start again</button></div>${phoneShell(inner)}</div>`;
+}
+
+/* ---------- TEAM week ---------- */
+function teamBooking(s,pid,k){if(pid==='asha'){const b=s.bookings[k];return b?{...b,desk:b.desk}:null}return s.team[pid][k]||null}
+function weekHead(s){const w=WEEKS[s.week];return `<div class="row"><button class="ibtn" data-a="wk" data-v="-1" ${s.week===0?'disabled':''} aria-label="Previous week">${ic('l')}</button><b style="font-weight:500;min-width:150px;text-align:center">${w[0].n} ${w[0].m} – ${w[4].n} ${w[4].m}</b><button class="ibtn" data-a="wk" data-v="1" ${s.week===3?'disabled':''} aria-label="Next week">${ic('r')}</button>${s.week!==1?`<button class="btn sm" data-a="wk" data-v="0">This week</button>`:''}</div>`}
+function teamFilter(s){return `<select class="sel" data-c="tOffice" aria-label="Office">${['All offices',...OFFICES].map(o=>`<option ${o===s.tOffice?'selected':''}>${o}</option>`).join('')}</select>`}
+function teamHead(s,extra=''){return `<div class="head"><div><h1>Team week</h1><div class="sub">Your 6 direct reports · people data updated today 02:10</div></div><span class="sp"></span>${weekHead(s)}${teamFilter(s)}${extra}</div>`}
+const visible=(s,b)=>b&&(s.tOffice==='All offices'||DESK[b.desk].office===s.tOffice);
+function rTeamA(s){
+  const w=WEEKS[s.week];
+  const counts=w.map(d=>PEOPLE.filter(p=>visible(s,teamBooking(s,p.id,d.k))));
+  return teamHead(s)+`<div class="card" style="padding:8px 10px"><table class="tw"><thead><tr><th style="width:200px"></th>${w.map(d=>`<th class="${d.k===TODAY?'today-col':''}">${d.k===TODAY?'Today · ':''}${d.label}</th>`).join('')}</tr>
+   <tr><td class="p muted">In the office</td>${counts.map((c,i)=>`<td class="${w[i].k===TODAY?'today-col':''}"><div class="row"><div class="stack">${c.slice(0,4).map(p=>`<div class="av sm" title="${p.name}">${p.ini}</div>`).join('')}</div><span style="font-weight:500">${c.length}</span><span class="muted">of 6</span></div></td>`).join('')}</tr></thead>
+   <tbody>${PEOPLE.map(p=>`<tr><td class="p"><div class="row"><div class="av">${p.ini}</div><div><div style="font-weight:500">${p.name}</div><div class="muted" style="font-size:12px">${p.home}</div></div></div></td>${w.map(d=>{const b=teamBooking(s,p.id,d.k);
+     if(visible(s,b)){const dk=DESK[b.desk];const away=dk.office!==p.home;return `<td class="${d.k===TODAY?'today-col':''}"><div class="tcell ${b.status==='Checked in'?'in':''} ${away?'away':''}"><div class="row" style="gap:4px"><span class="mono" style="font-weight:500">${b.desk}</span>${b.status==='Checked in'?`<span style="color:var(--db-accent)">${ic('check',14)}</span>`:''}</div><div class="muted" style="font-size:11.5px">${away?'In '+dk.office+' · ':''}${dk.zone}${b.part!=='Full day'?' · '+b.part:''}${b.by==='you'?' · booked by you':''}</div></div></td>`}
+     if(d.k>=TODAY&&bookable(d.k)&&!b)return `<td class="${d.k===TODAY?'today-col':''}"><button class="tadd" data-a="bookFor" data-v="${p.id}|${d.k}" aria-label="Book a desk for ${p.name} on ${d.label}">${ic('plus',14)} Book</button></td>`;
+     return `<td class="${d.k===TODAY?'today-col':''}"></td>`}).join('')}</tr>`).join('')}</tbody></table></div>
+   <p class="muted">Past days show only desks that were used. Empty means no booking, not "absent".</p>`;
+}
+function rTeamB(s){
+  const w=WEEKS[s.week];
+  return teamHead(s)+`<div class="card" style="padding:4px 6px"><table><thead><tr><th>Person</th>${w.map(d=>`<th>${d.label}</th>`).join('')}</tr></thead><tbody>${PEOPLE.map(p=>`<tr><td><div style="font-weight:500">${p.name}</div><div class="muted" style="font-size:12px">${p.home}</div></td>${w.map(d=>{const b=teamBooking(s,p.id,d.k);
+     if(visible(s,b)){const dk=DESK[b.desk];return `<td><div class="mono">${b.desk}</div><div class="muted" style="font-size:11.5px">${dk.office!==p.home?dk.office+' · ':''}${b.part} · ${b.status}${b.by==='you'?' by you':''}</div></td>`}
+     if(d.k>=TODAY&&bookable(d.k)&&!b)return `<td><button class="link" data-a="bookFor" data-v="${p.id}|${d.k}">Book</button></td>`;
+     return `<td class="muted">–</td>`}).join('')}</tr>`).join('')}</tbody></table></div><p class="muted">Past days show only desks that were used.</p>`;
+}
+function rTeamC(s){
+  const w=WEEKS[s.week];const zs=zonesOf('Pune').map(z=>z.zone);const rows=[...zs.map(z=>['Pune',z]),['Berlin',null],['Paris',null],['London',null]];
+  const cell=(o,z,k)=>PEOPLE.filter(p=>{const b=teamBooking(s,p.id,k);if(!visible(s,b))return false;const d=DESK[b.desk];return d.office===o&&(!z||d.zone===z)});
+  return teamHead(s)+`<div class="card" style="padding:8px 10px"><table class="tw"><thead><tr><th style="width:200px">Where</th>${w.map(d=>`<th class="${d.k===TODAY?'today-col':''}">${d.k===TODAY?'Today · ':''}${d.label}</th>`).join('')}</tr></thead><tbody>
+   ${rows.map(([o,z])=>{const any=w.some(d=>cell(o,z,d.k).length);if(!any&&o!=='Pune')return '';return `<tr><td class="p"><div style="font-weight:500">${z||o}</div><div class="muted" style="font-size:12px">${z?'Pune · Floor '+zonesOf('Pune').find(x=>x.zone===z).floor:'other office'}</div></td>${w.map(d=>{const c=cell(o,z,d.k);return `<td class="${d.k===TODAY?'today-col':''}">${c.length?`<div class="row wrap" style="gap:4px">${c.map(p=>{const b=teamBooking(s,p.id,d.k);return `<span class="badge ${b.status==='Checked in'?'in':''}" title="${p.name} · ${b.desk}">${p.ini} <span class="mono" style="font-weight:400;opacity:.8">${b.desk.slice(4)}</span></span>`}).join('')}</div>`:''}</td>`}).join('')}</tr>`}).join('')}
+   <tr><td class="p"><div style="font-weight:500">Not booked</div><div class="muted" style="font-size:12px">tap to book in the team's zone</div></td>${w.map(d=>{const nb=PEOPLE.filter(p=>!teamBooking(s,p.id,d.k));return `<td class="${d.k===TODAY?'today-col':''}">${d.k>=TODAY&&bookable(d.k)?nb.map(p=>`<button class="chip" style="margin:0 4px 4px 0;padding:2px 8px" data-a="bookFor" data-v="${p.id}|${d.k}" title="Book for ${p.name}">${ic('plus',11)} ${p.ini}</button>`).join(''):`<span class="muted">${nb.length?nb.length+' not in':''}</span>`}</td>`}).join('')}</tr></tbody></table></div>
+   <p class="muted">Initials and desk number per zone. Past days show only desks that were used.</p>`;
+}
+function bestZoneFor(s,k,o){const cnt={};PEOPLE.forEach(p=>{const b=teamBooking(s,p.id,k);if(b&&DESK[b.desk].office===o){const z=DESK[b.desk].zone;cnt[z]=(cnt[z]||0)+1}});const best=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];return best?{zone:best[0],n:best[1]}:null}
+
+/* ---------- OCCUPANCY ---------- */
+function zstats(o,zone,k){let cap=0,b=0,i=0,ns=0;const s=st();
+  for(const d of DESKS){if(d.office!==o||d.zone!==zone||isBlocked(d,k))continue;cap++;
+    const own=o==='Pune'&&s.bookings[k]&&s.bookings[k].desk===d.code;const t=own?'full':takenBy(d,k);if(!t)continue;const w=t==='full'?1:.5;b+=w;
+    if(k<TODAY){if(hash(d.code+k+'ns')%100<15)ns+=w;else i+=w}else if(k===TODAY){if(hash(d.code+k+'ci')%100<55)i+=w}}
+  return{cap,b,i,ns}}
+function dayStats(o,k){const t={cap:0,b:0,i:0,ns:0};zonesOf(o).forEach(z=>{const x=zstats(o,z.zone,k);for(const n in t)t[n]+=x[n]});return t}
+function occHead(s,extra=''){return `<div class="head"><div><h1>Occupancy</h1><div class="sub">Counts only, never names · days in ${s.occOffice} time (${OFF[s.occOffice].tz})</div></div><span class="sp"></span>
+  <div class="seg">${OFFICES.map(o=>`<button class="${o===s.occOffice?'on':''}" data-a="occOffice" data-v="${o}">${o}</button>`).join('')}</div>${extra}</div>`}
+function kpis(o){const w=WEEKS[1];let cap=0,b=0,i=0,ns=0,bp=0;w.forEach(d=>{const x=dayStats(o,d.k);cap+=x.cap;if(d.k<=TODAY){b+=x.b;i+=x.i}if(d.k<TODAY){ns+=x.ns;bp+=x.b}});
+  return `<div class="grid4"><div class="card kpi"><div class="k">Capacity this week</div><div class="v">${cap}</div><div class="muted">desk-days, without maintenance</div></div>
+  <div class="card kpi"><div class="k">Booked, Mon to today</div><div class="v">${fmt(b)}</div><div class="muted">${Math.round(b/(cap*3/5)*100)}% of capacity</div></div>
+  <div class="card kpi"><div class="k">Checked in, Mon to today</div><div class="v">${fmt(i)}</div><div class="muted">today so far</div></div>
+  <div class="card kpi"><div class="k">No-show rate, Mon–Tue</div><div class="v">${bp?(ns/bp*100).toFixed(1):'0'}%</div><div class="muted">${fmt(ns)} of ${fmt(bp)} bookings</div></div></div>`}
+function rOccA(s){
+  const o=s.occOffice,w=WEEKS[1],zs=zonesOf(o);
+  const cell=(z,k)=>{const x=zstats(o,z.zone,k);const fut=k>TODAY;const v=fut?x.b/x.cap:x.i/x.cap;const pct=Math.round(v*100);const strong=pct>=60;
+    return `<td><div class="hc ${fut?'fut':''}" style="background:color-mix(in srgb,var(--db-accent) ${Math.round(6+v*(fut?40:80))}%,#fff);color:${strong&&!fut?'#fff':'var(--db-text-primary)'}">${pct}%<small>${fut?'booked':k===TODAY?'in so far':'checked in'}</small></div></td>`};
+  return occHead(s)+kpis(o)+`<div class="card mt16"><div class="row"><h2 style="margin:0">Used desks by zone and day</h2><span class="sp"></span><span class="muted">26 – 30 Oct · share of capacity</span></div>
+  <table class="heat mt12"><thead><tr><th></th>${w.map(d=>`<th style="text-align:center">${d.k===TODAY?'Today':d.label}</th>`).join('')}</tr></thead><tbody>${zs.map(z=>`<tr><td style="padding:4px 10px 4px 0;white-space:nowrap"><div style="font-weight:500">${z.zone}</div><div class="muted" style="font-size:12px">Floor ${z.floor} · ${z.cap} desks</div></td>${w.map(d=>cell(z,d.k)).join('')}</tr>`).join('')}</tbody></table>
+  <div class="legend mt12"><span>Solid: checked in</span><span>Dashed: booked, still to come</span><span>Darker means fuller</span></div></div>`;
+}
+function rOccB(s){
+  const o=s.occOffice,w=WEEKS[1];let rows='';
+  w.forEach(d=>{const fl=[...new Set(zonesOf(o).map(z=>z.floor))];const tot={cap:0,b:0,i:0,ns:0};
+    fl.forEach(f=>{const x={cap:0,b:0,i:0,ns:0};zonesOf(o).filter(z=>z.floor===f).forEach(z=>{const y=zstats(o,z.zone,d.k);for(const n in x)x[n]+=y[n]});for(const n in tot)tot[n]+=x[n];
+      rows+=`<tr><td>${d.k===TODAY?'Today':d.label}</td><td>Floor ${f}</td><td class="num">${x.cap}</td><td class="num">${fmt(x.b)}</td><td class="num">${d.k>TODAY?'–':fmt(x.i)}</td><td class="num">${d.k<TODAY?fmt(x.ns):'–'}</td><td class="num">${d.k<TODAY&&x.b?(x.ns/x.b*100).toFixed(1)+'%':'–'}</td><td><div class="bar"><i style="width:${Math.round((d.k>TODAY?x.b:x.i)/x.cap*100)}%"></i></div></td></tr>`});
+    rows+=`<tr style="background:#FAFBFC"><td style="font-weight:500">${d.k===TODAY?'Today':d.label}</td><td style="font-weight:500">All floors</td><td class="num" style="font-weight:500">${tot.cap}</td><td class="num" style="font-weight:500">${fmt(tot.b)}</td><td class="num" style="font-weight:500">${d.k>TODAY?'–':fmt(tot.i)}</td><td class="num" style="font-weight:500">${d.k<TODAY?fmt(tot.ns):'–'}</td><td class="num" style="font-weight:500">${d.k<TODAY&&tot.b?(tot.ns/tot.b*100).toFixed(1)+'%':'–'}</td><td></td></tr>`});
+  return occHead(s,`<select class="sel" aria-label="Period"><option>26 – 30 Oct 2026</option><option>October 2026</option><option>Last 3 months</option></select><button class="btn" data-a="export">${ic('down',16)} Export to Excel</button>`)+kpis(o)+
+  `<div class="card mt16" style="padding:4px 6px"><table><thead><tr><th>Day</th><th>Floor</th><th class="num">Capacity</th><th class="num">Booked</th><th class="num">Checked in</th><th class="num">No-shows</th><th class="num">No-show rate</th><th>Used</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <p class="muted">Half-day bookings count 0.5. Desks under maintenance are not capacity.</p>`;
+}
+function rOccC(s){
+  const o=s.occOffice,k=s.occDay,zs=zonesOf(o);const fl=[...new Set(zs.map(z=>z.floor))];
+  const x=dayStats(o,k);const fut=k>TODAY;
+  return occHead(s)+`<div class="dchips">${WEEKS[1].map(d=>{const y=dayStats(o,d.k);const v=d.k>TODAY?y.b:y.i;return `<button class="dchip ${d.k===k?'on':''}" data-a="occDay" data-v="${d.k}"><div style="font-weight:500">${d.k===TODAY?'Today':d.label}</div><div class="c">${Math.round(v/y.cap*100)}% ${d.k>TODAY?'booked':'used'}</div></button>`}).join('')}</div>
+  <div class="grid4 mt16"><div class="card kpi"><div class="k">Capacity</div><div class="v">${x.cap}</div></div><div class="card kpi"><div class="k">Booked</div><div class="v">${fmt(x.b)}</div></div><div class="card kpi"><div class="k">Checked in</div><div class="v">${fut?'–':fmt(x.i)}</div></div><div class="card kpi"><div class="k">No-show rate</div><div class="v">${k<TODAY&&x.b?(x.ns/x.b*100).toFixed(1)+'%':'–'}</div></div></div>
+  <div class="card mt16">${fl.map(f=>`<div class="floor"><h3 style="margin-bottom:6px">Floor ${f}</h3><div class="zones">${zs.filter(z=>z.floor===f).map(z=>{const y=zstats(o,z.zone,k);const v=(fut?y.b:y.i)/y.cap;
+    return `<div class="zone" style="background:color-mix(in srgb,var(--db-accent) ${Math.round(4+v*22)}%,#fff);border-color:var(--db-accent-tint)"><b style="font-weight:500">${z.zone}</b><div class="muted" style="font-size:12px">${fmt(fut?y.b:y.i)} of ${y.cap} ${fut?'booked':'used'}${!fut&&k<TODAY?' · '+fmt(y.ns)+' no-shows':''}</div>${seatGrid(st(),o,z.zone,k,'Full day',{occ:true})}</div>`}).join('')}</div></div>`).join('')}
+  <div class="legend"><span><i style="background:#E3E6EB;border-color:#E3E6EB"></i>Booked</span><span><i></i>Not booked</span><span><i style="background:repeating-linear-gradient(45deg,#E3E6EB 0 3px,#fff 3px 6px);border-color:#D3D8E0"></i>Maintenance</span></div></div>`;
+}
+
+/* ---------- modal ---------- */
+function openModal(m){st().modal=m;renderModal()}
+function closeModal(){st().modal=null;renderModal()}
+function renderModal(){
+  const s=st(),m=s.modal,L=$('#layer');if(!m){L.innerHTML='';return}
+  let h='';
+  if(m.type==='doneB'){const b=s.bookings[m.k];
+    h=`<div class="row"><div class="bigcheck" style="margin:0;width:40px;height:40px">${ic('check',20)}</div><div><h2 style="margin:0">Desk booked</h2><div class="sub">${DAY[m.k].label} · ${b.part}</div></div><span class="sp"></span><button class="ibtn" data-a="close" aria-label="Close">${ic('x')}</button></div>
+    <div class="deskbig mt12">${b.desk}</div><div class="sub">${placeOf(b.desk)}</div>${howCheckin()}<div class="row mt16"><button class="btn" data-a="close">Book another</button><span class="sp"></span><button class="btn pri" data-a="toToday">View my bookings</button></div>`}
+  if(m.type==='bookFor'){const p=PERSON[m.pid];const o=p.home;
+    if(OPT==='A'){const save={...s};const tmp={...s,office:o,part:'Full day',zone:'Any zone',feats:[],choice:{}};const pr=propose(tmp,m.k);
+      const bz=bestZoneFor(s,m.k,o);let d=pr&&pr.d;if(bz){const z=freeDesks(s,o,m.k,'Full day').find(x=>x.zone===bz.zone);if(z)d=z}
+      m.code=d&&d.code;
+      h=`<h2>Book a desk for ${p.name}</h2><div class="sub">${DAY[m.k].label} · Full day · ${o}</div>${d?`<div class="card tint mt12"><div class="row"><span class="mono" style="font-weight:500;font-size:16px">${d.code}</span><span class="sp"></span><span class="badge line">${ic('spark',11)} ${bz?`Same zone as ${bz.n} of your team`:'Best free desk'}</span></div><div class="sub">${d.zone} · Floor ${d.floor}</div></div>`:`<p class="sub">No free desk in ${o} that day.</p>`}
+      <p class="muted">${p.name.split(' ')[0]} gets an email and sees "Booked by Meera".</p><div class="row"><button class="btn" data-a="close">Cancel</button><span class="sp"></span><button class="btn pri" data-a="confirmFor" ${d?'':'disabled'}>Book ${d?d.code:''}</button></div>`}
+    else if(OPT==='B'){const list=freeDesks(s,o,m.k,'Full day').slice(0,6);
+      h=`<div class="row"><h2 style="margin:0">Book for ${p.name}</h2><span class="sp"></span><button class="ibtn" data-a="close" aria-label="Close">${ic('x')}</button></div><div class="sub">${DAY[m.k].label} · Full day · ${o}</div><div class="mt12" style="border:1px solid var(--db-border);border-radius:10px">${list.map((d,i)=>`<div class="row" style="padding:8px 10px;${i?'border-top:1px solid var(--db-border)':''}"><span class="mono" style="font-weight:500;width:90px">${d.code}</span><span class="sub">${d.zone}</span><span class="sp"></span><button class="btn soft sm" data-a="confirmFor" data-v="${d.code}">Book</button></div>`).join('')}</div><p class="muted">Showing 6 of ${freeDesks(s,o,m.k,'Full day').length} free desks. ${p.name.split(' ')[0]} gets an email.</p>`}
+    else{const bz=bestZoneFor(s,m.k,o);const zone=bz?bz.zone:zonesOf(o)[0].zone;const d=freeDesks(s,o,m.k,'Full day').find(x=>x.zone===zone);m.code=d&&d.code;
+      h=`<h2>Book ${p.name} in ${zone}?</h2><div class="sub">${DAY[m.k].label} · Full day · ${o}${bz?` · ${bz.n} of your team sit here that day`:''}</div><div class="mt12">${seatGrid(s,o,zone,m.k,'Full day',{sel:d&&d.code,small:true})}</div><p class="muted">Desk ${d?d.code:'none free'} (highlighted). ${p.name.split(' ')[0]} gets an email.</p><div class="row"><button class="btn" data-a="close">Cancel</button><span class="sp"></span><button class="btn pri" data-a="confirmFor" ${d?'':'disabled'}>Book ${d?d.code:''}</button></div>`}}
+  L.innerHTML=`<div class="ov" data-a="ovl"><div class="dlg" role="dialog" aria-modal="true">${h}</div></div>`;
+  const f=L.querySelector('.dlg .btn.pri,.dlg .btn');if(f)f.focus();
+}
+
+/* ---------- render ---------- */
+const R={A:{today:rTodayA,book:rBookA,done:rDoneA},B:{today:rTodayB,book:s=>rBookB(s),done:rDoneB},C:{today:rTodayC,book:s=>rBookC(s,false),done:s=>{if(!s.bookings[s.day]){const d=freeDesks(s,'Pune',s.day,s.part).find(x=>x.zone===s.czone);if(d){s.bookings[s.day]={desk:d.code,part:s.part,status:'Booked'}}}return rBookC(s,true)}}};
+function render(){
+  renderProto();renderShell();const s=st();let h;
+  if(SCR==='checkin')h=rCheckin(s);
+  else if(SCR==='team')h={A:rTeamA,B:rTeamB,C:rTeamC}[OPT](s);
+  else if(SCR==='occ')h={A:rOccA,B:rOccB,C:rOccC}[OPT](s);
+  else h=R[OPT][SCR](s);
+  $('#view').innerHTML=h;renderModal();
+}
+function go(scr){SCR=scr;st().modal=null;$('#layer').innerHTML='';render();window.scrollTo(0,0)}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a],[data-c2]');if(!el)return;
+  if(el.dataset.c2){st()[el.dataset.c2]=el.dataset.v;render();return}
+  const a=el.dataset.a,v=el.dataset.v,s=st();
+  if(a==='ovl'&&e.target!==el)return;
+  switch(a){
+   case 'opt':OPT=v;go(SCR);return;
+   case 'scr':go(v);return;
+   case 'side':COLLAPSED=!COLLAPSED;break;
+   case 'theme':document.documentElement.style.setProperty('--db-accent',v);break;
+   case 'checkin':{const b=s.bookings[TODAY];if(b){b.status='Checked in';b.at='08:35';toast('Checked in at '+b.desk+' · 08:35')}break}
+   case 'hold':{const b=s.bookings[TODAY];if(b){b.held=true;toast('Your desk is kept until '+OFF.Pune.hold+'. You can do this once per booking.')}break}
+   case 'cancel':{const b=s.bookings[v];delete s.bookings[v];toast('Cancelled '+b.desk+' on '+DAY[v].label+'. The desk is free for others now.');break}
+   case 'addDay':if(OPT==='A'){if(!s.picked.includes(v))s.picked.push(v)}else s.day=v;go('book');return;
+   case 'pick':s.picked=s.picked.includes(v)?s.picked.filter(x=>x!==v):[...s.picked,v];s.changing=null;break;
+   case 'part':s.part=v;s.sel=null;break;
+   case 'feat':s.feats=s.feats.includes(v)?s.feats.filter(x=>x!==v):[...s.feats,v];break;
+   case 'chg':s.changing=s.changing===v?null:v;break;
+   case 'choose':{const [k,c]=v.split('|');s.choice[k]=c;s.changing=null;break}
+   case 'bookMany':{const ks=[...s.picked].sort().filter(k=>propose(s,k));s.last=[];ks.forEach(k=>{const p=propose(s,k);s.bookings[k]={desk:p.d.code,part:s.part,status:'Booked'};s.last.push(k)});s.picked=[];s.choice={};go('done');return}
+   case 'bookB':s.bookings[s.day]={desk:v,part:s.part,status:'Booked'};s.last=[s.day];s.modal={type:'doneB',k:s.day};SCR='done';render();return;
+   case 'close':case 'ovl':closeModal();if(SCR==='done'&&OPT==='B')SCR='book';render();return;
+   case 'toToday':go('today');return;
+   case 'czone':s.czone=v;break;
+   case 'cday':s.day=v;s.sel=null;break;
+   case 'seat':s.sel=v;s.czone=DESK[v].zone;break;
+   case 'bookC':s.bookings[s.day]={desk:s.sel,part:s.part,status:'Booked'};s.last=[s.day];s.sel=null;SCR='done';render();return;
+   case 'again':{const nx=DAYS.find(d=>bookable(d.k)&&!s.bookings[d.k]&&d.k>s.day);if(nx)s.day=nx.k;go('book');return}
+   case 'phone':s.phone=v;s.pChecked=false;s.pHeld=false;break;
+   case 'pCheck':s.pChecked=true;s.phone=s.phone==='wrong'?'arrive':s.phone;break;
+   case 'pHold':s.pHeld=true;break;
+   case 'pReset':s.phone='arrive';s.pChecked=false;s.pHeld=false;break;
+   case 'wk':s.week=v==='0'?1:Math.max(0,Math.min(3,s.week+Number(v)));break;
+   case 'bookFor':openModal({type:'bookFor',pid:v.split('|')[0],k:v.split('|')[1]});return;
+   case 'confirmFor':{const m=s.modal;const code=v||m.code;const p=PERSON[m.pid];
+     if(m.pid==='asha')s.bookings[m.k]={desk:code,part:'Full day',status:'Booked',by:'you'};else s.team[m.pid][m.k]={desk:code,part:'Full day',status:'Booked',by:'you'};
+     s.modal=null;$('#layer').innerHTML='';render();toast(`${p.name} is booked on ${code} for ${DAY[m.k].label}. ${p.name.split(' ')[0]} gets an email.`);return}
+   case 'occOffice':s.occOffice=v;break;
+   case 'occDay':s.occDay=v;break;
+   case 'export':toast('Excel file with the rows on screen (no names) would download now.');return;
+  }
+  render();
+});
+document.addEventListener('change',e=>{const el=e.target.closest('[data-c]');if(!el)return;const s=st();const c=el.dataset.c;s[c]=el.value;
+  if(c==='office'){s.zone='Any zone';s.floor='All floors';s.choice={};s.sel=null;s.czone=zonesOf(s.office)[0].zone;if(OFF[s.office].closed.includes(s.day))s.day='2026-10-29'}
+  render()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&st().modal){closeModal();render()}});
+setInterval(()=>{const s=st();if(SCR==='book'&&OPT==='B'){s.ago=s.ago>=5?1:s.ago+1;const a=$('#ago');if(a)a.textContent=`Updated ${s.ago} second${s.ago>1?'s':''} ago`}},1000);
+render();
+</script>
+</body>
+</html>

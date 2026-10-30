@@ -1,0 +1,62 @@
+# Installs the agent core into every product repo in .github/core-sync/targets.json when core/ changes on main.
+# Setup (once, README "One-time setup of the sync bot"): secret SYNC_GITHUB_TOKEN (SkillsOS: contents and pull
+# requests, read and write); variable AWS_SYNC_ROLE_ARN (the IAM role in .github/core-sync/aws/, trusted for main).
+name: core-sync
+
+on:
+  push:
+    branches: [main]
+    paths: ["core/**", "plugin/**", ".claude-plugin/**", ".github/core-sync/**", ".github/workflows/core-sync.yml"]
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "One repo by name (empty: all)"
+        required: false
+        default: ""
+      review:
+        description: "Open pull requests instead of pushing to dev"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Dry run: show what would happen, push nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # AWS sign-in for CodeCommit (OIDC), no stored AWS keys
+
+concurrency:
+  group: core-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Versions agree and the plugin build is current
+        run: |
+          python .github/core-sync/sync.py --check-version
+          python core/scripts/build_plugin.py --check
+
+      - name: AWS sign-in for CodeCommit
+        if: ${{ vars.AWS_SYNC_ROLE_ARN != '' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_SYNC_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Install the core into each repo
+        env:
+          SYNC_GITHUB_TOKEN: ${{ secrets.SYNC_GITHUB_TOKEN }}
+          SYNC_ONLY: ${{ inputs.only }}
+          SYNC_REVIEW: ${{ inputs.review }}
+          SYNC_DRY_RUN: ${{ inputs.dry_run }}
+        run: python .github/core-sync/sync.py

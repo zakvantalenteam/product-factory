@@ -1,0 +1,304 @@
+{
+  "name": "TalentBox",
+  "ticket_prefix": "",
+  "work_dir": ".claude/work",
+  "live_port": 8767,
+  "default_mode": "task",
+  "newline": "crlf",
+  "app": {
+    "url": "http://127.0.0.1:8080/tbx/",
+    "status": "python .claude/scripts/app_status.py"
+  },
+  "commands": {
+    "compile": "mvn -o -q compile -DskipTests",
+    "test": "mvn -o -q surefire:test \"-Dtest={tests}\"",
+    "test_all": "mvn -o -q surefire:test",
+    "char_run": "python .claude/scripts/char_run.py \"{file}\""
+  },
+  "guard": {
+    "blocked_commands": [],
+    "block_while_app_up": "(?:^|[\\s;&|(\"'])(?:[^\\s;&|\"']*[\\\\/])?mvnw?(?:\\.cmd)?[\"']?\\s[^;&|]*(?<!\\S)[\"']?(?:compile|test-compile|package|install|clean|verify|test|spring-boot:run)(?![^\\s)\"'])",
+    "secret_files": [
+      "application-local.properties"
+    ],
+    "secret_ok_commands": [],
+    "no_show": [
+      "application*.properties",
+      "*Constants.java",
+      "LearningAdminConfiguration.java"
+    ],
+    "no_read": [],
+    "no_write": [
+      {
+        "paths": [
+          "application-local.properties"
+        ],
+        "why": "application-local.properties is the developer's own credentials file; the agent never changes it."
+      }
+    ],
+    "generated": [
+      "target/**",
+      "releases/**",
+      "bin/**",
+      "approuter/resources/**",
+      "src/main/resources/static/node_modules/**",
+      "src/main/resources/static/node/**",
+      "createDDL.jdbc",
+      "src/main/resources/static/sap-ui-cachebuster-info.json"
+    ],
+    "frozen_if_tracked": [],
+    "big_file_kb": 120,
+    "read_only_roots": []
+  },
+  "setup_paths": [],
+  "quick_fix": {
+    "max_files": 3,
+    "max_lines": 30,
+    "never": [
+      "pom.xml",
+      "manifest.yml",
+      "Jenkinsfile",
+      "application*.properties",
+      "approuter/**",
+      "src/main/resources/menu.csv",
+      "src/main/resources/db/**",
+      "**/*VO.java",
+      "**/upgradejobs/**"
+    ]
+  },
+  "decisions": {
+    "D2": {
+      "what": "the data model (a JPA entity, an upgrade job or a db script)",
+      "paths": [
+        "src/main/java/**/*.java"
+      ],
+      "file_markers": [
+        "@Entity",
+        "@Embeddable",
+        "@MappedSuperclass",
+        "@UpgradeJob"
+      ],
+      "any_paths": [
+        "src/main/resources/db/*.sql"
+      ]
+    },
+    "D4": {
+      "what": "access rules (a permission check, menu.csv or an approuter route or scope)",
+      "paths": [
+        "src/main/java/**/*.java"
+      ],
+      "line_markers": [
+        "@CheckPermission",
+        "@PreAuthorize",
+        "@Secured",
+        "@RolesAllowed",
+        "hasRole(",
+        "hasAnyRole(",
+        "hasAuthority(",
+        "hasAnyAuthority("
+      ],
+      "any_paths": [
+        "src/main/resources/menu.csv",
+        "approuter/xs-app.json",
+        "approuter/xs-security.json"
+      ]
+    },
+    "D6": {
+      "what": "dependencies, app config or deploy config",
+      "paths": [
+        "pom.xml",
+        "manifest.yml",
+        "Jenkinsfile",
+        "approuter/package.json",
+        "src/main/resources/application*.properties"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "id": "rule 2",
+      "paths": [
+        "src/**/*.java"
+      ],
+      "pattern": "@(?:Join)?(?:Column|Table)\\s*\\([^)]*\\bname\\s*=\\s*\"\\\\\"",
+      "message": "quoted column/table name is case-sensitive on PostgreSQL; native queries won't match"
+    },
+    {
+      "id": "rule 3",
+      "paths": [
+        "src/**/*.java"
+      ],
+      "pattern": "\"[^\"\\n]*\\b(?:SELECT|INSERT|UPDATE|DELETE|WHERE|AND|OR|SET|VALUES|FROM|JOIN|LIKE|IN|ORDER BY|GROUP BY|LIMIT)\\b[^\"\\n]*\"\\s*\\+\\s*(?!\\s*\")[\\w(]|=\\s*'\\\"\\s*\\+",
+      "message": "SQL text joined with a variable; bind the value (?1 / :name). If it is a fixed name from code, say so"
+    },
+    {
+      "id": "logging",
+      "paths": [
+        "src/**/*.java"
+      ],
+      "pattern": "\\bSystem\\.(?:out|err)\\.|\\.printStackTrace\\(\\)",
+      "message": "use the class logger, not System.out/err or printStackTrace"
+    },
+    {
+      "id": "upload",
+      "paths": [
+        "src/**/*.java"
+      ],
+      "pattern": "new\\s+File\\s*\\([^;]*getOriginalFilename\\(",
+      "message": "a path built from getOriginalFilename() allows path traversal; use a generated name"
+    },
+    {
+      "id": "rule 6",
+      "paths": [
+        "src/**/*.java"
+      ],
+      "pattern": "(?i)[?&]api[-_]?key=",
+      "redact": true,
+      "message": "API key in a URL ends up in logs and proxies; send it in a header"
+    },
+    {
+      "id": "rule 9",
+      "paths": [
+        "src/**/*.java"
+      ],
+      "pattern": "(?i)\\b\\w*(?:password|passwd|secret|api_?key|token)\\w*\\s*=\\s*\"[^\"\\s$]{8,}\"",
+      "redact": true,
+      "message": "secret-looking literal in code; read it from config by key"
+    },
+    {
+      "id": "rule 9",
+      "paths": [
+        "src/main/resources/application*.properties"
+      ],
+      "pattern": "(?i)^[\\w.-]*(?:password|passwd|secret|api[._-]?key|apikey|token|client[._-]?secret)[\\w.-]*\\s*[=:]\\s*(?!\\$\\{)\\S{6,}",
+      "redact": true,
+      "message": "secret-looking value in a committed properties file; use ${ENV_VAR} or the credential store"
+    },
+    {
+      "id": "pages",
+      "paths": [
+        "src/main/resources/templates/**/*.html"
+      ],
+      "pattern": "\\bth:utext\\b|\\[\\(\\$\\{",
+      "comments": true,
+      "message": "th:utext / [(${...})] renders HTML unescaped; use th:text unless the markup is fixed"
+    },
+    {
+      "id": "rule 7",
+      "paths": [
+        "src/main/resources/static/css/**/*.css"
+      ],
+      "not_paths": [
+        "**/vendor/**",
+        "**/node_modules/**",
+        "**/*bootstrap*",
+        "**/*.min.*",
+        "**/*token*.css",
+        "**/*theme*.css"
+      ],
+      "pattern": "(?i)#(?!(?:fff|ffffff|000|000000)\\b)[0-9a-f]{3,8}\\b",
+      "message": "fixed hex colour; use var(--primaryColor) / var(--primary-color) or a tint of it"
+    },
+    {
+      "id": "rule 7",
+      "paths": [
+        "src/main/resources/static/js/**/*.js",
+        "src/main/resources/templates/**/*.html"
+      ],
+      "not_paths": [
+        "**/vendor/**",
+        "**/node_modules/**",
+        "**/*bootstrap*",
+        "**/*.min.*"
+      ],
+      "pattern": "(?i)(?:style|color).*#(?!(?:fff|ffffff|000|000000)\\b)[0-9a-f]{3,8}\\b|#(?!(?:fff|ffffff|000|000000)\\b)[0-9a-f]{3,8}\\b.*(?:style|color)",
+      "message": "fixed hex colour; use var(--primaryColor) / var(--primary-color) or a tint of it"
+    },
+    {
+      "id": "rule 7",
+      "paths": [
+        "src/main/resources/static/css/**/*.css"
+      ],
+      "not_paths": [
+        "**/vendor/**",
+        "**/node_modules/**",
+        "**/*bootstrap*",
+        "**/*.min.*",
+        "**/*token*.css",
+        "**/*theme*.css"
+      ],
+      "pattern": ":focus(?![-\\w])",
+      "message": "focus ring for keyboard only, use :focus-visible"
+    },
+    {
+      "id": "rule 7",
+      "paths": [
+        "src/main/resources/static/js/**/*.js",
+        "src/main/resources/templates/**/*.html"
+      ],
+      "not_paths": [
+        "**/vendor/**",
+        "**/node_modules/**",
+        "**/*bootstrap*",
+        "**/*.min.*"
+      ],
+      "pattern": "^(?=.*<style)(?=.*:focus(?![-\\w]))",
+      "message": "focus ring for keyboard only, use :focus-visible"
+    }
+  ],
+  "checks": [
+    {
+      "id": "UI5",
+      "paths": [
+        "src/main/resources/static/view/**/*.xml"
+      ],
+      "command": "python .claude/scripts/checks.py xml",
+      "message": "the XML no longer parses; UI5 silently drops every control after the error"
+    }
+  ],
+  "experts": [
+    "sf-expert",
+    "ai-engineer"
+  ],
+  "glossary": {
+    "code_words": "\\b[A-Z][A-Za-z]+VO\\b|\\b[A-Z]{2,}_[A-Z0-9_]{2,}\\b|[\\w/.-]+\\.csv\\b",
+    "words": [
+      "JPQL",
+      "native query",
+      "bind parameter",
+      "menu id",
+      "approuter"
+    ]
+  },
+  "impact": {
+    "code": [
+      "**/*.java",
+      "**/*.js"
+    ],
+    "clients": [
+      "src/main/resources/static/**/*.js",
+      "src/main/resources/static/**/*.xml",
+      "src/main/resources/templates/**/*.html"
+    ],
+    "n8n": {
+      "paths": [],
+      "command": ""
+    },
+    "tools": {
+      "marker": "",
+      "inventory": ""
+    },
+    "skip": [
+      "**/target/**",
+      "**/node_modules/**",
+      "releases/**",
+      "bin/**",
+      "approuter/resources/**",
+      "src/main/resources/static/node/**",
+      "src/main/resources/static/bootstrap-*/**",
+      "src/main/resources/static/vendor/**",
+      "**/*.min.js",
+      ".claude/worktrees/**"
+    ]
+  }
+}

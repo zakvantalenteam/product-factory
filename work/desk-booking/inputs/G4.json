@@ -1,0 +1,18 @@
+{
+  "id": "G4",
+  "kind": "confirm",
+  "gate": "G4",
+  "title": "Go-live call: deploy DeskBook to dev now, production later?",
+  "detail": "The re-audit passes with conditions. 748 backend and 215 frontend tests pass; 150 of 166 MVP criteria pass and 16 need dev. Dev deploy is GO once the frontend build is copied into the approuter (B1) and B4/B5 are done. Production is NO-GO until your scans (B7), the dev-stack proofs (B9), backup and restore, DE/FR legal sign-off, alert names and the CSRF decision are closed. You and the dev team run every deploy command.",
+  "options": [
+    {"id": "dev", "label": "Go to dev, hold production", "detail": "Team closes B1, B4, B5; you deploy to dev and run the scans; production comes back to you as G4 again", "recommended": true},
+    {"id": "hold", "label": "Hold", "detail": "Tell the team what to change before any deploy"}
+  ],
+  "links": [
+    {"label": "Release (go/no-go, notes)", "href": "09-release.md"},
+    {"label": "Deploy plan", "href": "09-deploy-plan.md"},
+    {"label": "Audit", "href": "08-audit.md"},
+    {"label": "Test report", "href": "07-test-report.md"},
+    {"label": "Ops and scans", "href": "05-ops.md"}
+  ]
+}

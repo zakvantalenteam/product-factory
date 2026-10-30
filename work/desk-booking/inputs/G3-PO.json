@@ -1,0 +1,20 @@
+{
+  "id": "G3-PO",
+  "kind": "questions",
+  "title": "6 product decisions before the design gate (G3)",
+  "detail": "The design review needs these from you. Accept the recommended answer or change it.",
+  "links": [
+    {"label": "Design review", "href": "05-design-review.md"},
+    {"label": "Prototype", "href": "P-prototype.html"},
+    {"label": "Stories", "href": "04-stories.md"},
+    {"label": "Questions", "href": "questions.md"}
+  ],
+  "items": [
+    {"id": "1", "q": "The two-week strip is step 1 of option A's main journey but is sized for R1. Move it into the MVP?", "rec": "Yes, move ST-BK-15 into the MVP (+3 points, MVP 142)."},
+    {"id": "2", "q": "The zone heat grid for Facilities: MVP or R1?", "rec": "R1. The MVP keeps the occupancy table and its Excel export."},
+    {"id": "3", "q": "What is a person's 'usual desk'?", "rec": "The desk they booked most often in the last 60 days, at least 3 times; a tie goes to the most recent."},
+    {"id": "4", "q": "Can a closed office be reopened?", "rec": "Not in the MVP: closing is final; a reopened office is created as a new office."},
+    {"id": "5", "q": "Who may book, from SuccessFactors?", "rec": "Employees and contingent workers; external users are not copied."},
+    {"id": "6", "q": "Reminders at 09:45 go out in one burst. What must the mail sender handle?", "rec": "At least 300 mails a minute; confirm the customer's mail service allows it."}
+  ]
+}

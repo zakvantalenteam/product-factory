@@ -1,0 +1,128 @@
+{
+  "name": "",
+  "ticket_prefix": "",
+  "work_dir": ".claude/work",
+  "live_port": 8766,
+  "default_mode": "task",
+  "newline": "lf",
+  "app": {
+    "url": "",
+    "status": "",
+    "strict": false
+  },
+  "commands": {
+    "compile": "",
+    "test": "",
+    "test_all": "",
+    "char_run": "",
+    "lint": ""
+  },
+  "guard": {
+    "git_blocked": [
+      "push",
+      "commit",
+      "pull",
+      "fetch",
+      "merge",
+      "rebase",
+      "cherry-pick",
+      "revert",
+      "am",
+      "stash",
+      "reset",
+      "checkout",
+      "switch",
+      "restore",
+      "clean",
+      "add",
+      "rm",
+      "mv",
+      "apply",
+      "tag",
+      "branch",
+      "config",
+      "init",
+      "worktree",
+      "submodule"
+    ],
+    "git_on_request": [
+      "pull"
+    ],
+    "blocked_commands": [],
+    "block_while_app_up": "",
+    "block_while_port_up": [],
+    "secret_files": [
+      "application-local.properties",
+      ".env"
+    ],
+    "secret_ok_commands": [],
+    "no_show": [
+      "application*.properties",
+      "manifest*.yml",
+      "xs-security*.json",
+      "*Constants.java"
+    ],
+    "no_read": [],
+    "no_write": [],
+    "generated": [
+      "target/**",
+      "dist/**",
+      "node_modules/**"
+    ],
+    "frozen_if_tracked": [],
+    "big_file_kb": 120,
+    "big_file_hints": [],
+    "read_only_roots": []
+  },
+  "quick_fix": {
+    "max_files": 3,
+    "max_lines": 30,
+    "never": [
+      "pom.xml",
+      "package.json",
+      "application*.properties"
+    ]
+  },
+  "decisions": {
+    "D2": {
+      "what": "the data model (an entity, a migration or a data fix)",
+      "paths": [
+        "**/*.java",
+        "**/*.sql"
+      ],
+      "file_markers": [
+        "@Entity",
+        "@Embeddable",
+        "@MappedSuperclass"
+      ]
+    },
+    "D4": {
+      "what": "access rules (a permission check)",
+      "line_markers": [
+        "@PreAuthorize",
+        "@Secured",
+        "@RolesAllowed",
+        "hasRole(",
+        "hasAuthority("
+      ]
+    },
+    "D6": {
+      "what": "dependencies or app config",
+      "paths": [
+        "pom.xml",
+        "package.json",
+        "application*.properties"
+      ]
+    }
+  },
+  "rules": [],
+  "checks": [],
+  "deploy": {},
+  "setup_paths": [],
+  "experts": [],
+  "expert_docs": {},
+  "glossary": {
+    "code_words": "",
+    "words": []
+  }
+}

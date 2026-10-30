@@ -1,0 +1,34 @@
+{
+  "teams": [
+    {"id": "lead", "name": "Lead", "agents": ["team-lead"]},
+    {"id": "product", "name": "Product", "agents": ["prd-reviewer", "requirements-analyst", "product-critic", "story-sizer"]},
+    {"id": "design", "name": "Design", "agents": ["ux-designer", "prototype-designer"]},
+    {"id": "architecture", "name": "Architecture", "agents": ["solution-architect", "api-designer", "data-architect", "security-architect"]},
+    {"id": "engineering", "name": "Engineering", "agents": ["base-builder", "backend-developer", "frontend-developer", "integration-engineer"]},
+    {"id": "domain", "name": "Domain experts", "agents": ["sf-consultant"]},
+    {"id": "quality", "name": "Quality", "agents": ["qa-engineer", "code-reviewer", "system-reviewer", "performance-engineer"]},
+    {"id": "audit", "name": "Audit", "agents": ["audit-expert"]},
+    {"id": "operations", "name": "Operations", "agents": ["devops-engineer", "release-manager", "technical-writer"]}
+  ],
+  "stages": [
+    {"id": "S0", "name": "Intake"},
+    {"id": "S1", "name": "Base"},
+    {"id": "S2", "name": "Requirements"},
+    {"id": "S3", "name": "Product review"},
+    {"id": "SP", "name": "Prototype"},
+    {"id": "S4", "name": "Stories"},
+    {"id": "S5", "name": "Design"},
+    {"id": "S6", "name": "Build"},
+    {"id": "S7", "name": "Review"},
+    {"id": "S8", "name": "Audit"},
+    {"id": "S9", "name": "Release"}
+  ],
+  "gates": [
+    {"id": "G0", "name": "Plan agreed", "after": "S0"},
+    {"id": "G1", "name": "Product owner answers", "after": "S3"},
+    {"id": "GP", "name": "Prototype approved", "after": "SP"},
+    {"id": "G2", "name": "Scope and MVP", "after": "S4"},
+    {"id": "G3", "name": "Design approved", "after": "S5"},
+    {"id": "G4", "name": "Go-live", "after": "S9"}
+  ]
+}

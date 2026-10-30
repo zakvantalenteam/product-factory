@@ -1,0 +1,13 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["codecommit:GitPull", "codecommit:GitPush", "codecommit:GetBranch", "codecommit:CreatePullRequest"],
+      "Resource": [
+        "arn:aws:codecommit:eu-west-2:<AWS_ACCOUNT_ID>:LearningContentPack",
+        "arn:aws:codecommit:eu-west-2:<AWS_ACCOUNT_ID>:LearningAdmin"
+      ]
+    }
+  ]
+}

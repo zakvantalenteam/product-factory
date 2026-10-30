@@ -1,0 +1,13 @@
+__pycache__/
+work/.active
+work/*/tracker.json
+work/*/tracker.html
+.claude/settings.local.json
+work/.sessions/
+work/live.js
+work/live.html
+work/*/status.js
+work/*/events.jsonl
+.claude/core-backup/
+work/simulate.html
+work/demo-*/

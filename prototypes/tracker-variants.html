@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Factory Tracker Variants</title>
+<style>
+/* One screen, no page scroll on desktop: header + stage strip + three columns that share the height. */
+:root{--ink:#2e2d38;--muted:#8b879a;--line:#ebe8f1;--panel:#fff;--soft:#f7f6fb;--accent:#6c7fd8;--accent-ink:#3a49a8;
+  --accent-soft:#eef0fc;--ok:#3f9d72;--ok-soft:#ecf8f1;--ok-line:#c4e7d4;--warn:#a86b12;--warn-soft:#fdf5e6;--warn-line:#f0dcb4}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+[hidden]{display:none!important}
+body{font:13px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;font-weight:400;background:var(--soft);color:var(--ink)}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus{outline:none}button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.app{height:100vh;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:8px;
+  padding:8px max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px))}
+
+/* header */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;padding:7px 12px}
+.brand{display:flex;align-items:center;gap:8px}.brand b{font-size:16px;font-weight:500}
+.live{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ok)}
+.live i{width:7px;height:7px;border-radius:50%;background:#5cc995;animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.3}}
+.stage{color:#5d5a6b}.stage b{font-weight:500;color:var(--ink)}
+.prog{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.pbar{width:90px;height:6px;border-radius:999px;background:#efedf4;overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,#b9c3f1,#8fd1b0);border-radius:999px;transition:width .8s}
+.gates{display:flex;gap:4px;flex-wrap:wrap}
+.gate{border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted);font-size:12px;background:#fff;transition:all .6s}
+.gate.approved{color:var(--ok);border-color:var(--ok-line);background:var(--ok-soft)}
+.gate.next{color:var(--warn);border-color:var(--warn-line);background:var(--warn-soft)}
+.gate.pop{animation:pop .8s}@keyframes pop{40%{transform:scale(1.15)}}
+.sp{flex:1}
+.tabs{display:flex;gap:4px}
+.tab{border:1px solid var(--line);background:#fff;color:#5d5a6b;border-radius:999px;padding:2px 10px;font-size:12px}
+.tab[aria-selected=true]{background:var(--accent-soft);border-color:#c9d0f3;color:var(--accent-ink)}
+.rp{border:1px solid #c9d0f3;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:2px 12px;font-size:12px}
+
+/* stage strip */
+.pipe{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px}
+.pst{position:relative;border:1px solid var(--line);border-radius:10px;padding:4px 7px;background:#fff;overflow:hidden;min-width:0}
+.pst b{display:block;font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pst span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pst.done{border-color:var(--ok-line);background:var(--ok-soft)}.pst.done b{color:var(--ok)}
+.pst.skip{opacity:.5;border-style:dashed}
+.pst.cur{border-color:#c9d0f3;background:var(--accent-soft)}.pst.cur b{color:var(--accent-ink)}
+.pst.cur::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+  transform:translateX(-100%);animation:sweep 2.2s infinite}
+@keyframes sweep{to{transform:translateX(100%)}}
+
+/* columns */
+.grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr) minmax(250px,.8fr);gap:8px;min-height:0}
+.col{display:grid;gap:8px;min-height:0}
+.colv{grid-template-rows:auto minmax(0,1fr)}
+.colv .vis svg,.colv .vis .lanes{flex:0 0 auto;height:32vh}
+.colm{grid-template-rows:auto minmax(0,1fr)}
+.colr{grid-template-rows:auto minmax(0,1fr)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 11px;min-height:0;display:flex;flex-direction:column}
+.panel h2{margin:0 0 6px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center;flex:none}
+.panel h2 em{font-style:normal;text-transform:none;letter-spacing:0;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:0 7px}
+.scroll{overflow:auto;min-height:0;flex:1}
+.vis{position:relative}
+.vis svg{display:block;width:100%;flex:1 1 0;min-height:0}
+.wait{background:var(--warn-soft);border-color:var(--warn-line);color:#6e4a0c}
+.wait b{font-weight:500}
+
+/* working now */
+.wk{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:2px 9px;align-items:center;padding:5px 0;border-top:1px solid #f3f1f6;animation:slideIn .5s ease-out}
+.wk:first-child{border-top:0}
+.ava{position:relative;width:30px;height:30px;grid-row:span 2}
+.ava .core{position:absolute;inset:4px;border-radius:50%;display:grid;place-items:center;font-weight:500;font-size:10px}
+.ava svg{position:absolute;inset:0;animation:spin 2.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wk .who{font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk .who small{font-weight:400;color:var(--muted);margin-left:4px}
+.wk .tm{color:var(--muted);font-size:12px;grid-row:span 2;align-self:center}
+.thought{grid-column:2;color:#4b58a8;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.typer::after{content:"▍";animation:blink 1s infinite;margin-left:1px;color:var(--accent)}
+.idle{color:var(--muted);padding:6px 0}
+
+/* team board */
+.tb{display:grid;grid-template-columns:88px minmax(0,1fr);gap:6px;align-items:start;padding:3px 0;border-top:1px solid #f3f1f6}
+.tb:first-child{border-top:0}
+.tb .tn{display:flex;align-items:center;gap:6px;font-weight:500;padding-top:2px}
+.tb .tn i{width:8px;height:8px;border-radius:50%;flex:none}
+.pills{display:flex;flex-wrap:wrap;gap:3px}
+.pill{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;padding:0 7px 0 5px;font-size:11.5px;line-height:18px;color:#8b879a;background:#fff;transition:all .6s}
+.pill i{width:6px;height:6px;border-radius:50%;background:#dcd8e4}
+.pill.working{color:var(--accent-ink);border-color:#c9d0f3;background:var(--accent-soft)}
+.pill.working i{background:var(--accent);animation:blink 1.1s infinite}
+.pill.done{color:var(--ok);border-color:var(--ok-line);background:var(--ok-soft)}
+.pill.done i{background:#5cc995}
+
+/* output + feed */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.kpi{border:1px solid #f0eef5;border-radius:10px;padding:5px 7px;transition:background .8s,border-color .8s}
+.kpi .v{font-size:17px;font-weight:500}
+.kpi .l{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.bump{animation:bump 1s}@keyframes bump{30%{border-color:#c9d0f3;background:var(--accent-soft)}}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px;padding:4px 0;border-top:1px solid #f3f1f6;animation:slideIn .5s ease-out}
+.feed li:first-child{border-top:0}
+.feed time{color:var(--muted)}
+.feed li.done span::before{content:"✓ ";color:var(--ok)}
+.feed li.g span{color:var(--ok)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* A hub */
+.node circle.halo{transform-box:fill-box;transform-origin:center;opacity:0}
+.node.active circle.halo{animation:halo 2s ease-out infinite}
+@keyframes halo{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(1.6)}}
+.link{stroke:#ebe8f1;stroke-width:2;fill:none;transition:stroke .6s}
+.link.active{stroke:#b9c3f1;stroke-dasharray:6 8;animation:flow 1s linear infinite}
+.link.done{stroke:var(--ok-line)}
+@keyframes flow{to{stroke-dashoffset:-28}}
+.toast{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:#fff;border:1px solid var(--ok-line);
+  border-radius:999px;padding:4px 12px;white-space:nowrap;animation:toast 3.4s forwards;pointer-events:none;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.toast b{color:var(--ok);font-weight:500}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,10px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+
+/* B timeline */
+.lanes{display:grid;grid-template-rows:repeat(8,minmax(0,1fr)) auto;flex:1;min-height:0}
+.lane{display:grid;grid-template-columns:88px minmax(0,1fr);align-items:center;gap:6px;border-top:1px solid #f3f1f6}
+.lane:first-child{border-top:0}
+.lane .tn{font-weight:500;font-size:12px}
+.track{position:relative;height:22px;background:#faf9fc;border-radius:999px}
+.barx{position:absolute;top:2px;height:18px;border-radius:999px;background:var(--c);font-size:11px;color:#2e2d38;
+  padding:0 7px;white-space:nowrap;overflow:hidden;line-height:18px;transition:left .5s,width .5s}
+.barx.work{background:linear-gradient(90deg,var(--c),#fff,var(--c));background-size:200% 100%;animation:shimmer 1.8s linear infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+.doc{position:absolute;top:-7px;width:9px;height:9px;transform:translateX(-50%) rotate(45deg);background:#fff;border:1.5px solid var(--ok);border-radius:2px;animation:dropIn .7s cubic-bezier(.2,1.4,.4,1)}
+@keyframes dropIn{from{opacity:0;top:-24px}to{opacity:1}}
+.axis{position:relative;height:16px;margin-left:94px;color:var(--muted);font-size:10px}
+.axis span{position:absolute;transform:translateX(-50%)}
+.nowline{position:absolute;top:0;bottom:16px;width:1.5px;background:#c9d0f3;pointer-events:none;transition:left .5s}
+
+/* C constellation */
+.star{animation:tw 4s ease-in-out infinite}@keyframes tw{50%{opacity:.2}}
+.an circle.body{transition:fill .8s,stroke .8s}
+.an text{fill:#a5a1b4;font-size:9.5px;transition:fill .8s}
+.an.done text,.an.working text{fill:#3a3946}
+.an .orbit{transform-box:fill-box;transform-origin:center;opacity:0}
+.an.working .orbit{opacity:1;animation:spin 3.4s linear infinite}
+.edge{stroke:#efecf5;stroke-width:1.3;fill:none;transition:stroke 1s}
+.edge.lit{stroke:#cfc4f3}
+.cluster{fill:rgba(255,255,255,.7);stroke:#e7e3f0;stroke-dasharray:2 5}
+.cl-name{fill:#b1adc0;font-size:10px;letter-spacing:.08em;text-transform:uppercase;transition:fill .6s}
+.cl-name.active{fill:#7a63d6}
+
+@media (max-width:1000px){
+  .app{height:auto}
+  .grid{grid-template-columns:1fr}
+  .vis{height:380px}
+  .pipe{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .col{grid-template-rows:none}
+  .scroll{max-height:320px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>DeskBook</b><span class="live"><i></i>Live</span></div>
+    <div class="stage" id="stageText"></div>
+    <div class="prog"><span class="num" id="progText"></span><div class="pbar"><i id="pbar"></i></div><span class="num" id="runTime"></span></div>
+    <div class="gates" id="gates"></div>
+    <span class="sp"></span>
+    <div class="tabs" role="tablist" aria-label="Design variant">
+      <button class="tab" role="tab" data-v="A" aria-selected="true">A Mission control</button>
+      <button class="tab" role="tab" data-v="B" aria-selected="false">B Timeline</button>
+      <button class="tab" role="tab" data-v="C" aria-selected="false">C Constellation</button>
+    </div>
+    <button class="rp" id="replay">Replay run</button>
+  </header>
+
+  <nav class="pipe" id="pipe" aria-label="Stages"></nav>
+
+  <main class="grid">
+    <section class="col colv">
+      <div class="panel vis" aria-label="Team view">
+        <h2><span id="visTitle">Teams around the lead</span><em id="visNote"></em></h2>
+        <svg id="aSvg" viewBox="0 0 620 430" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="bBox" class="lanes" hidden></div>
+        <svg id="cSvg" viewBox="0 0 780 470" preserveAspectRatio="xMidYMid meet" hidden></svg>
+      </div>
+      <div class="panel"><h2>Team board <em class="num" id="nTeam"></em></h2><div class="scroll" id="board"></div></div>
+    </section>
+
+    <section class="col colm">
+      <div class="panel wait" id="waitBox" hidden></div>
+      <div class="panel nowp"><h2>Working now <em class="num" id="nWork"></em></h2><div class="scroll" id="now"></div></div>
+    </section>
+
+    <section class="col colr">
+      <div class="panel"><h2>Output so far</h2><div class="kpis" id="kpis"></div></div>
+      <div class="panel"><h2>Activity</h2><ul class="feed scroll" id="feed"></ul></div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ---------- the real DeskBook run so far ---------- */
+const TEAMS = [
+  {id:"lead", name:"Lead", hue:220, agents:["team-lead"]},
+  {id:"product", name:"Product", hue:262, agents:["prd-reviewer","requirements-analyst","product-critic","story-sizer"]},
+  {id:"design", name:"Design", hue:320, agents:["ux-designer","prototype-designer"]},
+  {id:"architecture", name:"Architecture", hue:190, agents:["solution-architect","api-designer","data-architect","security-architect"]},
+  {id:"engineering", name:"Engineering", hue:150, agents:["base-builder","backend-developer","frontend-developer","integration-engineer"]},
+  {id:"quality", name:"Quality", hue:38, agents:["qa-engineer","code-reviewer","system-reviewer","performance-engineer"]},
+  {id:"audit", name:"Audit", hue:0, agents:["audit-expert"]},
+  {id:"operations", name:"Operations", hue:95, agents:["devops-engineer","release-manager","technical-writer"]}
+];
+const AGENTS = {}; TEAMS.forEach(t => t.agents.forEach(a => AGENTS[a] = t.id));
+const STAGES = [["S0","Intake"],["S1","Base"],["S2","Requirements"],["S3","Product review"],["SP","Prototype"],["S4","Stories"],
+  ["S5","Design"],["S6","Build"],["S7","Review"],["S8","Audit"],["S9","Release"]];
+const GATES = [["G0","Plan"],["G1","Product owner"],["GP","Prototype"],["G2","Scope"],["G3","Design"],["G4","Go-live"]];
+const EVENTS = [
+  {t:0,    type:"create", text:"DeskBook created: PRD + intake saved", add:{docs:2}, stage:"S0"},
+  {t:29,   type:"stage", stage:"S0", note:"PRD review"},
+  {t:29,   type:"start", agent:"prd-reviewer", task:"Readiness review of the PRD"},
+  {t:105,  type:"done",  agent:"prd-reviewer", result:"Ready with questions: 0 blockers, 11 high", add:{questions:11,docs:1}},
+  {t:105,  type:"gate",  gate:"G0"},
+  {t:105,  type:"stage", stage:"S2", note:"Spec and gap sheet"},
+  {t:105,  type:"start", agent:"requirements-analyst", task:"Spec and gap sheet"},
+  {t:380,  type:"done",  agent:"requirements-analyst", result:"17 features, 138 criteria, 24 gaps", add:{criteria:138,questions:24,docs:2}},
+  {t:380,  type:"stage", stage:"S3", note:"Product review and journeys"},
+  {t:380,  type:"start", agent:"product-critic", task:"Is this a good, clear product?"},
+  {t:380,  type:"start", agent:"ux-designer", task:"Journeys and screen inventory"},
+  {t:512,  type:"done",  agent:"ux-designer", result:"14 journeys, 19 screens, 9 problems", add:{screens:19,questions:9,docs:1}},
+  {t:544,  type:"done",  agent:"product-critic", result:"Good with fixes: 1 blocker found", add:{questions:4,docs:1}},
+  {t:544,  type:"gate",  gate:"G1"},
+  {t:544,  type:"stage", stage:"S4", note:"Stories and sizing"},
+  {t:545,  type:"start", agent:"story-sizer", task:"Backlog, points, MVP"},
+  {t:1076, type:"done",  agent:"story-sizer", result:"80 stories, 296 points, MVP 127", add:{stories:80,points:296,questions:12,docs:2}},
+  {t:1076, type:"gate",  gate:"G2"},
+  {t:1076, type:"stage", stage:"S5", note:"System design"},
+  {t:1076, type:"start", agent:"solution-architect", task:"System design and FE/BE split"},
+  {t:1548, type:"start", agent:"prototype-designer", task:"3 product options to pick from", stage:"SP"},
+  {t:1700, type:"done",  agent:"solution-architect", result:"8 modules, 81 operations, 11 ADRs", add:{ops:81,adrs:11,questions:7,docs:12}},
+  {t:1700, type:"start", agent:"api-designer", task:"OpenAPI 3.1 contract"},
+  {t:1700, type:"start", agent:"data-architect", task:"Database design for scale"},
+  {t:1700, type:"start", agent:"security-architect", task:"Access matrix and privacy"},
+  {t:1700, type:"start", agent:"integration-engineer", task:"SuccessFactors + email"}
+];
+const DEMO_NOW = 1700 + 210;              /* the replay ends 3.5 min after the last start */
+const START = new Date("2026-10-28T21:56:10+05:30").getTime();
+const NEXT_FOR_USER = "Pick one of 3 prototype options (gate GP) when prototype-designer finishes.";
+const THOUGHTS = {
+  "prd-reviewer":["Reading all 7 sections of the PRD…","'fast and easy' has no number. Flagging it.","Half-day booking vs 10:00 release: these clash.","Verdict forming: ready with questions."],
+  "requirements-analyst":["Modelling roles: employee, manager, facilities admin…","Given a desk is blocked, when Asha books it, then…","Tracing every PRD line to a feature…","Gap: blocking a desk that already has bookings?"],
+  "product-critic":["Walking the day as Asha, an employee in Pune…","Released at 10:00, but booking today stops at 10:00?","That breaks 'always find a desk'. Blocker."],
+  "ux-designer":["Mapping 14 journeys across 3 roles…","Team week at 360 px: does it fit?","QR check-in on a phone: sign-in every morning?"],
+  "story-sizer":["Slicing F4 Booking into vertical stories…","Anchor: a list page with filter = 3 points","Group booking looks like a 13: splitting it","Choosing the MVP slice…"],
+  "solution-architect":["Drawing modules: office, booking, check-in, people…","Who owns the release rule? Backend, every minute.","ADR: booking slots with unique indexes.","Splitting 33 MVP stories into FE and BE tasks…"],
+  "prototype-designer":["Option A: list first, fastest to book…","Option B: floor map, see where friends sit…","Option C: 'book my usual' in one tap…","Making the Berlin office data look real…"],
+  "api-designer":["createBooking: Idempotency-Key, 201 + Location","Problem details: DESK_ALREADY_BOOKED, 409","Paging on listDesks: page, size ≤ 100","POST /bookings/{id}/check-in"],
+  "data-architect":["bk_booking_slot: unique per desk, date, part…","tenant_id first in every index","Volume: 3,000 people x 220 days = 660k rows a year","Partitioning the change history by month…"],
+  "security-architect":["Access matrix: 42 operations x 4 roles…","Manager sees direct reports only, record rule","Reports show counts, never names","STRIDE on the QR check-in flow…"],
+  "integration-engineer":["SuccessFactors: User + EmpJob, delta by lastModified","Leaver arrives: cancel future bookings","Mail outbox: retry with backoff, 3 tries","What does an admin see when SF is down?"]
+};
+const KPI = [["docs","Documents"],["questions","Questions"],["criteria","Criteria"],["stories","Stories"],["points","Points"],["ops","API operations"],["adrs","Decisions"],["screens","Screens"]];
+
+/* ---------- state ---------- */
+let S, timers = [], typers = {}, replaying = false, liveStart = 0, variant = "A";
+const fresh = () => ({t:0, stage:"S0", note:"", gates:{}, runs:{}, stats:Object.fromEntries(KPI.map(k => [k[0],0])), docsAt:[], stageDocs:{}});
+const hue = a => TEAMS.find(t => t.id === AGENTS[a]).hue;
+const teamName = id => TEAMS.find(t => t.id === id).name;
+const simNow = () => replaying ? S.t : DEMO_NOW + (Date.now() - liveStart) / 1000;
+const clock = t => { const d = new Date(START + t * 1000); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); };
+const dur = s => { s = Math.max(0, Math.floor(s)); return s < 60 ? s + "s" : s < 3600 ? Math.floor(s/60) + "m " + String(s%60).padStart(2,"0") + "s" : Math.floor(s/3600) + "h " + String(Math.floor(s/60)%60).padStart(2,"0") + "m"; };
+const initials = a => a.split("-").map(w => w[0].toUpperCase()).join("").slice(0,2);
+const svgEl = (tag, attrs={}) => { const e = document.createElementNS("http://www.w3.org/2000/svg", tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const $ = id => document.getElementById(id);
+const working = () => Object.keys(S.runs).filter(a => S.runs[a].status === "working");
+const teamState = id => { const ags = TEAMS.find(t => t.id === id).agents;
+  return {n:ags.length, w:ags.filter(a => S.runs[a]?.status === "working").length, d:ags.filter(a => S.runs[a]?.status === "done").length}; };
+
+function apply(ev){
+  S.t = ev.t;
+  let line = null, cls = "";
+  if (ev.type === "create"){ line = ev.text; }
+  if (ev.type === "stage"){ S.stage = ev.stage; S.note = ev.note; line = "Stage " + ev.stage + ": " + ev.note; }
+  if (ev.type === "gate"){ S.gates[ev.gate] = true; line = "Gate " + ev.gate + " approved"; cls = "g"; }
+  if (ev.type === "start"){ S.runs[ev.agent] = {status:"working", task:ev.task, start:ev.t, end:null, stage:ev.stage || S.stage}; line = ev.agent + " started: " + ev.task; }
+  if (ev.type === "done"){ const r = S.runs[ev.agent]; Object.assign(r, {status:"done", end:ev.t, result:ev.result}); line = ev.agent + ": " + ev.result; cls = "done"; }
+  for (const k in ev.add || {}) S.stats[k] += ev.add[k];
+  if (ev.add && ev.add.docs){ const st = ev.type === "done" ? S.runs[ev.agent].stage : ev.stage; S.stageDocs[st] = (S.stageDocs[st] || 0) + ev.add.docs;
+    S.docsAt.push({t:ev.t, team: ev.agent ? AGENTS[ev.agent] : "lead", label: (ev.agent || "lead") + ": " + ev.add.docs + " document" + (ev.add.docs > 1 ? "s" : "")}); }
+  if (line){
+    const li = document.createElement("li"); if (cls) li.className = cls;
+    li.innerHTML = `<time class="num">${clock(ev.t)}</time><span></span>`; li.lastChild.textContent = line;
+    $("feed").prepend(li); while ($("feed").children.length > 40) $("feed").lastChild.remove();
+  }
+  render(ev);
+}
+
+/* ---------- shared panels ---------- */
+function render(ev){
+  const si = STAGES.findIndex(s => s[0] === S.stage);
+  $("stageText").innerHTML = `<b>${S.stage} ${STAGES[si][1]}</b> · ${S.note || "starting"}`;
+  const doneStages = STAGES.filter((s,i) => i < si && s[0] !== "S1" && s[0] !== "SP").length + (S.runs["prototype-designer"]?.status === "done" ? 1 : 0);
+  $("progText").textContent = doneStages + "/" + (STAGES.length - 1) + " stages";
+  $("pbar").style.width = Math.round(doneStages / (STAGES.length - 1) * 100) + "%";
+  const nextGate = GATES.find(([g]) => !S.gates[g]);
+  $("gates").innerHTML = GATES.map(([g,n]) => `<span class="gate ${S.gates[g] ? "approved" : nextGate && nextGate[0] === g ? "next" : ""} ${ev && ev.type === "gate" && ev.gate === g ? "pop" : ""}" title="${n}">${g} ${n}</span>`).join("");
+  $("pipe").innerHTML = STAGES.map(([id,n],i) => {
+    const running = Object.values(S.runs).some(r => r.status === "working" && r.stage === id);
+    const skip = id === "S1", isDone = !running && !skip && (i < si || (id === "SP" && S.runs["prototype-designer"]?.status === "done"));
+    const cls = skip ? "skip" : running || i === si ? "cur" : isDone && id !== "SP" ? "done" : "";
+    const docs = S.stageDocs[id] ? S.stageDocs[id] + " docs" : "";
+    const txt = skip ? "not in demo" : running || i === si ? "in progress" + (docs ? " · " + docs : "") : cls === "done" ? "done · " + (docs || "-") : "waiting";
+    return `<div class="pst ${cls}" title="${id} ${n}"><b>${id} ${n}</b><span>${txt}</span></div>`;
+  }).join("");
+  renderNow(); renderBoard(); renderKpis();
+  if (variant === "A") renderA(ev); else if (variant === "B") renderB(ev); else renderC(ev);
+  const w = working().length;
+  $("visNote").textContent = w ? w + " working in parallel" : "idle";
+  const wb = $("waitBox"); wb.hidden = false;
+  wb.innerHTML = `<b>Coming up for you:</b> ${NEXT_FOR_USER}`;
+}
+function renderNow(){
+  const w = working().sort((a,b) => S.runs[a].start - S.runs[b].start);
+  $("nWork").textContent = w.length;
+  $("now").innerHTML = w.length ? w.map(a => { const h = hue(a);
+    return `<div class="wk"><div class="ava"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="13.5" fill="none" stroke="hsl(${h} 60% 70%)" stroke-width="2" stroke-dasharray="20 65" stroke-linecap="round"/></svg>
+      <div class="core" style="background:hsl(${h} 70% 95%);color:hsl(${h} 45% 40%)">${initials(a)}</div></div>
+      <div class="who">${a}<small>${teamName(AGENTS[a])} · ${S.runs[a].task}</small></div>
+      <div class="tm num" data-el="${a}">${dur(simNow() - S.runs[a].start)}</div>
+      <div class="thought"><span class="typer" data-typer="${a}"></span></div></div>`; }).join("")
+    : `<div class="idle">Nobody is working. Waiting on you.</div>`;
+  w.forEach(a => typers[a] = typers[a] || {i:0, c:0, pause:0});
+}
+function renderBoard(){
+  let active = 0;
+  $("board").innerHTML = TEAMS.map(t => {
+    const st = teamState(t.id); if (st.w || t.id === "lead") active++;
+    const pills = t.agents.map(a => { const r = S.runs[a], cls = a === "team-lead" ? "working" : r ? r.status : "";
+      const extra = cls === "working" && a !== "team-lead" ? ` <span class="num" data-el="${a}">${dur(simNow() - r.start)}</span>` : "";
+      return `<span class="pill ${cls}" title="${r ? (r.result || r.task) : "not started"}"><i></i>${a}${extra}</span>`; }).join("");
+    return `<div class="tb"><div class="tn"><i style="background:hsl(${t.hue} 60% 78%)"></i>${t.name}</div><div class="pills">${pills}</div></div>`;
+  }).join("");
+  $("nTeam").textContent = active + " of " + TEAMS.length + " teams active";
+}
+function renderKpis(){
+  const box = $("kpis");
+  if (!box.children.length) box.innerHTML = KPI.map(([k,l]) => `<div class="kpi" id="k-${k}"><div class="v num" data-count="${k}">0</div><div class="l">${l}</div></div>`).join("");
+  KPI.forEach(([k]) => countTo($("k-" + k).querySelector(".v"), S.stats[k], $("k-" + k)));
+}
+function countTo(node, target, box){
+  const from = +(node.dataset.v || 0); if (from === target) return;
+  node.dataset.v = target; box.classList.remove("bump"); void box.offsetWidth; box.classList.add("bump");
+  const t0 = performance.now(), d = 900, tok = (node._tok = (node._tok || 0) + 1);
+  const step = () => { if (node._tok !== tok) return; const p = Math.max(0, Math.min(1, (performance.now() - t0) / d));
+    node.textContent = p >= 1 ? target : Math.round(from + (target - from) * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function tickTypers(){
+  for (const a in typers){
+    if (S.runs[a]?.status !== "working"){ delete typers[a]; continue; }
+    const t = typers[a], lines = THOUGHTS[a] || ["Working…"], line = lines[t.i % lines.length];
+    if (t.pause > 0){ if (--t.pause === 0){ t.i++; t.c = 0; } } else if (t.c < line.length) t.c++; else t.pause = 45;
+    document.querySelectorAll(`[data-typer="${a}"]`).forEach(e => e.textContent = line.slice(0, t.c));
+  }
+}
+
+/* ---------- A: hub ---------- */
+const A = {pos:{}, built:false};
+function buildA(){
+  const svg = $("aSvg"); svg.innerHTML = "";
+  const defs = svgEl("defs"); defs.innerHTML = `<radialGradient id="hubg"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e6e9fb"/></radialGradient>`; svg.append(defs);
+  const cx = 310, cy = 215, ring = TEAMS.slice(1);
+  ring.forEach((t,i) => { const ang = -Math.PI/2 + i * 2*Math.PI/ring.length; A.pos[t.id] = [cx + 225*Math.cos(ang), cy + 160*Math.sin(ang)]; });
+  A.pos.lead = [cx, cy];
+  ring.forEach(t => svg.append(svgEl("path", {d:`M${cx} ${cy} L${A.pos[t.id][0]} ${A.pos[t.id][1]}`, class:"link", id:"aL-" + t.id})));
+  const hub = svgEl("g", {class:"node active"});
+  hub.append(svgEl("circle", {cx, cy, r:50, fill:"none", stroke:"#b9c3f1", class:"halo"}));
+  hub.append(svgEl("circle", {cx, cy, r:50, fill:"url(#hubg)", stroke:"#c9d0f3", "stroke-width":"1.5"}));
+  const t1 = svgEl("text", {x:cx, y:cy - 3, "text-anchor":"middle", fill:"#3a49a8", "font-size":"15", "font-weight":"500"}); t1.textContent = "Team lead"; hub.append(t1);
+  hub.append(svgEl("text", {x:cx, y:cy + 16, "text-anchor":"middle", fill:"#8b879a", "font-size":"11", id:"aHub"}));
+  svg.append(hub);
+  ring.forEach(t => { const [x,y] = A.pos[t.id], g = svgEl("g", {class:"node", id:"aN-" + t.id});
+    g.append(svgEl("circle", {cx:x, cy:y, r:42, fill:"none", stroke:`hsl(${t.hue} 60% 78%)`, class:"halo"}));
+    g.append(svgEl("circle", {cx:x, cy:y, r:42, fill:`hsl(${t.hue} 70% 97%)`, stroke:`hsl(${t.hue} 40% 88%)`, "stroke-width":"1.5", class:"bd"}));
+    const tx = svgEl("text", {x, y:y - 4, "text-anchor":"middle", fill:"#3a3946", "font-size":"13", "font-weight":"500"}); tx.textContent = t.name; g.append(tx);
+    g.append(svgEl("text", {x, y:y + 13, "text-anchor":"middle", fill:`hsl(${t.hue} 35% 45%)`, "font-size":"10.5", id:"aS-" + t.id}));
+    svg.append(g); });
+  A.built = true;
+}
+function renderA(ev){
+  if (!A.built) buildA();
+  TEAMS.slice(1).forEach(t => { const st = teamState(t.id);
+    $("aN-" + t.id).classList.toggle("active", st.w > 0);
+    $("aN-" + t.id).querySelector(".bd").setAttribute("stroke", st.w ? `hsl(${t.hue} 60% 70%)` : st.d ? `hsl(${t.hue} 45% 80%)` : `hsl(${t.hue} 40% 88%)`);
+    $("aS-" + t.id).textContent = st.w ? st.w + " working" + (st.d ? ", " + st.d + " done" : "") : st.d ? st.d + "/" + st.n + " done" : st.n + " experts";
+    $("aL-" + t.id).setAttribute("class", "link" + (st.w ? " active" : st.d ? " done" : "")); });
+  $("aHub").textContent = "routing " + working().length + " agent" + (working().length === 1 ? "" : "s");
+  if (ev && ev.type === "start") pulse(A.pos.lead, A.pos[AGENTS[ev.agent]], `hsl(${hue(ev.agent)} 65% 66%)`);
+  if (ev && ev.type === "done"){ pulse(A.pos[AGENTS[ev.agent]], A.pos.lead, "#6fcf9f");
+    const toast = document.createElement("div"); toast.className = "toast"; toast.innerHTML = `<b>✓ ${ev.agent}</b> `; toast.append(ev.result);
+    document.querySelector(".vis").append(toast); setTimeout(() => toast.remove(), 3500); }
+}
+function pulse(from, to, color){
+  const svg = $("aSvg"), c = svgEl("circle", {r:5, fill:color});
+  const m = svgEl("animateMotion", {dur:"1.1s", fill:"freeze", path:`M${from[0]} ${from[1]} L${to[0]} ${to[1]}`});
+  c.append(m); svg.append(c); m.beginElement?.(); setTimeout(() => c.remove(), 1200);
+}
+
+/* ---------- B: timeline ---------- */
+function renderB(){
+  const span = Math.max(600, simNow() * 1.04), pct = t => (t / span * 100).toFixed(2) + "%";
+  const lanes = TEAMS.map(t => {
+    const bars = Object.keys(S.runs).filter(a => AGENTS[a] === t.id).map(a => { const r = S.runs[a], end = r.end ?? simNow();
+      return `<div class="barx ${r.status === "working" ? "work" : ""}" style="--c:hsl(${t.hue} 60% 86%);left:${pct(r.start)};width:max(14px,${pct(end - r.start)})" title="${a}: ${r.result || r.task}">${a}</div>`; }).join("");
+    const docs = S.docsAt.filter(d => d.team === t.id).map(d => `<span class="doc" style="left:${pct(d.t)}" title="${d.label}"></span>`).join("");
+    return `<div class="lane"><span class="tn">${t.name}</span><div class="track">${bars}${docs}</div></div>`;
+  }).join("");
+  const ticks = []; const step = span > 2400 ? 600 : 300;
+  for (let s = 0; s <= span; s += step) ticks.push(`<span style="left:${pct(s)}">${clock(s)}</span>`);
+  $("bBox").innerHTML = lanes + `<div class="axis num">${ticks.join("")}</div>`;
+}
+
+/* ---------- C: constellation ---------- */
+const C = {pos:{}, up:{}, built:false};
+const CL = {lead:[390,232], product:[140,110], design:[390,62], architecture:[640,110], engineering:[660,350], quality:[430,405], audit:[200,410], operations:[110,300]};
+const HAND = [["team-lead","prd-reviewer"],["prd-reviewer","requirements-analyst"],["requirements-analyst","product-critic"],["requirements-analyst","ux-designer"],
+  ["product-critic","prototype-designer"],["ux-designer","prototype-designer"],["product-critic","story-sizer"],["prototype-designer","story-sizer"],["story-sizer","solution-architect"],
+  ["solution-architect","api-designer"],["solution-architect","data-architect"],["solution-architect","security-architect"],["solution-architect","integration-engineer"],
+  ["solution-architect","devops-engineer"],["api-designer","system-reviewer"],["data-architect","system-reviewer"],["security-architect","system-reviewer"],["solution-architect","performance-engineer"],
+  ["system-reviewer","backend-developer"],["system-reviewer","frontend-developer"],["backend-developer","qa-engineer"],["frontend-developer","qa-engineer"],["qa-engineer","code-reviewer"],
+  ["code-reviewer","audit-expert"],["audit-expert","release-manager"],["release-manager","technical-writer"],["team-lead","base-builder"]];
+const curve = (f,t) => { const [x1,y1] = C.pos[f], [x2,y2] = C.pos[t]; return `M${x1} ${y1} Q ${(x1+x2)/2} ${(y1+y2)/2 - 18} ${x2} ${y2}`; };
+function buildC(){
+  const svg = $("cSvg"); svg.innerHTML = "";
+  for (let i = 0; i < 70; i++){ const s = svgEl("circle", {cx:Math.random()*780, cy:Math.random()*470, r:Math.random()*1.1 + .3, fill:"#d6d0ec", class:"star"}); s.style.animationDelay = Math.random()*4 + "s"; svg.append(s); }
+  TEAMS.forEach(t => { const [x,y] = CL[t.id], n = t.agents.length, R = [0,0,32,40,46][n];
+    svg.append(svgEl("circle", {cx:x, cy:y, r:R + 30, class:"cluster"}));
+    const nm = svgEl("text", {x, y:y - R - 36, "text-anchor":"middle", class:"cl-name", id:"cT-" + t.id}); nm.textContent = t.name; svg.append(nm);
+    t.agents.forEach((a,i) => { const ang = -Math.PI/2 + i*2*Math.PI/n + (n === 4 ? Math.PI/4 : n === 2 ? Math.PI/2 : 0);
+      C.pos[a] = [x + R*Math.cos(ang), y + R*Math.sin(ang)]; C.up[a] = n > 1 && Math.sin(ang) < -0.1; }); });
+  HAND.forEach(([f,t]) => svg.append(svgEl("path", {d:curve(f,t), class:"edge", id:`cE-${f}--${t}`})));
+  Object.keys(AGENTS).forEach(a => { const [x,y] = C.pos[a], h = hue(a), g = svgEl("g", {class:"an", id:"cA-" + a});
+    g.append(svgEl("circle", {cx:x, cy:y, r:16, fill:"none", stroke:`hsl(${h} 55% 70%)`, "stroke-width":"1.5", "stroke-dasharray":"7 9", class:"orbit"}));
+    g.append(svgEl("circle", {cx:x, cy:y, r:a === "team-lead" ? 14 : 9, fill:"#fff", stroke:`hsl(${h} 30% 86%)`, class:"body"}));
+    const tx = svgEl("text", {x, y:C.up[a] ? y - 17 : y + 24, "text-anchor":"middle"}); tx.textContent = a; g.append(tx); svg.append(g); });
+  C.built = true;
+}
+function renderC(ev){
+  if (!C.built) buildC();
+  Object.keys(AGENTS).forEach(a => { const g = $("cA-" + a), h = hue(a), st = a === "team-lead" ? "working" : S.runs[a]?.status || "", body = g.querySelector(".body");
+    g.setAttribute("class", "an " + st);
+    body.setAttribute("fill", st === "working" ? `hsl(${h} 70% 82%)` : st === "done" ? `hsl(${h} 55% 90%)` : "#fff");
+    body.setAttribute("stroke", st ? `hsl(${h} 45% 62%)` : `hsl(${h} 30% 86%)`); });
+  HAND.forEach(([f,t]) => $(`cE-${f}--${t}`).setAttribute("class", "edge" + ((f === "team-lead" || S.runs[f]) && S.runs[t] ? " lit" : "")));
+  TEAMS.forEach(t => $("cT-" + t.id).setAttribute("class", "cl-name" + (teamState(t.id).w ? " active" : "")));
+  if (ev && ev.type === "start"){ const from = HAND.filter(([f,t]) => t === ev.agent && (f === "team-lead" || S.runs[f]?.status === "done")).map(([f]) => f);
+    (from.length ? from : ["team-lead"]).forEach(f => comet(f, ev.agent)); }
+  if (ev && ev.type === "done") comet(ev.agent, "team-lead", "#6fcf9f");
+}
+function comet(f, t, color){
+  if (!C.pos[f] || !C.pos[t]) return;
+  const g = svgEl("g"); [5,3.5,2.2].forEach((r,i) => { const c = svgEl("circle", {r, fill:color || `hsl(${hue(t)} 65% 66%)`, opacity:String(1 - i*.3)});
+    c.append(svgEl("animateMotion", {dur:"1.3s", begin:(i*.06) + "s", fill:"freeze", path:curve(f,t)})); g.append(c); });
+  $("cSvg").append(g); g.querySelectorAll("animateMotion").forEach(m => m.beginElement?.()); setTimeout(() => g.remove(), 1500);
+}
+
+/* ---------- variant switch, replay, live ---------- */
+const VIS = {A:["aSvg","Teams around the lead"], B:["bBox","Teams over time"], C:["cSvg","Every agent, grouped by team"]};
+function show(v){
+  variant = v;
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x.dataset.v === v));
+  Object.entries(VIS).forEach(([k,[id]]) => $(id).toggleAttribute("hidden", k !== v));
+  $("visTitle").textContent = VIS[v][1];
+  if (S) render(null);
+}
+function replay(){
+  timers.forEach(clearTimeout); timers = []; typers = {}; S = fresh(); replaying = true;
+  A.built = false; C.built = false; $("feed").innerHTML = ""; $("kpis").innerHTML = "";
+  render(null);
+  let delay = 300, prev = 0;
+  EVENTS.forEach(ev => { delay += Math.min(2200, Math.max(220, (ev.t - prev) * 10)); prev = ev.t; timers.push(setTimeout(() => apply(ev), delay)); });
+  timers.push(setTimeout(() => { replaying = false; liveStart = Date.now(); render(null); }, delay + 200));
+}
+setInterval(() => {
+  if (!S) return;
+  document.querySelectorAll("[data-el]").forEach(e => { const r = S.runs[e.dataset.el]; if (r) e.textContent = dur(simNow() - r.start); });
+  $("runTime").textContent = "running " + dur(simNow());
+  if (variant === "B") renderB();
+}, 1000);
+setInterval(() => S && tickTypers(), 35);
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => show(b.dataset.v)));
+$("replay").addEventListener("click", replay);
+const first = location.hash.slice(1).toUpperCase();
+show(VIS[first] ? first : "A");
+replay();
+</script>
+</body>
+</html>

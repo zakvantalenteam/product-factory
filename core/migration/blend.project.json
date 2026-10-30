@@ -1,0 +1,238 @@
+{
+  "name": "Blend",
+  "ticket_prefix": "BLEN-",
+  "work_dir": ".claude/work",
+  "live_port": 8766,
+  "default_mode": "task",
+  "newline": "crlf",
+  "app": {
+    "url": "http://127.0.0.1:8080/lxp/",
+    "status": "python .claude/scripts/app_status.py"
+  },
+  "commands": {
+    "compile": "mvn -o -q compile -DskipTests",
+    "test": "mvn -o -q surefire:test \"-Dtest={tests}\"",
+    "test_all": "mvn -o -q surefire:test",
+    "char_run": "python .claude/scripts/char_run.py \"{file}\""
+  },
+  "guard": {
+    "blocked_commands": [
+      {
+        "pattern": "(^|[\\s;&|(])(\\./)?mvnw(\\.cmd)?(\\s|$)",
+        "why": "./mvnw is Maven 3.5.4 and fails on this project. Use system `mvn` (3.8.4)."
+      }
+    ],
+    "block_while_app_up": "(^|[\\s;&|(])mvn(\\.cmd)?\\s.*(?<![\\w:-])(compile|test-compile|package|install|clean|verify|test|spring-boot:run)(?![\\w:-])",
+    "secret_files": [
+      "application-local.properties"
+    ],
+    "secret_ok_commands": [
+      "hana_query.py"
+    ],
+    "no_show": [
+      "application*.properties",
+      "*Constants.java"
+    ],
+    "no_read": [
+      {
+        "paths": [
+          "n8n_workflows/*.json"
+        ],
+        "why": "n8n workflow exports are huge. Use `python .claude/scripts/n8n_node.py list|show|find` (n8n-node skill)."
+      }
+    ],
+    "no_write": [
+      {
+        "paths": [
+          "n8n_workflows/*.json"
+        ],
+        "why": "patch n8n nodes with `python .claude/scripts/n8n_node.py extract|patch` (n8n-node skill), not by editing the export."
+      }
+    ],
+    "generated": [
+      "createDDL.jdbc",
+      "approuter/resources/**",
+      "target/**",
+      "releases/**",
+      "docs/widget-gallery/*.html"
+    ],
+    "big_file_kb": 120,
+    "read_only_roots": []
+  },
+  "quick_fix": {
+    "max_files": 3,
+    "max_lines": 30,
+    "never": [
+      "pom.xml",
+      "application*.properties",
+      "n8n_workflows/**",
+      "**/domain/**",
+      "*Entity.java",
+      "*UpgradeJob*",
+      "*McpTools.java"
+    ]
+  },
+  "decisions": {
+    "D2": {
+      "what": "the data model (a JPA entity or an upgrade job)",
+      "paths": [
+        "src/main/java/**/*.java"
+      ],
+      "file_markers": [
+        "@Entity",
+        "@Embeddable",
+        "@MappedSuperclass",
+        "@UpgradeJob"
+      ]
+    },
+    "D4": {
+      "what": "access rules (a permission check)",
+      "paths": [
+        "src/main/java/**/*.java"
+      ],
+      "line_markers": [
+        "@CheckPermission",
+        "@PreAuthorize",
+        "@Secured",
+        "@RolesAllowed",
+        "hasRole(",
+        "hasAnyRole(",
+        "hasAuthority(",
+        "hasAnyAuthority("
+      ]
+    },
+    "D6": {
+      "what": "dependencies or app config",
+      "paths": [
+        "pom.xml",
+        "src/main/resources/application*.properties"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "id": "rule 2",
+      "paths": [
+        "**/*.java"
+      ],
+      "pattern": "@(?:Join)?Column\\s*\\([^)]*\\bname\\s*=\\s*\"\\\\\"",
+      "comments": true,
+      "message": "quoted column name breaks startup schema validation"
+    },
+    {
+      "id": "rule 4",
+      "paths": [
+        "src/main/resources/messages*.properties"
+      ],
+      "part": "value",
+      "pattern": "\\bBlend\\b",
+      "message": "\"Blend\" in a label; if learners see it use neutral words"
+    },
+    {
+      "id": "rule 4",
+      "paths": [
+        "src/main/resources/static/js/aisearch/**/*.js",
+        "src/main/resources/static/js/pulse/**/*.js"
+      ],
+      "pattern": "([\\\"'`])[^\\\"'`\\n]*\\bBlend\\b",
+      "message": "\"Blend\" shown to learners; use neutral words"
+    },
+    {
+      "id": "rule 4",
+      "paths": [
+        "src/main/resources/static/css/aisearch*.css",
+        "src/main/resources/static/css/pulse*.css",
+        "src/main/resources/templates/aisearch.html",
+        "src/main/resources/templates/pulse.html"
+      ],
+      "pattern": "\\bBlend\\b",
+      "message": "\"Blend\" shown to learners; use neutral words"
+    },
+    {
+      "id": "rule 5",
+      "paths": [
+        "src/main/resources/static/css/aisearch*.css",
+        "src/main/resources/static/css/pulse*.css"
+      ],
+      "pattern": "#[0-9a-fA-F]{3,8}\\b",
+      "message": "fixed hex colour; use var(--primaryColor) or a tint of it"
+    },
+    {
+      "id": "rule 5",
+      "paths": [
+        "src/main/resources/static/js/aisearch/**/*.js",
+        "src/main/resources/static/js/pulse/**/*.js",
+        "src/main/resources/templates/aisearch.html",
+        "src/main/resources/templates/pulse.html"
+      ],
+      "pattern": "(?i)(style|color).*#[0-9a-f]{3,8}\\b|#[0-9a-f]{3,8}\\b.*(style|color)",
+      "message": "fixed hex colour; use var(--primaryColor) or a tint of it"
+    },
+    {
+      "id": "rule 5",
+      "paths": [
+        "src/main/resources/static/css/aisearch*.css",
+        "src/main/resources/static/css/pulse*.css"
+      ],
+      "pattern": ":focus(?![-\\w])",
+      "message": "focus ring for keyboard only, use :focus-visible"
+    }
+  ],
+  "setup_paths": [],
+  "expert_docs": {
+    "n8n.md": [
+      "Workflows touched",
+      "Today's flow",
+      "Plan",
+      "Eval and rollout",
+      "Handoff"
+    ]
+  },
+  "experts": [
+    "sf-expert",
+    "ai-engineer",
+    "n8n-expert"
+  ],
+  "glossary": {
+    "code_words": "\\bLXP_[A-Z_]+\\b",
+    "words": [
+      "upgrade job",
+      "JPQL",
+      "envelope",
+      "MCP"
+    ]
+  },
+  "impact": {
+    "code": [
+      "**/*.java",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js"
+    ],
+    "clients": [
+      "**/*.js",
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.html"
+    ],
+    "n8n": {
+      "paths": [
+        "n8n_workflows/*.json"
+      ],
+      "command": ""
+    },
+    "tools": {
+      "marker": "@McpTool",
+      "inventory": "docs/wiki/reference/mcp-tools.md"
+    },
+    "skip": [
+      "target/**",
+      "**/node_modules/**",
+      "dist/**",
+      "**/*.min.js",
+      "approuter/**",
+      "releases/**",
+      ".claude/worktrees/**"
+    ]
+  }
+}
