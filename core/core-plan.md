@@ -300,7 +300,8 @@ and never ships a change that breaks something else.
   the developer once and records the answer. `spec.md` gets `## Non-functional` for the needs a change touches.
 
 ## 22. 1.4.0 - the plugin is called product-factory
-- The plugin is `product-factory` (it was `agent-core`), by TalenTeam Product & Engineering, in the `talenteam`
+- The plugin is `product-factory` (it was `agent-core`; shown as "Product Factory" through `displayName` in
+  `.claude-plugin/marketplace.json`), by TalenTeam Product & Engineering, in the `talenteam`
   marketplace of the public repo `zakvantalenteam/product-factory`. Its agents show as `product-factory:<name>` and
   its skills as `/product-factory:<name>`.
 - install.py writes `"product-factory@talenteam": false` in repos that carry the core and removes the old
