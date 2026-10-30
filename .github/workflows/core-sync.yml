@@ -1,6 +1,6 @@
 # Installs the agent core into every product repo in .github/core-sync/targets.json when core/ changes on main.
-# Setup (once, README "One-time setup of the sync bot"): secret SYNC_GITHUB_TOKEN (SkillsOS: contents and pull
-# requests, read and write); variable AWS_SYNC_ROLE_ARN (the IAM role in .github/core-sync/aws/, trusted for main).
+# Setup (once, README "One-time setup of the sync bot"): variable AWS_SYNC_ROLE_ARN (the IAM role in
+# .github/core-sync/aws/, trusted for main); secret SYNC_GITHUB_TOKEN only when targets.json lists a GitHub repo.
 name: core-sync
 
 on:

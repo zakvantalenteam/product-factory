@@ -96,7 +96,13 @@ def sync(t, a, work):
         if t["host"] == "codecommit" and not os.environ.get("AWS_ACCESS_KEY_ID"):  # not a failure: AWS is optional
             return {"name": name, "result": "skipped: AWS not set up yet, update by hand (README, sync bot setup, steps 3-4)"}
     dest = os.path.join(work, re.sub(r"\W+", "-", name))
-    run(["git", "clone", "--quiet", "--filter=blob:none", "--single-branch", "--branch", branch, url_of(t), dest], env=env)
+    rc, out = run(["git", "clone", "--quiet", "--filter=blob:none", "--single-branch", "--branch", branch, url_of(t), dest],
+                  env=env, check=False)
+    if rc and t["host"] == "github" and re.search(r"403|not granted", out):
+        raise RuntimeError("the SYNC_GITHUB_TOKEN token cannot reach %s: it must be owned by %s and list that repo "
+                           "(README, sync bot setup, step 1)" % (t["repo"], t["repo"].split("/")[0]))
+    if rc:
+        raise RuntimeError("git clone failed (%d): %s" % (rc, out.strip()[-800:]))
     run(["git", "config", "user.name", a.bot["name"]], cwd=dest)
     run(["git", "config", "user.email", a.bot["email"]], cwd=dest)
     vf = os.path.join(dest, ".claude", "core", "VERSION")

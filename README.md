@@ -18,11 +18,12 @@ new version, and Claude users get it as a plugin.
 
 ## How people get it
 
-**Product repos (Claude Code and Cursor, nothing to install).** On each push to `main` that changes the core,
-the `core-sync` workflow installs it into every repo in `.github/core-sync/targets.json` (SkillsOS on GitHub,
-Blend and TalentBox on AWS CodeCommit). It runs the checks and pushes one commit to `dev`. When a person must look,
-it opens a pull request instead: a first install, a core file edited by hand in that repo, a failed check, or a
-protected branch. Developers get the update with their normal `git pull`.
+**Product repos (Claude Code and Cursor, nothing to install).** Each repo carries its own copy of the core in
+`.claude/`, `.cursor/` and `AGENTS.md`. After each core release the maintainer installs it into every product repo
+and commits it there (step 5 of "Releasing a change to the core"); developers get it with their normal `git pull`.
+The optional sync bot does this by itself for the repos in `.github/core-sync/targets.json` (Blend and TalentBox on
+AWS CodeCommit, once AWS is set up): it runs the checks and pushes one commit to `dev`, or opens a pull request
+when a person must look (a first install, a core file edited by hand, a failed check, a protected branch).
 
 **Any other repo (Claude Code only): the plugin.** Each person sets it up once (steps below). Repos that carry the
 core switch the plugin off in their own settings, so nothing runs twice. To give a repo the core for the whole team
@@ -30,15 +31,12 @@ core switch the plugin off in their own settings, so nothing runs twice. To give
 
 ### Set up the plugin (each Claude Code user, once)
 
-1. Get read access to `talenteam/product-factory` from a GitHub org owner. The repo is private; nobody outside
-   the org can see it.
-2. Check that git reaches it over HTTPS without asking for a password:
-   `git ls-remote https://github.com/talenteam/product-factory.git HEAD` must print one line. On Windows, Git
-   Credential Manager asks you to sign in to GitHub the first time; after that it remembers you.
-3. Add the marketplace and the plugin. Either type in Claude Code (terminal, desktop app or IDE):
+The repo `zakvantalenteam/product-factory` is public, so no GitHub access or sign-in is needed.
+
+1. Add the marketplace and the plugin. Either type in Claude Code (terminal, desktop app or IDE):
 
    ```
-   /plugin marketplace add https://github.com/talenteam/product-factory.git
+   /plugin marketplace add https://github.com/zakvantalenteam/product-factory.git
    /plugin install agent-core@talenteam
    ```
 
@@ -47,14 +45,14 @@ core switch the plugin off in their own settings, so nothing runs twice. To give
 
    ```json
    "extraKnownMarketplaces": {
-     "talenteam": {"source": {"source": "git", "url": "https://github.com/talenteam/product-factory.git"}, "autoUpdate": true}
+     "talenteam": {"source": {"source": "git", "url": "https://github.com/zakvantalenteam/product-factory.git"}, "autoUpdate": true}
    },
    "enabledPlugins": {"agent-core@talenteam": true}
    ```
 
-4. Start a new session in a repo that does not carry the core. `/agents` lists `agent-core:explorer` and the
+2. Start a new session in a repo that does not carry the core. `/agents` lists `agent-core:explorer` and the
    others, and the skills show as `/agent-core:sdlc` and so on.
-5. Updates: a new version reaches you within about 10 minutes of starting a session; `/reload-plugins` applies it.
+3. Updates: a new version reaches you within about 10 minutes of starting a session; `/reload-plugins` applies it.
    Nothing changes until the version in `core/VERSION` is raised.
 
 ## The agents
@@ -106,27 +104,41 @@ See the flow without real work: `python .claude/core/scripts/simulate.py --list`
    updated only when it changes.
 3. `python core/scripts/install.py . --write-settings`: installs it here and rebuilds `plugin/`. Then
    `python .claude/core/scripts/install.py . --check` must print `ok`.
-4. Commit and push to `main`. The workflow stops a push whose versions differ or whose `plugin/` is stale.
+4. Commit and push to `main`. The workflow stops a push whose versions differ or whose `plugin/` is stale. Plugin
+   users get the new version by themselves.
+5. Port it to each product repo the bot does not cover (SkillsOS today, and Blend and TalentBox until AWS is set
+   up), from this repo:
+
+   ```bash
+   python core/scripts/install.py <product repo> --write-settings
+   ```
+
+   then, in that repo, `python .claude/core/scripts/cursor_sync.py` and both checks
+   (`python .claude/core/scripts/cursor_sync.py --check`, `python .claude/core/scripts/install.py . --check`) must
+   be clean. Files a repo edited by hand are kept and listed; review them. Commit the setup files there
+   (`.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`) and push to `dev`.
 
 ## One-time setup of the sync bot
 
-Until these steps are done, a push to `main` gives a `core-sync` run whose summary names the missing step for each
-repo. Nothing in the product repos changes. Steps 1, 2 and 4 need admin rights on this repo; step 3 needs an AWS
-admin for the account that holds the CodeCommit repos (region `eu-west-2`).
+The bot is optional; without it, port each release by hand (step 5 above). Until these steps are done, a push to
+`main` gives a `core-sync` run whose summary names the missing step for each repo, and nothing in the product repos
+changes. Steps 1, 2 and 4 need admin rights on this repo; step 3 needs an AWS admin for the account that holds the
+CodeCommit repos (region `eu-west-2`).
 
-**1. A GitHub token for SkillsOS.** Signed in as a person (or bot account) with write access to
-`talenteam/SkillsOS`: picture > Settings > Developer settings > Personal access tokens > Fine-grained tokens >
-Generate new token (https://github.com/settings/personal-access-tokens/new).
-- Token name: any clear name (only the secret name in step 2 matters); Resource owner `talenteam`; Expiration at most a year (note the date: when it ends,
-  the SkillsOS row fails until a new one is saved).
-- Repository access: Only select repositories > `talenteam/SkillsOS`.
+**1. A GitHub token (only when `targets.json` lists a GitHub repo; none does today).** Signed in as a person (or
+bot account) with write access to that repo: picture > Settings > Developer settings > Personal access tokens >
+Fine-grained tokens > Generate new token (https://github.com/settings/personal-access-tokens/new).
+- Token name: any clear name (only the secret name in step 2 matters); Resource owner: the org that owns the repo,
+  for example `talenteam` (a token owned by your own account cannot reach org repos, and the run fails with 403).
+  Expiration at most a year; note the date, because that repo's row fails until a new token is saved.
+- Repository access: Only select repositories > the repos in `targets.json`.
 - Permissions > Repository permissions: Contents "Read and write", Pull requests "Read and write" (Metadata
   "Read-only" is added by itself).
 - Generate token and copy it. If the org asks for approval, an org owner approves it under the org's Settings >
   Personal access tokens > Pending requests.
 
-**2. Save the token in this repo.** Settings > Secrets and variables > Actions > New repository secret
-(https://github.com/talenteam/product-factory/settings/secrets/actions/new): name `SYNC_GITHUB_TOKEN`, paste the
+**2. Save the token in this repo (only with step 1).** Settings > Secrets and variables > Actions > New repository secret
+(https://github.com/zakvantalenteam/product-factory/settings/secrets/actions/new): name `SYNC_GITHUB_TOKEN`, paste the
 token, Add secret. GitHub never shows it again; to renew, save a new token under the same name.
 
 **3. An AWS role the workflow may use (no AWS keys are stored).** Until steps 3 and 4 are done, the run skips the
@@ -135,7 +147,7 @@ In the AWS console, IAM:
 - Identity providers > Add provider: OpenID Connect, provider URL `https://token.actions.githubusercontent.com`,
   audience `sts.amazonaws.com`. Skip this if it is already listed.
 - Roles > Create role > Web identity: that provider, audience `sts.amazonaws.com`, GitHub organization
-  `talenteam`, repository `product-factory`, branch `main`. Attach no policies; role name `core-sync-bot`.
+  `zakvantalenteam` (the repo's owner), repository `product-factory`, branch `main`. Attach no policies; role name `core-sync-bot`.
 - Open the role > Trust relationships > Edit trust policy: paste `.github/core-sync/aws/trust-policy.json` with the
   12-digit account id in place of `<AWS_ACCOUNT_ID>`. Only runs on `main` of this repo may use the role.
 - Permissions > Add permissions > Create inline policy > JSON: paste `.github/core-sync/aws/permissions-policy.json`
@@ -152,7 +164,7 @@ aws iam put-role-policy --role-name core-sync-bot --policy-name core-sync-codeco
 ```
 
 **4. Save the role ARN in this repo.** Settings > Secrets and variables > Actions > Variables tab > New repository
-variable (https://github.com/talenteam/product-factory/settings/variables/actions/new): name `AWS_SYNC_ROLE_ARN`,
+variable (https://github.com/zakvantalenteam/product-factory/settings/variables/actions/new): name `AWS_SYNC_ROLE_ARN`,
 value the role ARN. It is not a secret.
 
 **5. Each product repo carries the core on `dev`.** Install it once by hand (`install.py <repo> --write-settings`)

@@ -20,7 +20,7 @@ own repo (the core is installed there by `base-builder`) or from here with `--ro
 ## Hard rules
 1. Git: no command that changes a repo (commit, push, pull, merge, stash, reset, switch, checkout, add, ...); read-only
    git is fine. `git pull` only when the developer asks for it in their own message. The developer does git (this folder is the
-   GitHub repo `talenteam/product-factory`; a push to `main` ships the core to every product repo).
+   public GitHub repo `zakvantalenteam/product-factory`; a push to `main` ships the core to every product repo).
 2. Never start or restart servers. Say what needs a restart and why. The one exception is the live-status page
    (`live-status` in `.claude/launch.json`).
 3. Repos used as reference (for example `D:\skillos\repo\SkillsOS`) are read-only: `git show`, `git ls-tree`,
