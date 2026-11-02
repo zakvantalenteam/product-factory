@@ -352,3 +352,11 @@ and never ships a change that breaks something else.
   in status.json) and its time; the header says "N agents working in parallel"; the stage's activity below it has
   an agent tag per row and agent filter chips (kept in the browser), and only new rows animate.
 - The demo run and the simulator's medium request run Design with 3 experts in parallel.
+
+## 26. 1.4.4 - the working agent always shows
+- Zakvan (2 Nov, Blend plan-overdue-window): the page showed the running stage but not which agent works or what it
+  does; the card stayed hidden because only one agent (the main session) was working.
+- The now-working card shows whenever a stage runs, waits or is being fixed, one agent or many; the activity list
+  under it stays for 2 or more agents (the stage row already lists one agent's activity).
+- The running stage's agent stands out: a tag in the stage colour with a breathing dot instead of grey text, and
+  the header names the agent before its latest action ("main session: Ran ...").
