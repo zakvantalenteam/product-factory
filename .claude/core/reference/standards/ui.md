@@ -81,4 +81,4 @@ repo hard rule or a checklist MUST breaks. Score honestly, write nothing under 5
 pre-existing, 25 might be real, 50 real but minor, 75 checked twice or named in a rule, 100 certain). Not a
 finding: lines the diff did not change, issues that existed before, what a linter catches, taste, a speculative
 risk with no concrete path. Needs the running app = a "Live checks for Verify" line. No verdict; the
-`code-reviewer` check pass re-verifies and merges.
+main session fails the review on any MUST here, and `code-reviewer` merges the file when it is there first.

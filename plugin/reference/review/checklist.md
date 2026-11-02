@@ -9,8 +9,9 @@ examples, not requirements.
 ## Which focus reads which section
 
 A focused pass (`code-reviewer` with focus `rules`, `bugs` or `security`) reads only its items in the sections
-whose path trigger matches a changed file. Focus `all` and the `check` pass read everything. Every section and
-item stays in force; each item belongs to one focus.
+whose path trigger matches a changed file. Focus `all` reads every section in the review pack. Every section and
+item stays in force; each item belongs to one focus. A section's path trigger is its `Paths:` line (a project
+section: the backticked globs after " - " in its heading); a backticked `@Marker` matches the changed text.
 
 | Section | rules | bugs | security |
 |---|---|---|---|
@@ -36,7 +37,9 @@ The extra passes also read:
 
 ## How to use
 
-1. Run `git diff --stat`. Read "Always" plus every section whose path trigger matches a changed file. Skip the others.
+1. Read the review pack (`python .claude/core/scripts/review_pack.py <id>` writes `<work>/<id>/review-pack.md`): it
+   holds "Always" plus every section whose path trigger matches a changed file, core and project. Without a pack:
+   `git diff --stat`, then read those sections only.
 2. Every item is MUST or SHOULD. One failed MUST makes the verdict FAIL and sends the change back. SHOULD items
    go in the SHOULD list and do not block.
 3. Proof rule: each finding cites `path:line`, quotes the exact line, and gives a failure scenario (input or
@@ -74,6 +77,8 @@ Also apply the hard rules in `AGENTS.md`.
 
 ## Backend - server code (for example `src/main/**`, `server/**`)
 
+Paths: `**/*.java`, `**/*.kt`, `**/*.scala`, `**/*.go`, `**/*.cs`, `**/*.rb`, `**/*.php`, `**/*.py`, `server/**`, `backend/**`, `api/**`
+
 Also apply the `.claude/rules/*.md` file for backend paths when it exists.
 
 - **BE1 MUST** A value from outside (a remote response, a JSON config row, a nullable column, an optional) is null-checked or defaulted before use; an optional is unwrapped only after a check.
@@ -92,6 +97,8 @@ Also apply the `.claude/rules/*.md` file for backend paths when it exists.
 
 ## REST and API - controllers, resources, route handlers
 
+Paths: `*Controller*`, `*Resource.*`, `*Endpoint*`, `*Handler.*`, `*Router*`, `**/routes/**`, `**/api/**`, `**/controllers/**`, `@RestController`, `@RequestMapping`
+
 - **RE1 MUST** A new or changed endpoint has a guard that fits its caller: login session, permission annotation, or a machine key for callbacks. Name the guard in the review. With no guard it is public: it must be public on purpose and return non-sensitive data only.
 - **RE2 MUST** Admin-only endpoints (configuration, policies, monitoring, debug, integration settings) check the admin role on the server. Hiding the button is not the check.
 - **RE3 MUST** Callback, webhook and machine-to-machine endpoints fail closed with 401 or 403 on a missing or wrong key.
@@ -107,6 +114,8 @@ Also apply the `.claude/rules/*.md` file for backend paths when it exists.
 - **RE13 SHOULD** Long work (import, sync, scan) does not run on the request thread; the endpoint starts it and reports status.
 
 ## Data access - repositories, DAOs, query classes, entities, migrations
+
+Paths: `*Repository*`, `*Dao*`, `*Query*`, `*Entity*`, `**/entity/**`, `**/entities/**`, `**/models/**`, `**/migrations/**`, `**/db/**`, `*.sql`, `@Entity`, `@Query`
 
 Also apply the hard rules in `AGENTS.md` about the database.
 
@@ -131,6 +140,8 @@ Also apply the hard rules in `AGENTS.md` about the database.
 
 ## Jobs and schedulers - scheduled jobs, upgrade hooks, executors
 
+Paths: `*Job.*`, `*Scheduler*`, `*Executor*`, `*Worker*`, `**/jobs/**`, `@Scheduled`, `@UpgradeJob`, `@Async`
+
 - **JB1 MUST** Only one instance runs the job per schedule: a node-role condition or an atomic lock row. Scenario: two instances start at midnight and write every record twice.
 - **JB2 MUST** The job is idempotent: a re-run or a retry after a crash creates no duplicate rows or cards (fingerprint, upsert, unique constraint).
 - **JB3 MUST** Partial failure is defined: one record's failure is caught and logged with job name and id and does not abort the batch (or aborts on purpose), and the next run resumes or retries.
@@ -141,6 +152,8 @@ Also apply the hard rules in `AGENTS.md` about the database.
 - **JB8 SHOULD** The job logs start, end, counts and failures with its name, and no personal data in those lines.
 
 ## Integrations and imports - outside APIs, file transfer, storage, spreadsheet or document import and export
+
+Paths: `*Client.*`, `*Connector*`, `*Integration*`, `*Import*`, `*Export*`, `*Sync*`, `*Sftp*`, `*Storage*`, `**/integration*/**`, `RestTemplate`, `WebClient`
 
 - **IN1 MUST** Credentials and hosts come from destinations or per-tenant config, never literals or per-environment values in code.
 - **IN2 MUST** A list call pages (server paging by next link, or a stable order key with top and skip) and is bounded; no unbounded fetch of all employees, candidates or records.
@@ -154,6 +167,8 @@ Also apply the hard rules in `AGENTS.md` about the database.
 - **IN10 MUST** Throttling and transient errors (429, 503, timeouts) are retried with bounded backoff honouring Retry-After; an access token is reused until shortly before expiry, not fetched per call.
 
 ## LLM calls - model clients, prompt code, agent and tool plumbing, guardrails, quota ledger
+
+Paths: `**/ai*/**`, `**/llm/**`, `**/mcp/**`, `*Prompt*`, `*Agent*`, `*Guardrail*`, `*Quota*`, `*Llm*`, `**/n8n*/**`, `@McpTool`
 
 Also apply `.claude/rules/*.md` for AI paths when it exists.
 
@@ -176,6 +191,8 @@ Also apply `.claude/rules/*.md` for AI paths when it exists.
 - **LL17 SHOULD** Independent model or tool calls run in parallel, not in series; the first words of an answer are streamed.
 
 ## Frontend pages - templates, scripts, components, styles, admin screens
+
+Paths: `*.html`, `*.js`, `*.jsx`, `*.ts`, `*.tsx`, `*.vue`, `*.svelte`, `*.css`, `*.scss`, `*.view.xml`, `**/static/**`, `**/templates/**`, `manifest.json`
 
 Also apply the `.claude/rules/*.md` file for frontend paths when it exists.
 
@@ -202,6 +219,8 @@ Also apply the `.claude/rules/*.md` file for frontend paths when it exists.
 
 ## Labels and i18n - label files, locale files, message bundles
 
+Paths: `**/i18n/**`, `**/locales/**`, `**/lang/**`, `messages*.properties`, `i18n*.properties`, `*.po`
+
 Also apply the project's labels rule (`AGENTS.md` or `.claude/rules/*.md`).
 
 - **LB1 MUST** Every key the diff reads exists in the file that code reads from. A missing key shows the raw key.
@@ -212,6 +231,8 @@ Also apply the project's labels rule (`AGENTS.md` or `.claude/rules/*.md`).
 - **LB6 SHOULD** Where the project keeps several locale files, a new key follows the project's translation rule (all files at once, or the release pass) and placeholders match the English value. MUST when a locale test fails.
 
 ## Config and dependencies - properties, constants, build files, deploy and security descriptors, pipeline
+
+Paths: `*.properties`, `*.yml`, `*.yaml`, `*.toml`, `pom.xml`, `build.gradle*`, `package.json`, `requirements*.txt`, `Dockerfile`, `Jenkinsfile`, `.github/workflows/**`, `*Constants*`, `xs-security*.json`, `.env*`
 
 Also apply the project's config and deploy rule when it exists.
 

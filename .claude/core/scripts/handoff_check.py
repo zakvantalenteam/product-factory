@@ -367,6 +367,10 @@ def check_design(text, spec, name="design.md", stories=None, product=False):
     """A product-mode design may leave the criterion map to 04-stories.md: a criterion counts as covered when the
     design or the stories cite it, and the criteria come from 02-spec.md (else from the stories)."""
     p, secs = [], sections(text)
+    left = text.count("<fill")
+    if left:
+        p.append("%s: %d place%s still say <fill> (the review_pack.py skeleton): fill or delete them"
+                 % (name, left, "" if left == 1 else "s"))
     how = find(secs, "how it will work")
     if how is None:
         p.append("%s: section \"How it will work\" (plain English, for the developer) is missing" % name)

@@ -311,3 +311,28 @@ and never ships a change that breaks something else.
 - sdlc: a new or changed screen, however small, gets `ux-designer` at Design (mode `variants`); the main session
   never designs a screen itself. The prototype skill says the same inside a flow.
 - The core block of AGENTS.md: the live page is the only tracker; no other tracker page or artifact.
+
+## 24. 1.4.2 - review and design from a pack
+- Evidence (Blend, 28-30 Oct): one `code-reviewer` run took 5-13 min and 36-55 tool calls, most of them `git diff`
+  per file, grep and sed, after reading 10-15 documents; the Review stage took 17-30 min with several reviewers, a
+  check pass and a full re-review after each fix. `solution-architect` took 6-12 min and 27-61 calls and explored
+  again despite context.md. Opus stays; the time comes out of the turns.
+- `scripts/review_pack.py <id>` writes `review-pack.md` in seconds: pre-filled MUST rows (unplanned files from the
+  scope check, the safety net at risk medium or high, callers nobody checked), the criteria, the approved cards and
+  fixed answers, the caller table, and only the checklist sections whose path trigger matches a changed file (core
+  sections have a `Paths:` line; project sections keep the globs in their heading; a project item replaces the core
+  item of the same id), the hard rules, the path rules, the lessons for those paths and the matching live checks,
+  then the diff with new-side line numbers (new files in full, capped, secret values masked). `--files`, `--base`
+  and `--head` pack given files or a commit range; `--root` a product root.
+- Re-review is a delta: `review-state.json` keeps a hash and a copy of each packed file; once `review.md` exists the
+  next pack holds only the files changed since then (as the change since the review), the files whose PASS stays
+  and the previous MUST rows to re-check.
+- `code-reviewer` reads the pack and nothing else up front, opens code only to prove or drop a finding, about 20
+  tool calls, maxTurns 30. One reviewer by default; an expert pass (ui, speed, sf, ai, n8n) joins only when most of
+  the change is its area and reads the same pack. The separate `check` pass is gone: `code-reviewer` merges expert
+  files that are there, and any MUST in `review.md` or a `review-<x>.md` fails the review.
+- `review_pack.py <id> --design` writes `design-pack.md` (criteria, fixed answers, impact rows, the decision cards
+  the paths may need, hard rules, path rules, repo facts from `.claude/experts/`, lessons) and, when there is no
+  design.md, a skeleton with one Changes row per criterion and one Impact map row per impact line. Every `<fill>`
+  left fails handoff_check. `solution-architect` fills it from the pack and context.md, explores only a named gap,
+  about 20 calls in task mode (35 in product mode), maxTurns 40; domain experts run in parallel from the same pack.

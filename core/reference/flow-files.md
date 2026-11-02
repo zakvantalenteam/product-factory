@@ -51,6 +51,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | AI behaviour, cost | `ai.md` | `05-ai.md` | ai-engineer |
 | Decision cards D2-D8 | `decisions/D<n>-<name>.md` | same | see the decision table in the `sdlc` skill |
 | Build log | `## Notes` in `status.md` | `06-build-log.md` | developers / main session |
+| Review and design packs | `review-pack.md` + `review-state.json`, `design-pack.md` (`review_pack.py`) | same | main session |
 | Code review | `review.md` (`review-<focus>.md` for extra passes) | `07-code-review.md` | code-reviewer |
 | Tests | `test.md` | `07-test-report.md` (with `## Test plan` from S6) | qa-engineer |
 | Verification | `verify.md` (the lead copies PASS/FAIL into `status.md`) | `05-design-review.md`, `07-system-review.md` | verifier |
@@ -68,7 +69,10 @@ the reviewer fails a change that goes against a confirmed answer or an approved 
 - Read `context.md` first (task mode) and do not explore beyond it; fill only a named gap and add it under its
   `## Gaps` as `### <gap> (by <your name>)`. Then read `status.md`, `decisions.md` and the earlier documents.
 - Write your output file first, then improve it, so a cut-off run still leaves it. Stay within the tool-call budget
-  in your agent file (about 35 for the agents that decide, about 20 for the others), at most 3 web lookups. Reply in 10 lines or fewer.
+  in your agent file (about 35 for the agents that decide, about 20 for the others and for `code-reviewer` and
+  `solution-architect` in task mode, which work from a pack), at most 3 web lookups. Reply in 10 lines or fewer.
+  A reviewer reads `review-pack.md` and a designer `design-pack.md` (both from `review_pack.py`) instead of the
+  checklists, rules and lessons one by one.
 - Never edit another agent's file: write the problem to `questions.md` addressed to that agent.
 - Never commit, push, stash, reset, check out, start or restart servers. Say what needs a restart and why.
 - Never copy secret values from config files into documents or chat: name the key only.

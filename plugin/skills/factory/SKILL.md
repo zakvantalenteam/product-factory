@@ -28,7 +28,8 @@ Even on "just build it": say once what is skipped and the risk, then follow thei
 - After an agent returns, read its output (not just its summary), move its questions into `questions.md`, then
   route to another agent, answer from `decisions.md`, or hold for the gate.
 - Models: every agent runs on Opus (its own `model:` line), so a brief needs no model override. The agents that
-  decide (spec, design, review, audit, domain experts) have about 35 tool calls; the others about 20.
+  decide (spec, design, audit, domain experts) have about 35 tool calls; `code-reviewer` works from a review pack
+  in about 20; the others about 20.
 - Product-owner documents also get an offline copy: `md_to_html.py <file.md>`. Replies: 6 lines or fewer.
 
 ## Gates (in chat)
@@ -94,7 +95,8 @@ document (`05-performance.md`, `05-security.md`, `05-ops.md`, `05-ui.md`).
   contract is fixed, `integration-engineer` (build) for stories with an outside system, `devops-engineer` for
   environment changes, `qa-engineer` writes the tests from the acceptance criteria. Log each story in
   `06-build-log.md`. Builders work in slices; run them again where they stopped.
-- After each story or batch: one `code-reviewer` pass -> `07-code-review.md` (MUSTs go back to the developer
+- After each story or batch: `review_pack.py <slug> --root <product root> --files <the story's files>`, then one
+  `code-reviewer` pass from that pack -> `07-code-review.md` (MUSTs go back to the developer
   agent with the exact findings; re-run only what failed). `qa-engineer` runs the tests -> `07-test-report.md`.
   At the end `performance-engineer` -> `07-performance.md`, `verifier` (system, build mode) ->
   `07-system-review.md`, `sf-expert` (review) when SF code changed.
