@@ -192,7 +192,7 @@ def canon(name):
     """The core agent of a hook or table name: drops a plugin prefix and maps earlier names."""
     n = project.agent_name(str(name or ""))
     low = n.lower()
-    if low.startswith("main session"):
+    if low == "main" or low.startswith("main session"):
         return "main session"
     own = [str(e).lower() for e in CFG.get("experts") or []]
     if low in RENAMES and low not in own:  # a project that keeps its own agent of an earlier name keeps that name
@@ -210,6 +210,26 @@ def team_of(agent):
         if a in agents:
             return tid
     return "domain" if a in [e.lower() for e in experts_list()] else "helpers"
+
+
+CALLS = {}
+
+
+def call_budget(agent, mode):
+    """The "about N tool calls" of an agent's Speed line (task or product mode), for the page's calls meter."""
+    key = (agent.lower(), mode)
+    if key not in CALLS:
+        CALLS[key] = 0
+        for d in (os.path.join(ROOT, ".claude", "agents"), os.path.join(_HERE, "..", "agents")):
+            try:
+                with open(os.path.join(d, agent + ".md"), encoding="utf-8") as f:
+                    speed = next((x for x in f.read().splitlines() if x.startswith("Speed:")), "")
+            except OSError:
+                continue
+            m = re.search(r"\b%s mode about (\d+)" % mode, speed) or re.search(r"\babout (\d+) tool calls", speed)
+            CALLS[key] = int(m.group(1)) if m else 0
+            break
+    return CALLS[key]
 
 
 def teams_table(mode):
@@ -455,6 +475,31 @@ def sync_page():
         pass
 
 
+TOOL_KINDS = ("read", "edit", "run", "search", "skill")
+
+
+def now_rows(st):
+    """Per agent of the current stage (its experts, background agents, the main session): tool calls since its
+    row started, its latest action and the last file it wrote, for the page's "now working" card (the page
+    gets only the last 80 events)."""
+    k = current_stage(st)
+    s = stage_of(st, k)
+    who = [(r["expert"], r["agent"], r["start"], r.get("end")) for r in (st.get("plan") or {}).get("rows", [])
+           if r["stage"] == k and r.get("start") and r["agent"] != "main session"]
+    who += [(b["agent"], b["agent"], b["start"], None) for b in st.get("bg") or []]
+    who.append(("main session", "main session", s.get("run") or s.get("start") or "", None))
+    out = {}
+    for ex, ag, t0, t1 in who:
+        alone = sum(1 for w in who if w[1] == ag) == 1
+        mine = [e for e in st.get("events", []) if e["t"] >= t0 and (not t1 or e["t"] <= t1)
+                and (e.get("actor") == ex or (alone and e.get("actor") == ag))]
+        acts = [e for e in mine if e["kind"] not in ("gate", "ok", "changes", "plan", "risk")]
+        wrote = [e for e in mine if e["kind"] == "edit" and e.get("file")]
+        out[ex] = {"n": sum(1 for e in mine if e["kind"] in TOOL_KINDS), "last": acts[-1]["text"] if acts else "",
+                   "wrote": wrote[-1]["file"] if wrote else ""}
+    return out
+
+
 def save(st):
     st["updated"] = now()
     st["project"] = CFG.get("name") or ""
@@ -464,6 +509,9 @@ def save(st):
     st["budgets"] = {k: v for k, v in timing.budgets_for(st["risk"], mode_of(st), CFG).items() if k in keys}
     for r in (st.get("plan") or {}).get("rows", []):
         r["team"] = team_of(r.get("agent") or r.get("expert") or "")
+    ags = {r["agent"] for r in (st.get("plan") or {}).get("rows", [])} | {b["agent"] for b in st.get("bg") or []}
+    st["calls"] = {a: n for a in sorted(ags) if a != "main session" for n in [call_budget(a, mode_of(st))] if n}
+    st["now"] = now_rows(st)
     d = path(st["id"])
     os.makedirs(d, exist_ok=True)
     write(os.path.join(d, "status.json"), json.dumps(st, indent=1))
@@ -1455,7 +1503,37 @@ def describe(tool, inp, root=""):
     return None
 
 
-def on_tool(tid, data):
+def bind(st, aid, name):
+    """One run of an agent (Claude's agent_id, Cursor's subagent_id) -> its expert row: the first working row of
+    that agent not taken by another run since the row started; off the team it is the agent itself."""
+    aids = st.setdefault("aids", {})
+    if aid in aids:
+        return aids[aid]["expert"]
+    taken = lambda r: any(v["expert"] == r["expert"] and v["t"] >= (r.get("start") or "") for v in aids.values())
+    rows = [r for r in (st.get("plan") or {}).get("rows", []) if r["agent"].lower() == name.lower() and r["state"] == "live"]
+    r = next((r for r in rows if r["stage"] == current_stage(st) and not taken(r)), None) or \
+        next((r for r in rows if not taken(r)), None)
+    aids[aid] = {"expert": r["expert"] if r else name, "t": now()}
+    st["aids"] = dict(list(aids.items())[-30:])
+    return aids[aid]["expert"]
+
+
+def who(st, data, sid=""):
+    """The agent behind a tool call. Claude sends agent_type (and agent_id) only from inside a subagent or a
+    session started with --agent, so a call without them is the main session's. Cursor's tool hooks name no
+    agent: a call from a subagent's own conversation is known from its subagentStart (bound by id)."""
+    aid = str(data.get("agent_id") or "")
+    if not aid and sid and sid in (st.get("aids") or {}):
+        aid = sid
+    if aid and aid in (st.get("aids") or {}):
+        return st["aids"][aid]["expert"], aid
+    if not data.get("agent_type"):
+        return "main session", ""
+    name = canon(data["agent_type"])
+    return (bind(st, aid, name) if aid else name), aid
+
+
+def on_tool(tid, data, sid=""):
     event = data.get("hook_event_name", "")
     tool = data.get("tool_name", "")
     inp = data.get("tool_input") or {}
@@ -1467,15 +1545,29 @@ def on_tool(tid, data):
     pre = event in ("PreToolUse", "preToolUse")
     st = load(tid)
     cur = current_stage(st)
+    if event in ("SubagentStart", "subagentStart"):
+        # Cursor: a subagent starts in its own conversation; its tool calls are recorded under this task's run
+        aid = re.sub(r"[^A-Za-z0-9._-]", "", str(data.get("subagent_id") or data.get("agent_id") or ""))[:80]
+        name = canon(data.get("subagent_type") or data.get("agent_type") or "")
+        if aid and name:
+            bind(st, aid, name)
+            os.makedirs(path(".sessions"), exist_ok=True)
+            write(path(".sessions", aid), tid)
+            save(st)
+        return
     if event in ("SubagentStop", "subagentStop"):
-        # optional hook: a background agent finished; its first working row is done
-        name = canon(data.get("agent_type") or "")
-        r = next((x for x in (st.get("plan") or {}).get("rows", []) if name and x["agent"].lower() == name.lower()
-                  and x["state"] == "live"), None)
-        bg = next((b for b in st.get("bg") or [] if name and b["agent"].lower() == name.lower()), None)
+        # a background agent finished: the row its run is bound to, else the first working row of that agent
+        name = canon(data.get("agent_type") or data.get("subagent_type") or "")
+        aid = str(data.get("agent_id") or data.get("subagent_id") or "")
+        mine = ((st.get("aids") or {}).get(aid) or {}).get("expert")
+        live = [x for x in (st.get("plan") or {}).get("rows", []) if x["state"] == "live"
+                and (x["expert"] == mine if mine else name and x["agent"].lower() == name.lower())]
+        r = live[0] if live else None
+        bg = next((b for b in st.get("bg") or [] if aid and b.get("aid") == aid), None) or \
+            next((b for b in st.get("bg") or [] if name and b["agent"].lower() == name.lower()), None)
         if r:
             r["state"], r["end"] = "done", now()
-            add(st, r["stage"], "agent", r["expert"] + " finished", name)
+            add(st, r["stage"], "agent", r["expert"] + " finished", r["expert"])
             save(st)
         elif bg:
             st["bg"].remove(bg)
@@ -1487,28 +1579,35 @@ def on_tool(tid, data):
         stage = agent_stage(st, name, cur)
         resp = data.get("tool_response")  # a background launch returns at once: {"isAsync": true, "status": "async_launched"}
         hint = " ".join(str(inp.get(k) or "") for k in ("description", "prompt"))[:4000]
+        use = str(data.get("tool_use_id") or "")
+        rid = isinstance(resp, dict) and str(resp.get("agentId") or resp.get("agent_id") or "")
         if pre and stage:
             s = stage_of(st, stage)
             r = mark_expert(st, stage, name, "live", hint)
+            if r and use:  # the launch's result names the run (agentId): its tool calls then show on this row
+                st["launch"] = dict(list((st.get("launch") or {}).items())[-9:] + [(use, r["expert"])])
             if s["state"] == "live":  # another expert of a stage that is already running
-                add(st, stage, "agent", (r["expert"] if r else name) + " started", name)
+                add(st, stage, "agent", (r["expert"] if r else name) + " started", r["expert"] if r else name)
             else:
                 reopen(s)
                 s["state"], s["run"], s["actor"] = "live", now(), name
                 s.setdefault("start", s["run"])
-                add(st, stage, "start", s["name"] + " started", name)
+                add(st, stage, "start", s["name"] + " started", r["expert"] if r else name)
         elif pre:
             add(st, cur, "agent", name + " agent started" + (": " + str(inp["description"])[:80] if inp.get("description") else ""), name)
         elif inp.get("run_in_background") or (isinstance(resp, dict) and (resp.get("isAsync") or resp.get("status") == "async_launched")) \
                 or "async_launched" in str(resp)[:400]:
             # the call returns at launch: the agent keeps working until its result comes back
+            ex = (st.get("launch") or {}).pop(use, None)
+            if rid:
+                st.setdefault("aids", {})[rid] = {"expert": ex or name, "t": now()}
             if not (stage and team_rows(st, stage, name, ("live",))):  # off the team: flow_check waits for it too
-                st["bg"] = (st.get("bg") or [])[-9:] + [{"agent": name, "start": now()}]
-            add(st, stage or cur, "agent", name + " is working in the background", name)
+                st["bg"] = (st.get("bg") or [])[-9:] + [dict({"agent": name, "start": now()}, **({"aid": rid} if rid else {}))]
+            add(st, stage or cur, "agent", (ex or name) + " is working in the background", name)
         elif stage and team_rows(st, stage):
             # planned team: the stage ends with `stage done`, not when its first expert finishes
             r = mark_expert(st, stage, name, "done", hint)
-            add(st, stage, "agent", (r["expert"] if r else name) + " finished", name)
+            add(st, stage, "agent", (r["expert"] if r else name) + " finished", r["expert"] if r else name)
         elif stage and stage_of(st, stage)["state"] == "live":
             s = stage_of(st, stage)
             s["state"], s["end"] = "done", now()
@@ -1523,7 +1622,9 @@ def on_tool(tid, data):
     if not hit:
         return
     kind, text, extra = hit
-    actor = canon(data.get("agent_type")) if data.get("agent_type") else (stage_of(st, cur).get("actor") or "main session")
+    actor, aid = who(st, data, sid)
+    if aid:
+        extra["aid"] = aid[-8:]  # two runs of one agent stay apart on the page
     add(st, cur, kind, text, actor, **extra)
     save(st)
 
@@ -1558,13 +1659,13 @@ def cmd_hook(a):
                 write(path(".sessions", sid + ".quick"), "1")  # flow_check.py accepts this turn's quick fix
         tid = session_task(sid)
         if tid:
-            with_lock(lambda: on_tool(tid, data))
+            with_lock(lambda: on_tool(tid, data, sid))
         if data.get("hook_event_name") in ("PostToolUse", "postToolUse"):
             note_edit(sid, data.get("tool_name", ""), inp)
     except Exception:
         pass
     finally:
-        if a.cursor and data.get("hook_event_name") in ("preToolUse", None):  # unreadable input: Cursor waits on a reply
+        if a.cursor and data.get("hook_event_name") in ("preToolUse", "subagentStart", None):  # unreadable input: Cursor waits on a reply
             print(json.dumps({"permission": "allow"}))
 
 

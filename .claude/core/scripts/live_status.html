@@ -282,6 +282,40 @@ dialog.fv::backdrop{background:rgba(16,18,28,.38)}
 @keyframes pop{from{transform:scale(.6);opacity:0}}
 @keyframes bump{40%{transform:translateY(-3px);color:var(--cur)}}
 @keyframes glow{50%{border-color:color-mix(in srgb,var(--you) 70%,var(--card))}}
+/* now working: one row per agent of the stage (main session first) with its latest action, calls against its budget
+   and time, then the stage's activity with an agent filter (from the live-page-agents prototype, variant A) */
+.acard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+#doing .n{color:var(--cur)}
+.adot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none;display:inline-block}
+.nr.working .adot{animation:abreathe 1.4s ease-in-out infinite}
+.anm{font-weight:500;color:color-mix(in srgb,var(--c) 70%,var(--text))}
+.atag{display:inline-flex;gap:5px;align-items:center;font-size:11px;padding:0 8px;border-radius:999px;white-space:nowrap;
+ color:color-mix(in srgb,var(--c) 75%,var(--text));background:color-mix(in srgb,var(--c) 10%,var(--card));border:1px solid color-mix(in srgb,var(--c) 28%,var(--card))}
+.feed .atag{margin-left:4px;vertical-align:1px}
+.meter{height:4px;border-radius:2px;background:color-mix(in srgb,var(--c) 14%,var(--card));overflow:hidden;width:72px;flex:none}
+.meter i{display:block;height:100%;background:var(--c);border-radius:2px;transition:width .4s}
+.anum{font-variant-numeric:tabular-nums;color:var(--faint);font-size:12px;white-space:nowrap}
+.achips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px}
+button.atag{font:inherit;font-size:11px;cursor:pointer}
+.atag[aria-pressed=false]{opacity:.45}
+.afeed{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
+.afeed li{display:grid;grid-template-columns:46px 150px minmax(0,1fr);gap:8px;padding:3px 0;border-top:1px solid var(--line);align-items:baseline}
+.afeed li.new{animation:inrow 1.2s ease-out}
+.afeed li .atag{overflow:hidden;text-overflow:ellipsis;justify-self:start;max-width:100%}
+.afeed li .tx{min-width:0;overflow-wrap:anywhere}
+.now{display:grid;gap:0}
+.nr{display:grid;grid-template-columns:200px minmax(0,1fr) 96px minmax(52px,auto);gap:12px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.nr:first-child{border-top:0}
+.nr .who{display:flex;gap:8px;align-items:center;min-width:0}
+.nr .role{font-size:12px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nr .act{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nr.done .act{color:var(--muted)}
+.nr.waiting .act{color:var(--faint)}
+.nr .calls{display:flex;gap:6px;align-items:center}
+@keyframes abreathe{50%{opacity:.35}}
+@keyframes inrow{from{background:color-mix(in srgb,var(--c,var(--cur)) 14%,var(--card))}}
+@media (max-width:620px){.nr{grid-template-columns:minmax(0,1fr) auto;gap:2px 8px}.nr .act{grid-column:1/-1;white-space:normal}.nr .calls{display:none}
+.afeed li{grid-template-columns:40px minmax(0,1fr)}.afeed li .tx{grid-column:1/-1;padding-left:48px}}
 @media (max-width:620px){.tm{white-space:normal;text-align:right}.stats{grid-template-columns:repeat(3,1fr)}.stat:nth-child(n+4){display:none}.top{flex-wrap:wrap}.meta{flex-direction:row;align-items:center;flex-basis:100%;flex-wrap:wrap}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
@@ -314,6 +348,8 @@ dialog.fv::backdrop{background:rgba(16,18,28,.38)}
       <div class="stat"><span class="sub">Commands</span><b id="c-run">0</b></div>
     </section>
     <section id="gate" hidden></section>
+    <section class="acard" id="now" hidden aria-label="Who is working"></section>
+    <section class="acard" id="act" hidden aria-label="Activity of this stage"></section>
     <section class="crew" id="crew" hidden aria-label="Team"></section>
     <ol class="tl" id="tl" aria-label="Stages"></ol>
   </div>
@@ -372,7 +408,7 @@ function buildRows(d){
 }
 function line(e){const li=document.createElement("li");li.dataset.n=e.n;li.className="k-"+e.kind;
   li.innerHTML='<span class="when">'+hm(e.t)+'</span><span><span class="tag">'+esc(TAG[e.kind]||e.kind)+'</span><span class="tx"></span>'+
-    (e.actor&&e.actor!=="main session"&&e.actor!=="you"?' <span class="by">'+esc(e.actor)+'</span>':"")+'</span>';
+    (e.actor&&e.actor!=="main session"&&e.actor!=="you"?' <span class="atag" style="--c:'+acol(e.actor)+'"><span class="adot"></span>'+esc(e.actor)+'</span>':"")+'</span>';
   li.querySelector(".tx").textContent=e.text;
   if(e.answer){const a=document.createElement("div");a.className="ans";a.textContent="A: "+e.answer;li.lastElementChild.appendChild(a)}
   return li}
@@ -409,7 +445,10 @@ function apply(d){
   const pn=d.project||PROJ.name;document.title=(pn?pn+" - ":"")+d.id+" live status";
   const pill=$("#state");pill.className="pill st-"+ov;pill.textContent={live:"Live",wait:"Your turn",done:"Done",fail:"Fixing",idle:"Idle"}[ov];
   const ev=d.events.length?d.events[d.events.length-1]:null;
-  say(ov==="wait"?(d.gate?gname(d.gate)+": "+whoWaits(d.gate):"Waiting for you"):ov==="done"?"All stages done":ov==="idle"?"No activity for "+fmt(ms(d.updated)):ov==="fail"?NAMES[c.k]+" found problems":c.state==="done"?between(d,c):
+  NOW=agentsNow();const par=ov==="live"&&NOW&&NOW.working.length>1?NOW:null,pn2=par?par.working.map(a=>a.id).join(", "):"";
+  if(par)say(par.working.length+" agents working in parallel: "+pn2+(par.done.length?" · "+par.done.length+" done":""),!first,
+    '<span class="n">'+par.working.length+" agents working in parallel</span>: "+esc(pn2)+(par.done.length?' <span class="sub">· '+par.done.length+" done</span>":""));
+  else say(ov==="wait"?(d.gate?gname(d.gate)+": "+whoWaits(d.gate):"Waiting for you"):ov==="done"?"All stages done":ov==="idle"?"No activity for "+fmt(ms(d.updated)):ov==="fail"?NAMES[c.k]+" found problems":c.state==="done"?between(d,c):
     ev&&ms(ev.t)<90000&&ev.kind!=="gate"?ev.text:(c.actor||ACTOR[c.k])+" "+(VERB[c.k]||"is working"),!first&&ov==="live");
   d.stages.forEach(s=>{const li=rows[s.k],was=prev?(prev.stages.find(x=>x.k===s.k)||{}).state:null;
     li.className="row s-"+s.k+" "+s.state+(li.classList.contains("open")?" open":"");
@@ -422,8 +461,52 @@ function apply(d){
     if(["live","wait","fail"].includes(s.state)||li.classList.contains("open")||li.querySelector(".chips").children.length||d.events.some(e=>e.stage===s.k&&e.kind==="edit"))feed(s.k,!first)});
   const last=d.events.length?d.events[d.events.length-1].n:0;if(last>seen){lastChange=Date.now();beat()}seen=last;
   const n=d.counts||{};count("#c-read",n.read||0);count("#c-edit",n.edit||0);count("#c-run",n.run||0);
-  gate();crew();tick();
+  gate();agentsCard();crew();tick();
 }
+/* who is working: shown while the stage has 2 or more experts or a background agent; one row per agent, main
+   session first, with its latest action, tool calls against the "about N" of its Speed line, and time; below it
+   the stage's activity, newest first, with an agent filter kept in this browser */
+const TCOL={lead:"wrap",product:"product",design:"design",architecture:"spec",engineering:"build",domain:"verify",quality:"review",audit:"stories",operations:"release",helpers:"base"};
+let NOW=null,HID=new Set(),actSeen=0,actId="";try{HID=new Set(JSON.parse(localStorage.getItem("ls:hide")||"[]"))}catch(e){}
+function acol(a,team){if(a==="main session")return "var(--wrap)";
+  const r=((D.plan&&D.plan.rows)||[]).find(x=>x.expert===a)||((D.plan&&D.plan.rows)||[]).find(x=>x.agent===a);
+  return "var(--"+(TCOL[team||(r&&r.team)||benchTeam(r?r.agent:a)]||"base")+")"}
+function tname(id){const t=teams().find(t=>t.id===id);return t?t.name:"Helpers"}
+function agentsNow(){const c=cur(D);if(!c||!["live","wait","fail"].includes(c.state))return null;
+  const t0=Date.parse(c.run||c.start)||0,N=D.now||{},XST={live:"working",done:"done",todo:"planned"};
+  const ex=((D.plan&&D.plan.rows)||[]).filter(r=>r.stage===c.k&&r.state!=="skip"&&r.agent!=="main session");
+  const bg=(D.bg||[]).filter(b=>Date.parse(b.start)>=t0-60000&&!ex.some(r=>r.agent===b.agent));
+  if(ex.length<2&&!bg.length)return null;
+  const A=ex.map(r=>({id:r.expert,agent:r.agent,team:r.team||benchTeam(r.agent),why:r.why||"",st:XST[r.state]||r.state,start:r.start,end:r.end,out:r.out}))
+    .concat(bg.map(b=>({id:b.agent,agent:b.agent,team:benchTeam(b.agent),why:"in the background",st:"working",start:b.start})));
+  const w=A.filter(a=>a.st==="working"),g=D.gate&&D.gate.stage===c.k,mn=N["main session"]||{};
+  A.forEach(a=>{const n=N[a.id]||{};a.calls=n.n||0;a.budget=(D.calls||{})[a.agent]||0;a.c=acol(a.id,a.team);
+    a.act=a.st==="done"&&(n.wrote||a.out)?(n.wrote?"Wrote "+n.wrote:a.out):n.last||(a.st==="planned"?"Planned":"Starting")});
+  const m={id:"main session",agent:"main session",team:"lead",why:"runs the flow",st:w.length||g?"waiting":"working",start:c.run||c.start,c:"var(--wrap)",
+    act:w.length?"Waiting for "+w.map(a=>a.id).join(", "):g?"Waiting for you: "+D.gate.question:mn.last||"Working"};
+  return {k:c.k,rows:[m].concat(A),working:w,done:A.filter(a=>a.st==="done")}}
+function meter(a){if(!a.budget)return "";
+  return '<span class="meter" title="'+a.calls+" of about "+a.budget+' tool calls"><i style="width:'+Math.min(100,a.calls/a.budget*100)+'%"></i></span><span class="anum">'+a.calls+"/"+a.budget+"</span>"}
+function stateLabel(a){return a.st==="done"?'<span class="pill st-done">done'+(a.start&&a.end?" "+fmt(ms(a.start,a.end)):"")+"</span>":a.st==="waiting"?'<span class="pill st-wait">waiting</span>'
+  :a.st==="working"?'<span class="pill st-live" style="--cur:'+a.c+'"'+(a.start?' data-s="'+esc(a.start)+'">'+fmt(ms(a.start)):">working")+"</span>":'<span class="pill">planned</span>'}
+function agentsCard(){const box=$("#now"),act=$("#act");
+  if(!NOW){box.hidden=act.hidden=true;box.innerHTML=act.innerHTML="";return}
+  box.hidden=act.hidden=false;
+  box.innerHTML='<div class="now">'+NOW.rows.map(a=>'<div class="nr '+a.st+'" style="--c:'+a.c+'"><div class="who"><span class="adot"></span><div style="min-width:0"><div class="anm">'+esc(a.id)+
+    '</div><div class="role">'+esc(tname(a.team)+": "+a.why)+'</div></div></div><div class="act" title="'+esc(a.act)+'">'+esc(a.act)+'</div><div class="calls">'+meter(a)+"</div><div>"+stateLabel(a)+"</div></div>").join("")+"</div>";
+  activity()}
+function activity(){const n=NOW,ids=n.rows.map(a=>a.id),col=Object.fromEntries(n.rows.map(a=>[a.id,a.c]));
+  if(actId!==D.id+":"+n.k){actId=D.id+":"+n.k;actSeen=0}
+  const by=e=>ids.includes(e.actor)?e.actor:(n.rows.find(a=>a.agent===e.actor)||{}).id||"main session";
+  const L=D.events.filter(e=>e.stage===n.k).map(e=>({e,a:by(e)})).filter(x=>!HID.has(x.a)).reverse();
+  $("#act").innerHTML='<b style="font-weight:500">Activity</b> <span class="sub">newest first</span><div class="achips" role="group" aria-label="Show activity of">'+
+    n.rows.map(a=>'<button type="button" class="atag" style="--c:'+a.c+'" aria-pressed="'+!HID.has(a.id)+'" data-a="'+esc(a.id)+'"><span class="adot"></span>'+esc(a.id)+"</button>").join("")+
+    '</div><ul class="afeed">'+L.map(({e,a})=>{const you=e.actor==="you";return '<li class="'+(actSeen&&e.n>actSeen?"new":"")+'" style="--c:'+(you?"var(--you)":col[a])+'"><span class="anum">'+hm(e.t)+
+      '</span><span class="atag"><span class="adot"></span>'+esc(you?"you":a)+'</span><span class="tx">'+esc(e.text)+"</span></li>"}).join("")+"</ul>";
+  actSeen=Math.max(actSeen,0,...D.events.map(e=>e.n))}
+$("#act").addEventListener("click",e=>{const b=e.target.closest("button.atag[data-a]");if(!b||!NOW)return;const id=b.dataset.a;
+  if(HID.has(id))HID.delete(id);else if(NOW.rows.filter(a=>!HID.has(a.id)).length>1)HID.add(id);
+  try{localStorage.setItem("ls:hide",JSON.stringify([...HID]))}catch(x){}activity()});
 /* header: types the latest activity while the keyboard presses the matching keys */
 const KB={};
 (function(){const kb=$("#kb");["qwertyuiop","asdfghjkl","zxcvbnm"," "].forEach(r=>{const row=document.createElement("div");row.className="r";
@@ -431,10 +514,10 @@ const KB={};
 const LETTERS=Object.keys(KB).filter(k=>k!==" ");
 let typed="",typing=false,typeT=null;
 function press(ch){const k=KB[ch]||KB[LETTERS[Math.floor(Math.random()*LETTERS.length)]];k.classList.add("dn");setTimeout(()=>k.classList.remove("dn"),110)}
-function say(text,animate){$("#doingSr").textContent=text;if(text===typed)return;typed=text;clearTimeout(typeT);const el=$("#doing");
-  if(!animate||REDUCE){typing=false;el.textContent=text;return}
+function say(text,animate,html){$("#doingSr").textContent=text;if(text===typed)return;typed=text;clearTimeout(typeT);const el=$("#doing"),end=()=>{typing=false;if(html)el.innerHTML=html};
+  if(!animate||REDUCE){el.textContent=text;end();return}
   let i=0;typing=true;(function step(){i++;el.textContent=text.slice(0,i);press(text[i-1].toLowerCase());
-    if(i<text.length)typeT=setTimeout(step,28+Math.random()*45);else typing=false})()}
+    if(i<text.length)typeT=setTimeout(step,28+Math.random()*45);else end()})()}
 setInterval(()=>{if(!REDUCE&&!typing&&document.body.dataset.ov==="live"&&Math.random()<.6)press()},700);
 function between(d,c){const i=d.stages.indexOf(c),nx=d.stages.slice(i+1).find(s=>s.state==="todo");return nx?"Getting ready for "+NAMES[nx.k]:"Finishing up"}
 function beat(){const u=$("#upd");u.classList.remove("pulse");void u.offsetWidth;u.classList.add("pulse")}
@@ -457,6 +540,7 @@ function budgetNote(s,now){
 /*budget:end*/
 function tick(){if(!D)return;
   document.querySelectorAll(".crew-x[data-s]").forEach(el=>{el.textContent="working "+fmt(ms(el.dataset.s))});
+  document.querySelectorAll(".nr .pill[data-s]").forEach(el=>{el.textContent=fmt(ms(el.dataset.s))});
   D.stages.forEach(s=>{let t="";
     if(s.state==="done"&&s.start&&s.end)t=hm(s.start)+"  "+fmt(ms(s.start,s.end));
     else if((s.state==="live"||s.state==="fail")&&(s.run||s.start))t=fmt(ms(s.run||s.start));
@@ -723,9 +807,16 @@ const RUN=[
 {s:"spec",k:"search",a:"spec-analyst",x:"Searched requireAdmin"},{s:"spec",k:"read",a:"spec-analyst",x:"Reading web/src/list/ListPage.tsx"},
 {s:"spec",k:"edit",a:"spec-analyst",x:"Wrote spec.md",file:"spec.md"},{s:"spec",k:"done",a:"spec-analyst",x:"spec-analyst finished",out:"spec.md, 6 criteria, D3 + D4, 1 question",keep:1},
 {s:"spec",k:"gate",a:"you",x:"Review spec.md: 6 criteria and 1 open question",file:"spec.md",lines:SPEC},
-{s:"design",k:"start",a:"solution-architect",x:"Design started"},{s:"design",k:"read",a:"solution-architect",x:"Reading src/report/ReportController.java (the export pattern)"},
-{s:"design",k:"edit",a:"solution-architect",x:"Wrote design.md and decisions/D3-api.md",file:"design.md"},
-{s:"design",k:"edit",a:"main session",x:"Built prototype.html with 3 button placements",file:"prototype.html"},{s:"design",k:"done",a:"solution-architect",x:"Design ready",out:"design.md, 7 changes, D3 D4 cards, 3 variants",keep:1},
+{s:"design",k:"start",a:"solution-architect",x:"Design started"},{s:"design",k:"agent",a:"ux-designer",x:"ux-designer started"},
+{s:"design",k:"agent",a:"security-architect",x:"security-architect started"},
+{s:"design",k:"read",a:"solution-architect",x:"Reading src/report/ReportController.java (the export pattern)"},{s:"design",k:"read",a:"ux-designer",x:"Reading web/src/list/ListPage.tsx"},
+{s:"design",k:"search",a:"security-architect",x:"Searched requireAdmin"},{s:"design",k:"read",a:"solution-architect",x:"Reading src/list/ListService.java"},
+{s:"design",k:"edit",a:"ux-designer",x:"Wrote prototype.html with 3 button placements",file:"prototype.html"},{s:"design",k:"read",a:"security-architect",x:"Reading src/auth/Roles.java"},
+{s:"design",k:"edit",a:"solution-architect",x:"Wrote design.md: 7 changes",file:"design.md"},{s:"design",k:"edit",a:"security-architect",x:"Wrote decisions/D4-access.md",file:"D4-access.md"},
+{s:"design",k:"fin",a:"security-architect",x:"security-architect finished",out:"D4: export is admin-only"},{s:"design",k:"run",a:"ux-designer",x:"Checked prototype.html at 360 px"},
+{s:"design",k:"edit",a:"solution-architect",x:"Wrote decisions/D3-api.md",file:"D3-api.md"},{s:"design",k:"fin",a:"ux-designer",x:"ux-designer finished",out:"prototype.html, 3 variants"},
+{s:"design",k:"fin",a:"solution-architect",x:"solution-architect finished",out:"design.md, D3 card"},
+{s:"design",k:"done",a:"main session",x:"Design ready",out:"design.md, 7 changes, D3 D4 cards, 3 variants",keep:1},
 {s:"design",k:"gate",a:"you",x:"Pick a button placement (A, B or C) and OK the plan",open:"prototype.html"},
 {s:"build",k:"start",a:"main session",x:"Build started"},{s:"build",k:"edit",a:"main session",x:"Wrote src/list/ListExportService.java",file:"ListExportService.java"},
 {s:"build",k:"edit",a:"main session",x:"Edited src/list/ListController.java",file:"ListController.java"},
@@ -745,16 +836,28 @@ const RUN=[
 {s:"verify",k:"start",a:"verifier",x:"Verify started"},{s:"verify",k:"run",a:"verifier",x:"Opened the list page and exported it"},{s:"verify",k:"done",a:"verifier",x:"Verified",out:"6 of 6 criteria PASS"},
 {s:"release",k:"start",a:"release-manager",x:"Release check started"},{s:"release",k:"done",a:"release-manager",x:"Release check done",out:"READY"},
 {s:"wrap",k:"start",a:"commit-msg",x:"Writing the commit message"},{s:"wrap",k:"done",a:"commit-msg",x:"Commit message ready",out:"commit message ready"}];
-function demoState(){const t=new Date().toISOString();return {id:DID,title:"Export a list as CSV",size:"L",tool:"claude",mode:"task",project:PROJ.name,started:t,updated:t,seq:0,events:[],counts:{},gate:null,teams:CORE_TEAMS,risk:"medium",budgets:{spec:15,design:20,build:45,review:20,test:15,verify:15,release:15,wrap:5},
+/* the demo team: Design runs three experts in parallel while the main session waits */
+const DTEAM=[["spec","spec-analyst","Criteria, decisions, open questions"],["design","solution-architect","File plan and the D3 API card"],["design","ux-designer","Export button: 3 placements to pick from"],
+  ["design","security-architect","D4: who may export"],["build","main session","Builds the plan"],["review","code-reviewer","One pass over the diff"],["test","qa-engineer","Tests per criterion"],
+  ["verify","verifier","Checks it in the running app"],["release","release-manager","Ready to ship?"]];
+const DCALLS={"spec-analyst":35,"solution-architect":20,"ux-designer":35,"security-architect":35,"code-reviewer":20,"qa-engineer":20,"verifier":20,"release-manager":20};
+function demoState(){const t=new Date().toISOString(),tm=a=>(CORE_TEAMS.find(x=>x.agents.includes(a))||{}).id;
+  return {id:DID,title:"Export a list as CSV",size:"L",tool:"claude",mode:"task",project:PROJ.name,started:t,updated:t,seq:0,events:[],counts:{},gate:null,teams:CORE_TEAMS,risk:"medium",budgets:{spec:15,design:20,build:45,review:20,test:15,verify:15,release:15,wrap:5},
+  plan:{kinds:["feature"],confirmed:true,rows:DTEAM.map(([stage,a,why])=>({stage,expert:a,agent:a,why,state:"todo",team:tm(a)}))},calls:DCALLS,now:{},bg:[],
   stages:TASK.map(([k,n])=>({k,name:n,state:"todo",actor:ACTOR[k]}))}}
-function dpush(e){const st=demo.st,t=new Date().toISOString(),s=st.stages.find(x=>x.k===e.s);
-  if(e.k==="start"){s.state="live";s.start=s.start||t;s.run=t;s.actor=e.a}
-  else if(e.k==="done"){s.state=e.keep?"live":"done";if(!e.keep)s.end=t;if(e.out)s.out=e.out}
-  else if(e.k==="fail"){s.state="fail";s.out=e.out}
+function dpush(e){const st=demo.st,t=new Date().toISOString(),s=st.stages.find(x=>x.k===e.s),R=st.plan.rows,row=R.find(r=>r.stage===e.s&&r.agent===e.a);
+  const go=()=>{if(row){row.state="live";row.start=t;delete row.end}st.now[e.a]={n:0,last:e.x,wrote:""}},fin=r=>{r.state="done";r.end=t};
+  if(e.k==="start"){s.state="live";s.start=s.start||t;s.run=t;s.actor=e.a;go();st.now["main session"]={n:0,last:e.x,wrote:""}}
+  else if(e.k==="agent")go();
+  else if(e.k==="fin"&&row){fin(row);if(e.out)row.out=e.out}
+  else if(e.k==="done"){s.state=e.keep?"live":"done";if(!e.keep){s.end=t;R.filter(r=>r.stage===e.s&&r.state==="live").forEach(fin)}if(e.out)s.out=e.out}
+  else if(e.k==="fail"){s.state="fail";s.out=e.out;R.filter(r=>r.stage===e.s&&r.state==="live").forEach(fin)}
   else if(e.k==="gate"){s.state="wait";st.gate={stage:e.s,question:e.x,at:t,key:String(st.seq+1),file:e.file,lines:e.lines,open:e.open,openHref:"#"}}
-  else if(e.k==="ok"){st.gate=null;if(e.s==="spec"||e.s==="design"){s.state="done";s.end=t}else{s.state="live";s.run=t}}
+  else if(e.k==="ok"){st.gate=null;if(e.s==="spec"||e.s==="design"){s.state="done";s.end=t;R.filter(r=>r.stage===e.s&&r.state==="live").forEach(fin)}else{s.state="live";s.run=t}}
   else if(e.k==="changes"){st.gate=null;s.state="live";s.run=t}
-  st.seq++;st.events.push({n:st.seq,t,stage:e.s,kind:e.k,actor:e.a,text:e.x,file:e.file&&e.k==="edit"?e.file:undefined});
+  const n=st.now[e.a]||(st.now[e.a]={n:0,last:"",wrote:""});
+  if(["read","edit","run","search","skill"].includes(e.k))n.n++;if(!["gate","ok","changes"].includes(e.k))n.last=e.x;if(e.k==="edit"&&e.file)n.wrote=e.file;
+  st.seq++;st.events.push({n:st.seq,t,stage:e.s,kind:e.k==="fin"?"agent":e.k,actor:e.a,text:e.x,file:e.file&&e.k==="edit"?e.file:undefined});
   st.counts[e.k]=(st.counts[e.k]||0)+1;st.updated=t;apply(JSON.parse(JSON.stringify(st)))}
 function demoNext(){if(!demo||demo.wait)return;const e=RUN[demo.i++];if(!e){clearInterval(demo.iv);return}
   dpush(e);if(e.k==="gate"){demo.wait=true;if(e.s==="verify")setTimeout(()=>{demoAnswer(true,[])},5000)}}

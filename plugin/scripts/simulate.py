@@ -286,6 +286,33 @@ class Replay:
                 self.hook("PreToolUse", "Agent", {"subagent_type": a, "description": why[:80]})
                 self.wait(0.3)
 
+    def parallel(self, s, others):
+        """Several experts at once, as background agents run: each reads the context pack, writes its own files
+        in turn with the others, and finishes on its own; the main session waits. A file is the step's `owners`
+        entry's, else the expert whose `writes` names it (or its decision card), else the first expert's."""
+        def owner(f):
+            name = os.path.basename(f)
+            card = re.match(r"(D\d)-", name)
+            return (s.get("owners") or {}).get(f) or next(
+                (a for a in others if re.search(r"\b%s\b" % re.escape(card.group(1) if card else name),
+                                                (self.d["agents"].get(a) or {}).get("writes", ""))), others[0])
+        mine = {a: [f for f in s.get("files") or [] if owner(f) == a] for a in others}
+        order = sorted(others, key=lambda a: len(mine[a]))  # the one with the least to write finishes first
+        for a in others:
+            self.hook("PostToolUse", "Read", {"file_path": ls.path(self.tid, "context.md")}, a)
+            self.wait(0.3)
+        while any(mine.values()):
+            for a in others:
+                if mine[a]:
+                    self.files(dict(s, files=[mine[a].pop(0)]), a)
+        for c in s.get("cmds") or []:
+            self.ran(c.replace("<id>", self.tid), s.get("cmdsBy") or others[0])
+        for a in order:
+            self.hook("PostToolUse", "Agent", {"subagent_type": a})
+            self.wait(0.8)
+        if s.get("say"):
+            self.note(("%s: " % s["title"] if s.get("title") else "") + s["say"])
+
     def agents_done(self, agents):
         for a in agents or []:
             if a != "main session":
@@ -393,6 +420,10 @@ class Replay:
                 k = self.open
             self.agents_start(agents, s.get("title") or s.get("say") or "")
             lead = next((a for a in agents if a != "main session"), "main session")
+            others = [a for a in agents if a != "main session"]
+            if t not in ("build", "rebuild", "review") and len(others) > 1:
+                self.parallel(s, others)
+                return self.wait(1.0)
             if t in ("build", "rebuild"):
                 for f in (s.get("files") or []) or [self.last_build[0]]:
                     self.wrote(f, in_task=False)

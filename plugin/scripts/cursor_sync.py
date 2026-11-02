@@ -128,6 +128,7 @@ def hooks():
         "beforeReadFile": [h()],
         "preToolUse": [h(matcher="Delete|" + EDIT_TOOLS), h(LIVE, timeout=5, matcher="Task")],
         "postToolUse": [h(RULES_CHECK, matcher=EDIT_TOOLS), h(LIVE, timeout=5)],
+        "subagentStart": [h(LIVE, timeout=5)],
         "subagentStop": [h(LIVE, timeout=5)],
         "stop": [h(FLOW_STOP, timeout=5)],
     }}, indent=2) + "\n"

@@ -336,3 +336,19 @@ and never ships a change that breaks something else.
   design.md, a skeleton with one Changes row per criterion and one Impact map row per impact line. Every `<fill>`
   left fails handoff_check. `solution-architect` fills it from the pack and context.md, explores only a named gap,
   about 20 calls in task mode (35 in product mode), maxTurns 40; domain experts run in parallel from the same pack.
+
+## 25. 1.4.3 - the live page shows who is working
+- Evidence (Blend ask-perf-capacity, 30 Oct): Design ran 3 experts in the background; the page named one of them,
+  and 26 of 203 tool calls in the replay went to the wrong agent: with no `agent_type` the hook credited the
+  stage's last-started expert, so the main session's own calls showed as `performance-engineer`.
+- The hook credits a call by what Claude sends: no `agent_type` is the main session; `agent_id` ties a run to its
+  expert row (bound from the background launch's `agentId`, else the first working row of that agent not yet
+  taken), so two runs of one agent stay apart; events keep the run id. Cursor's tool hooks name no agent:
+  `subagentStart` (now in `.cursor/hooks.json`) binds the subagent's conversation to the task and its row, and
+  `subagentStop` reads `subagent_type`. Replay of the Blend session: 0 of 203 wrong.
+- The page (`live_status.html`): a "now working" card while a stage has 2 or more experts or a background agent,
+  one row per agent (main session first) with its team colour, role, latest action ("Waiting for ..." for the
+  main session, "Wrote <file>" when done), tool calls against the "about N" of its Speed line (`calls` and `now`
+  in status.json) and its time; the header says "N agents working in parallel"; the stage's activity below it has
+  an agent tag per row and agent filter chips (kept in the browser), and only new rows animate.
+- The demo run and the simulator's medium request run Design with 3 experts in parallel.

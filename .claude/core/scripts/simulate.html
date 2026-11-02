@@ -7,192 +7,372 @@
 <script>window.__SIM__={"port":8766,"name":""};</script>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("sim:theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
 <style>
-:root{--bg:#f8f8fc;--card:#fff;--line:#e6e8f0;--text:#1e2230;--muted:#5b6274;--faint:#8a90a0;
---spec:#7c6cf0;--design:#139c87;--build:#3b7ddd;--review:#cf8417;--test:#3c974a;--verify:#1790b5;--release:#c9558b;--wrap:#6b7480;
---intake:#6d72c9;--base:#5f7a8c;--requirements:var(--spec);--product:#a35fc4;--prototype:var(--design);--stories:#a9861c;--audit:var(--verify);
---you:#c27812;--fail:#c43d48;--cur:var(--build);--plan:#6d72c9;--triage:#5f7a8c;--do:var(--build);--check:var(--test);--end:var(--wrap)}
-:root{color-scheme:light}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#111318;--card:#181b22;--line:#2a2e39;--text:#e8eaf0;--muted:#a9afbd;--faint:#7e8596;
---spec:#a99ff8;--design:#4ccab5;--build:#7eaaf0;--review:#eeb25c;--test:#7cc68a;--verify:#5fc3e0;--release:#e78db6;--wrap:#a5acb8;--you:#f1b752;--fail:#f28c95;
---intake:#a3a8f0;--base:#9fb4c2;--product:#d09be8;--stories:#e2c165;--plan:#a3a8f0;--triage:#9fb4c2}
-:root[data-theme="system"]{color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root[data-theme="system"]{--bg:#111318;--card:#181b22;--line:#2a2e39;--text:#e8eaf0;--muted:#a9afbd;--faint:#7e8596;
---spec:#a99ff8;--design:#4ccab5;--build:#7eaaf0;--review:#eeb25c;--test:#7cc68a;--verify:#5fc3e0;--release:#e78db6;--wrap:#a5acb8;--you:#f1b752;--fail:#f28c95;
---intake:#a3a8f0;--base:#9fb4c2;--product:#d09be8;--stories:#e2c165;--plan:#a3a8f0;--triage:#9fb4c2}}
+/* Base palette: the SkillsOS review tracker tokens (soft Bento). Light first, dark redefines them. */
+:root{
+  --bg:#f6f6fa;--surface:#ffffff;--surface-2:#f3f2f8;--surface-3:#ebe9f3;--ink:#1f1d30;--muted:#615e76;--line:#e6e4ee;--line-2:#d8d5e3;--focus:#7d68d0;
+  --rose:#fcecf0;--rose-ink:#9b3553;--peach:#fdf0e6;--peach-ink:#8f4a1f;--lemon:#fbf5df;--lemon-ink:#6b5414;
+  --sky:#eaf3fb;--sky-ink:#235b84;--mint:#e6f5ee;--mint-ink:#226a4b;--lilac:#f0ecfb;--lilac-ink:#5a46a6;
+  --grad:linear-gradient(130deg,#fbe4d8 0%,#f8dde7 50%,#e7e0f8 100%);--on-grad:#2b2440;--grad-chip:rgba(255,255,255,.62);
+  --grad-strong:linear-gradient(130deg,#efa98b 0%,#e48aa6 52%,#a493dd 100%);
+  --a1:#8d7ad3;--a2:#7581d6;--a3:#6c9bd6;--a4:#5eaea3;--a5:#de9a6f;--a6:#d3b25d;--a7:#d98cae;--a8:#6eb78b;--a9:#63aed3;--a10:#a2aab8;
+  --crit:#cf6079;--high:#d88a58;--med:#cdaa4c;--low:#6aa1c9;
+  --code-bg:#24223a;--code-ink:#e8e5f6;--code-dim:#8f8bad;
+  --f-ui:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-display:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:"Cascadia Code","Cascadia Mono",Consolas,ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13131f;--surface:#1b1b2a;--surface-2:#232335;--surface-3:#2b2b40;--ink:#ebeaf4;--muted:#a6a3bb;--line:#2c2b40;--line-2:#3a3952;--focus:#b3a5ee;
+  --rose:#2e1c25;--rose-ink:#f0aabd;--peach:#2e231b;--peach-ink:#efb995;--lemon:#2b2718;--lemon-ink:#e3cd84;
+  --sky:#192634;--sky-ink:#a3cbea;--mint:#172a21;--mint-ink:#98d8b6;--lilac:#231f3b;--lilac-ink:#c6baf0;
+  --grad:linear-gradient(130deg,#3a2c29 0%,#382634 50%,#2a2746 100%);--on-grad:#f2eef9;--grad-chip:rgba(255,255,255,.09);
+  --a1:#a495e3;--a2:#8f99e3;--a3:#86b0e3;--a4:#76c2b7;--a5:#e8ad86;--a6:#dcc275;--a7:#e3a2c0;--a8:#86c9a0;--a9:#7fc0e0;--a10:#b2b9c6;
+  --crit:#e47d95;--high:#e6a173;--med:#dcbf66;--low:#86b8dc;
+  --code-bg:#0f0e19;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13131f;--surface:#1b1b2a;--surface-2:#232335;--surface-3:#2b2b40;--ink:#ebeaf4;--muted:#a6a3bb;--line:#2c2b40;--line-2:#3a3952;--focus:#b3a5ee;
+  --rose:#2e1c25;--rose-ink:#f0aabd;--peach:#2e231b;--peach-ink:#efb995;--lemon:#2b2718;--lemon-ink:#e3cd84;
+  --sky:#192634;--sky-ink:#a3cbea;--mint:#172a21;--mint-ink:#98d8b6;--lilac:#231f3b;--lilac-ink:#c6baf0;
+  --grad:linear-gradient(130deg,#3a2c29 0%,#382634 50%,#2a2746 100%);--on-grad:#f2eef9;--grad-chip:rgba(255,255,255,.09);
+  --a1:#a495e3;--a2:#8f99e3;--a3:#86b0e3;--a4:#76c2b7;--a5:#e8ad86;--a6:#dcc275;--a7:#e3a2c0;--a8:#86c9a0;--a9:#7fc0e0;--a10:#b2b9c6;
+  --crit:#e47d95;--high:#e6a173;--med:#dcbf66;--low:#86b8dc;
+  --code-bg:#0f0e19;color-scheme:dark}
+
+/* One tint family per stage, used the same way everywhere (ticks, pills, tiles, why box, board). */
+.k-triage,.k-base{--k:var(--a9);--kb:color-mix(in srgb,var(--a9) 15%,var(--surface));--ki:color-mix(in srgb,var(--a9) 45%,var(--ink))}
+.k-plan,.k-intake{--k:var(--a2);--kb:color-mix(in srgb,var(--a2) 14%,var(--surface));--ki:color-mix(in srgb,var(--a2) 50%,var(--ink))}
+.k-spec,.k-requirements{--k:var(--a1);--kb:var(--lilac);--ki:var(--lilac-ink)}
+.k-design,.k-prototype{--k:var(--a5);--kb:var(--peach);--ki:var(--peach-ink)}
+.k-build,.k-do{--k:var(--a3);--kb:var(--sky);--ki:var(--sky-ink)}
+.k-review{--k:var(--a6);--kb:var(--lemon);--ki:var(--lemon-ink)}
+.k-test,.k-check{--k:var(--a8);--kb:var(--mint);--ki:var(--mint-ink)}
+.k-verify,.k-audit{--k:var(--a4);--kb:color-mix(in srgb,var(--a4) 14%,var(--surface));--ki:color-mix(in srgb,var(--a4) 45%,var(--ink))}
+.k-wrap,.k-release{--k:var(--a10);--kb:color-mix(in srgb,var(--a10) 18%,var(--surface));--ki:color-mix(in srgb,var(--a10) 35%,var(--ink))}
+.k-fail{--k:var(--crit);--kb:var(--rose);--ki:var(--rose-ink)}
+.k-ok{--k:var(--a8);--kb:var(--mint);--ki:var(--mint-ink)}
+.r-low{--k:var(--low)}.r-medium{--k:var(--med)}.r-high{--k:var(--high)}
+.r-low,.r-medium,.r-high{--kb:color-mix(in srgb,var(--k) 16%,var(--surface));--ki:color-mix(in srgb,var(--k) 42%,var(--ink))}
+/* One accent per team, for the agent avatars and team marks. */
+.t-Lead{--ac:var(--a9)}.t-Helpers{--ac:var(--a2)}.t-Product{--ac:var(--a1)}.t-Design{--ac:var(--a5)}.t-Architecture{--ac:var(--a7)}
+.t-Engineering{--ac:var(--a3)}.t-Quality{--ac:var(--a6)}.t-Operations{--ac:var(--a4)}.t-Audit{--ac:var(--a10)}.t-Domain-experts{--ac:var(--a8)}.t-all{--ac:var(--a10)}
+
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-button,select{font:inherit;color:inherit}
-:focus{outline:none}:focus-visible{outline:2px solid var(--cur);outline-offset:2px;border-radius:4px}
-code,.mono{font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace}
-.wrap{max-width:1280px;margin:0 auto;padding:16px}
-.sub{color:var(--faint);font-size:12px}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.5 var(--f-ui)}
+button,input,select{font:inherit;color:inherit}
+b,strong,th{font-weight:500}
+h1,h2,h3,h4{margin:0;font-weight:500}
+h1{font:500 17px/1.3 var(--f-display)}
+h2{font:500 15px/1.35 var(--f-display)}
+h3{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;gap:6px;align-items:center}
+h4{font-size:12px;font-weight:500;color:var(--muted);margin:14px 0 6px;display:flex;gap:6px;align-items:center}
+p{margin:0 0 8px}
+ul{margin:4px 0 8px;padding-left:18px}
+q{quotes:"\201C" "\201D"}
+code{font:12px/1.45 var(--f-mono);background:var(--surface-2);border-radius:6px;padding:0 5px;overflow-wrap:anywhere}
+pre{font:12px/1.6 var(--f-mono);background:var(--code-bg);color:var(--code-ink);border-radius:10px;padding:8px 12px;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:8px}
+.sub{color:var(--muted);font-size:12px}
 .muted{color:var(--muted)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.pill{font-size:11px;padding:1px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;display:inline-block}
-.btn{border:1px solid transparent;background:var(--cur);color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer}
-.btn.ghost{background:transparent;border-color:color-mix(in srgb,currentColor 35%,transparent);color:inherit}
-.btn.sm{padding:2px 9px;font-size:12px}
-.btn.you{background:var(--you)}
-.btn:disabled{opacity:.45;cursor:default}
-/* header */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.ic.fill{fill:currentColor;stroke:none}
+
+/* controls */
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:4px 12px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.pri{background:var(--lilac);color:var(--lilac-ink);border-color:color-mix(in srgb,var(--a1) 40%,var(--surface))}
+.btn.pri:hover:not(:disabled){background:color-mix(in srgb,var(--a1) 22%,var(--surface))}
+.btn.go{background:var(--mint);color:var(--mint-ink);border-color:color-mix(in srgb,var(--a8) 45%,var(--surface))}
+.btn.go:hover:not(:disabled){background:color-mix(in srgb,var(--a8) 24%,var(--surface))}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover:not(:disabled){background:var(--surface-2);color:var(--ink)}
+.btn.sm{min-height:26px;padding:2px 9px;font-size:12px}
+.btn.icon{padding:4px 7px}
+.seg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px;padding:2px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
+.seg button{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:2px 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface);border-color:var(--line-2);color:var(--ink)}
+.seg.sm button{min-height:24px;padding:1px 8px;font-size:12px}
+.cnt{font-size:11px;line-height:16px;padding:0 6px;border-radius:999px;background:var(--surface-3);color:var(--muted)}
+.mark{width:8px;height:8px;border-radius:50%;background:var(--focus);display:inline-block;flex:none}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;white-space:nowrap;background:var(--kb);color:var(--ki);border:1px solid color-mix(in srgb,var(--k) 35%,var(--surface))}
+.pn{display:inline-flex;align-items:center;font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.m{font-size:10.5px;line-height:16px;padding:0 6px;border-radius:999px;background:var(--surface-3);color:var(--muted);font-style:normal;white-space:nowrap}
+
+/* avatars: coloured initials by team */
+.av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;flex:none;font-size:10px;font-weight:500;letter-spacing:.02em;
+  background:color-mix(in srgb,var(--ac,var(--a10)) 20%,var(--surface));color:color-mix(in srgb,var(--ac,var(--a10)) 45%,var(--ink));border:1px solid color-mix(in srgb,var(--ac,var(--a10)) 45%,var(--surface))}
+.av.s{width:22px;height:22px;font-size:9.5px}
+.av.l{width:44px;height:44px;font-size:15px}
+.av.t-You{background:var(--grad);color:var(--on-grad);border-color:color-mix(in srgb,var(--a7) 40%,var(--surface))}
+.av.fin{background:var(--mint);color:var(--mint-ink);border-color:color-mix(in srgb,var(--a8) 45%,var(--surface))}
+.av.fin .ic{width:12px;height:12px}
+.av.hl{outline:2px solid var(--focus);outline-offset:1px}
+.app{max-width:1440px;margin:0 auto;padding:16px;container:app/inline-size}
+
+/* page header */
 .top{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
-.top h1{font-size:16px;font-weight:500;margin:0}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--grad);color:var(--on-grad);flex:none}
 .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-select{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
-.seg button{background:transparent;border:0;padding:3px 10px;cursor:pointer;color:var(--muted)}
-.seg button[aria-pressed="true"]{background:color-mix(in srgb,var(--cur) 12%,var(--card));color:var(--text)}
-.tg{display:inline-flex;gap:5px;align-items:center;color:var(--muted);cursor:pointer;font-size:12px}
-.tg input{accent-color:var(--cur);margin:0}
-.tg.off{opacity:.45;cursor:default}
-/* request bar */
-.ask{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:12px 0}
-.ask q{font-size:14px;font-weight:500;quotes:"\201C" "\201D"}
-.lane{--lc:var(--cur);font-size:11px;padding:1px 9px;border-radius:999px;color:color-mix(in srgb,var(--lc) 80%,var(--text));background:color-mix(in srgb,var(--lc) 11%,var(--card));border:1px solid color-mix(in srgb,var(--lc) 28%,var(--line))}
-.risk-low{--lc:var(--test)}.risk-medium{--lc:var(--review)}.risk-high{--lc:var(--fail)}
-/* agent chips and model badges */
-.ag{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:1px 4px 1px 9px;background:var(--card);white-space:nowrap;font-size:12px}
-.ag.on{border-color:color-mix(in srgb,var(--cur) 50%,var(--line));background:color-mix(in srgb,var(--cur) 8%,var(--card))}
-.ag.done{opacity:.7}
-.m{font-style:normal;font-size:10px;padding:0 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-.m-haiku{color:var(--test);border-color:color-mix(in srgb,var(--test) 35%,var(--line))}
-.m-sonnet{color:var(--build);border-color:color-mix(in srgb,var(--build) 35%,var(--line))}
-.m-opus{color:var(--product);border-color:color-mix(in srgb,var(--product) 40%,var(--line))}
-.m-you{color:var(--you);border-color:color-mix(in srgb,var(--you) 40%,var(--line))}
-.fc{display:inline-block;font:11px/1.6 ui-monospace,Consolas,monospace;border:1px dashed var(--line);border-radius:5px;padding:0 6px;margin:2px 3px 2px 0;color:var(--muted)}
-.fc.new{border-style:solid;color:var(--text)}
-.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
-/* tables */
-table{border-collapse:collapse;width:100%;font-size:12px}
-th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-weight:500;color:var(--muted)}
-pre{margin:6px 0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--text) 4%,var(--card));border:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere}
-/* step detail */
-.st-h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
-.st-h b{font-size:14px;font-weight:500}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sc,var(--cur));margin-right:2px}
-.say{font-size:13.5px;margin:4px 0 8px}
-.gatebox{border:1px solid color-mix(in srgb,var(--you) 40%,var(--card));background:color-mix(in srgb,var(--you) 7%,var(--card));border-radius:10px;padding:10px 12px;margin:8px 0}
-.gatebox .q{font-weight:500}
-.qa{margin-top:6px;padding:6px 8px;border-left:2px solid var(--you);background:var(--card);border-radius:0 6px 6px 0}
-.fail{border-color:color-mix(in srgb,var(--fail) 45%,var(--card));background:color-mix(in srgb,var(--fail) 7%,var(--card))}
-.blk{border:1px solid color-mix(in srgb,var(--fail) 40%,var(--card));background:color-mix(in srgb,var(--fail) 6%,var(--card));border-radius:10px;padding:8px 12px;margin:8px 0}
-.okbox{border:1px solid color-mix(in srgb,var(--test) 40%,var(--card));background:color-mix(in srgb,var(--test) 6%,var(--card));border-radius:10px;padding:8px 12px;margin:8px 0}
-.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.nav .sp{flex:1}
-.why h3,.side h3{font-size:12px;font-weight:500;color:var(--muted);margin:0 0 6px;text-transform:none}
-.side>*+*{margin-top:10px}
-/* clock */
-.clk .row{display:grid;grid-template-columns:70px 1fr 74px;gap:8px;align-items:center;font-size:12px;margin:3px 0}
-.bar{position:relative;height:10px;border-radius:5px;background:color-mix(in srgb,var(--text) 5%,var(--card))}
-.bar .b{position:absolute;inset:0 auto 0 0;border:1px dashed var(--faint);border-radius:5px}
-.bar .e{position:absolute;inset:1px auto 1px 0;border-radius:4px;background:color-mix(in srgb,var(--sc) 30%,var(--card))}
-.bar .p{position:absolute;inset:1px auto 1px 0;border-radius:4px;background:var(--sc)}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--faint);margin-top:6px}
-.legend i{display:inline-block;width:12px;height:8px;border-radius:3px;margin-right:4px;vertical-align:0}
-/* variant A: stepper */
-.va{display:grid;grid-template-columns:230px minmax(0,1fr) 300px;gap:12px;align-items:start}
-.steps{list-style:none;margin:0;padding:6px;max-height:72vh;overflow:auto}
-.steps li{display:flex;gap:7px;align-items:flex-start;padding:4px 6px;border-radius:6px;color:var(--faint);font-size:12px}
-.steps li.done{color:var(--muted)}
-.steps li.cur{color:var(--text);background:color-mix(in srgb,var(--cur) 9%,var(--card))}
-.steps li .n{flex:none;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:10px;border:1px solid var(--line);margin-top:1px}
-.steps li.done .n{background:var(--sc,var(--test));border-color:transparent;color:#fff}
-.steps li.cur .n{border-color:var(--sc,var(--cur));color:var(--sc,var(--cur))}
-.steps li.bad .n{background:var(--fail)}
-/* variant B: board */
-.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(118px,1fr);gap:8px;overflow-x:auto;padding-bottom:4px}
-.col{background:var(--card);border:1px solid var(--line);border-radius:10px;min-height:250px;display:flex;flex-direction:column}
-.col.cur{border-color:color-mix(in srgb,var(--sc) 55%,var(--line));box-shadow:inset 0 3px 0 var(--sc)}
-.col.skip{opacity:.5}
-.col .ch{padding:7px 9px;border-bottom:1px solid var(--line);font-size:12px}
-.col .ch b{font-weight:500;display:block}
-.col .cb{padding:7px;display:flex;flex-direction:column;gap:5px;flex:1}
-.col .ag{align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.col .ag.on{animation:slide .45s ease-out}
-.col .gatemini{border:1px solid color-mix(in srgb,var(--you) 45%,var(--card));background:color-mix(in srgb,var(--you) 9%,var(--card));border-radius:7px;padding:5px 7px;font-size:11.5px;animation:glow 2.6s ease-in-out infinite}
-.col .gatemini.ok{animation:none;border-color:color-mix(in srgb,var(--test) 40%,var(--card));background:color-mix(in srgb,var(--test) 7%,var(--card))}
-.col .mustmini{border:1px solid color-mix(in srgb,var(--fail) 45%,var(--card));border-radius:7px;padding:5px 7px;font-size:11.5px;color:var(--fail)}
-.vb .lower{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;margin-top:12px;align-items:start}
-.feed{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;font-size:12px}
-.feed li{padding:3px 0;border-bottom:1px solid var(--line);color:var(--muted)}
-.feed li b{font-weight:500;color:var(--text)}
-@keyframes slide{from{transform:translateX(-14px);opacity:0}to{transform:none;opacity:1}}
-@keyframes glow{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 3px color-mix(in srgb,var(--you) 18%,transparent)}}
-.copy{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.copy code{padding:2px 7px;border:1px solid var(--line);border-radius:6px;background:color-mix(in srgb,var(--text) 4%,var(--card));overflow-wrap:anywhere}
-a{color:var(--cur)}
-.ag.hl{outline:2px solid var(--you);outline-offset:1px}
-.vr{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:12px;align-items:start}
-.vr h3{font-size:12px;font-weight:500;color:var(--muted);margin:12px 0 6px}
-.vr h3:first-child{margin-top:0}
-.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
-.agc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 9px;cursor:pointer}
-.agc .nm{display:flex;gap:6px;align-items:center;font-weight:500}
-.agc.sel{border-color:color-mix(in srgb,var(--you) 60%,var(--line));background:color-mix(in srgb,var(--you) 8%,var(--card))}
-.agc.none{opacity:.55}
-.kv th{width:96px;white-space:nowrap}
-.kv td,.kv th{border-bottom:1px solid var(--line)}
-.sc-chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:1px 9px;font-size:12px;cursor:pointer}
-.sc-chip b{font-weight:500}
-.hlbar{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin:-4px 0 10px}
-@media (max-width:1000px){.vr{grid-template-columns:1fr}}
+.follow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;padding:5px 10px;border-radius:12px;background:color-mix(in srgb,var(--focus) 9%,var(--surface));border:1px solid color-mix(in srgb,var(--focus) 30%,var(--surface))}
+.follow .btn{margin-left:auto}
+
+/* step body */
+.files{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+.fc{display:inline-flex;align-items:center;gap:4px;font:11px/1.6 var(--f-mono);padding:1px 7px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);overflow-wrap:anywhere}
+.fc .ic{width:12px;height:12px}
+.agrow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.agc{display:inline-flex;align-items:center;gap:6px;padding:2px 8px 2px 2px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px}
+.imp{display:grid;gap:4px;margin:8px 0}
+.ir{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:0 10px;padding:6px 10px;border-radius:10px;background:var(--surface-2)}
+.ir .kind{font-size:11px;color:var(--muted)}
+.ir code{grid-column:2/-1;background:transparent;padding:0;color:var(--muted)}
+.team{display:grid}
+.tr{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:4px 10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+.tr .tn{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+details.out{margin-top:8px}
+details.out summary{cursor:pointer;color:var(--muted);font-size:12px;padding:2px 0}
+details.out .tr{grid-template-columns:auto auto minmax(0,1fr)}
+.note-box,.okbox,.failbox,.donebox{display:flex;gap:8px;align-items:flex-start;border-radius:12px;padding:8px 12px;margin:8px 0}
+.note-box{background:var(--surface-2);color:var(--muted)}
+.okbox{background:var(--mint);color:var(--mint-ink);border:1px solid color-mix(in srgb,var(--a8) 35%,var(--surface))}
+.failbox{background:var(--rose);color:var(--rose-ink);border:1px solid color-mix(in srgb,var(--crit) 45%,var(--surface))}
+.loopnote{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:1px 10px;margin:0 0 8px;background:var(--rose);color:var(--rose-ink);font-size:12px}
+.donebox{background:var(--mint);color:var(--mint-ink);border:1px solid color-mix(in srgb,var(--a8) 35%,var(--surface));padding:12px 14px}
+.donebox .dt{font:500 15px/1.4 var(--f-display)}
+.stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
+.gate{background:var(--grad);color:var(--on-grad);border-radius:14px;padding:12px 14px;margin:2px 0 8px;border:1px solid color-mix(in srgb,var(--a7) 30%,var(--surface))}
+.gate .gh{display:flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.gate .gq{font:500 17px/1.35 var(--f-display);margin:4px 0 8px}
+.gate .gs{display:flex;gap:6px;align-items:center;font-size:12px}
+.gate .fc{background:var(--grad-chip);border-color:transparent;color:var(--on-grad)}
+.gate .qa{background:var(--grad-chip);border-radius:10px;padding:8px 10px;margin:8px 0}
+.gact{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.gate .btn:not(.go){background:var(--grad-chip);color:var(--on-grad);border-color:transparent}
+.decided{display:inline-flex;gap:6px;align-items:center;margin-top:8px;padding:2px 10px;border-radius:999px;background:var(--grad-chip)}
+.mins{display:flex;align-items:center;gap:6px;margin-top:6px}
+.mins .ic{width:14px;height:14px}
+.sh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:10px}
+.sh .n{margin-left:auto}
+.ctrls{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.ctrls .sp{flex:1}
+.ticks{display:flex;gap:2px;align-items:center}
+.tk{flex:1 1 0;min-width:4px;height:8px;border:0;padding:0;border-radius:999px;background:color-mix(in srgb,var(--k) 24%,var(--surface));cursor:pointer}
+.tk.done{background:var(--k)}
+.tk.cur{background:var(--k);height:14px}
+.tk.g.done,.tk.g.cur{background:var(--grad-strong)}
+.tk:disabled{cursor:default}
+.why{background:var(--kb);border-color:color-mix(in srgb,var(--k) 35%,var(--surface))}
+.why h3{color:var(--ki)}
+.why p{font-size:14px;line-height:1.55;margin:0;color:var(--ink)}
+.wrow{display:flex;gap:8px;align-items:center;padding:3px 0}
+.wif .tg{display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer}
+.wif .tg input{margin:3px 0 0;accent-color:var(--focus)}
+.wif .tg.off{color:var(--muted);cursor:default}
+.clock .ct{margin-bottom:6px}
+.crow{display:grid;grid-template-columns:104px minmax(0,1fr) 78px;gap:8px;align-items:center;font-size:12px;margin:3px 0}
+.cbar{position:relative;height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.cbar i{position:absolute;inset:0 auto 0 0;border-radius:999px}
+.cbar .ce{background:var(--kb);border:1px solid color-mix(in srgb,var(--k) 45%,var(--surface))}
+.cbar .cd{background:var(--k)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;background:var(--k,var(--ac));display:inline-block}
+.legend .lg-you i{background:var(--grad-strong)}
+
+/* live tracker placeholder */
+.live{margin-top:12px}
+.lh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.lh h3{margin:0}
+.lv-frame{border:1.5px dashed var(--line-2);border-radius:12px;min-height:220px;display:grid;place-items:center;padding:16px;background:var(--surface-2)}
+.lv-ph{display:flex;gap:10px;max-width:560px;align-items:flex-start}
+.lv-load{border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-height:220px;align-content:start}
+.sk{height:12px;border-radius:6px;background:var(--surface-3);animation:pulse 1.4s ease-in-out infinite}
+.sk:nth-child(2){width:72%}.sk:nth-child(3){width:90%}.sk:nth-child(4){width:56%}.sk:nth-child(5){width:80%}.sk:nth-child(6){width:40%}
+.lv-off{display:flex;gap:10px;padding:14px;border-radius:12px;background:var(--peach);color:var(--peach-ink);border:1px solid color-mix(in srgb,var(--a5) 40%,var(--surface))}
+.lv-off .btn{margin-top:8px}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes pop{from{transform:translateY(4px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- Studio: requests, board, transport, inspector ---------- */
+.C .cgrid{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;gap:12px;margin-top:14px;align-items:start}
+.C .reqs{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rq{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:inherit;margin-bottom:6px;position:relative}
+.rq:hover{border-color:var(--line-2)}
+.rq[aria-pressed="true"]{background:color-mix(in srgb,var(--focus) 9%,var(--surface));border-color:color-mix(in srgb,var(--focus) 45%,var(--surface))}
+.rq .rt{font-weight:500;padding-right:14px}
+.rq .ra{font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rq .rp{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.rq .mark{position:absolute;top:12px;right:10px}
+.C .mid{display:flex;flex-direction:column;gap:12px;min-width:0}
+.C .board{padding:0;overflow:hidden}
+.C .bscroll{overflow-x:auto;position:relative}
+.C .bgridC{display:grid;grid-template-columns:128px repeat(9,minmax(64px,1fr));min-width:704px}
+.C .corner,.C .bh{padding:8px;font-size:12px;border-bottom:1px solid var(--line)}
+.C .corner{color:var(--muted);position:sticky;left:0;background:var(--surface);z-index:2}
+.C .bh{display:flex;flex-direction:column;gap:1px;border-left:1px solid var(--line)}
+.C .bh .bn{font-weight:500;color:var(--ki)}
+.C .bh .bs{font-size:11px;color:var(--muted)}
+.C .bh.is-cur,.C .bh.is-fail{background:var(--kb)}
+.C .bh.is-fail{--kb:var(--rose);--ki:var(--rose-ink)}
+.C .bh.is-todo .bn{color:var(--muted)}
+.C .bl{position:sticky;left:0;z-index:1;background:var(--surface);display:flex;gap:6px;align-items:center;padding:4px 8px;border-top:1px solid var(--line);font-size:12px;min-width:0}
+.C .bl .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.C .bl.hlrow{background:color-mix(in srgb,var(--focus) 9%,var(--surface))}
+.C .bcell{border-top:1px solid var(--line);border-left:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:3px;min-height:36px}
+.C .bcell.is-cur{background:color-mix(in srgb,var(--k) 7%,var(--surface))}
+.C .bcell.is-skip,.C .bh.is-skip{background:repeating-linear-gradient(135deg,var(--surface-2) 0 6px,var(--surface) 6px 12px)}
+.C .tile{display:flex;align-items:center;gap:4px;width:100%;text-align:left;overflow-wrap:anywhere;font-size:11px;line-height:1.3;padding:3px 6px;border-radius:6px;border:1px solid color-mix(in srgb,var(--k) 40%,var(--surface));background:var(--surface);color:var(--ki);cursor:pointer}
+.C .tile .ic{width:11px;height:11px}
+.C .tile.done{background:var(--kb)}
+.C .tile.cur{background:var(--kb);border:1.5px solid var(--k);outline:3px solid color-mix(in srgb,var(--k) 24%,transparent);animation:pop .15s ease-out}
+/* the step being worked on: a breathing dot, a sheen running across and a pulsing ring (a gate waits instead) */
+.C .tile.cur:not(.g){background:linear-gradient(100deg,var(--kb) 30%,color-mix(in srgb,var(--k) 22%,var(--kb)) 50%,var(--kb) 70%) 0 0/250% 100%;
+  animation:pop .15s ease-out,work 2.2s linear infinite,ring 1.6s ease-in-out infinite}
+.C .tile.cur:not(.g)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--k);flex:none;animation:pulse 1.2s ease-in-out infinite}
+@keyframes work{from{background-position:100% 0}to{background-position:-150% 0}}
+@keyframes ring{50%{outline-color:color-mix(in srgb,var(--k) 8%,transparent)}}
+.C .tile.todo{border-style:dashed;color:var(--muted);cursor:default}
+.C .tile.g{background:var(--grad);color:var(--on-grad);border-color:transparent}
+.C .tile.g.todo{background:var(--surface);color:var(--muted);border:1px dashed var(--line-2)}
+.C .tpt{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.C .tpt .gc{display:inline-flex;gap:4px;align-items:center;background:var(--grad);color:var(--on-grad);border:1px solid color-mix(in srgb,var(--a7) 30%,var(--surface))}
+.C .transport .tk{height:12px;border-radius:4px}
+.C .transport .tk.cur{height:18px}
+.C .insp{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+.C .whybig{background:var(--kb);border-radius:12px;padding:10px 12px;margin-bottom:12px;border:1px solid color-mix(in srgb,var(--k) 35%,var(--surface))}
+.C .whybig .wl{display:flex;gap:6px;align-items:center;color:var(--ki);font-size:12px;font-weight:500;margin-bottom:4px}
+.C .whybig p{font:15px/1.5 var(--f-display);margin:0}
+.C .whoC{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+
+/* ---------- Agents view ---------- */
+.team{padding:10px}
+.tdot{width:10px;height:10px;border-radius:50%;background:var(--ac,var(--a10));flex:none;display:inline-block}
+.sdots{display:inline-flex;gap:2px}
+.sdots i{width:7px;height:7px;border-radius:50%;background:var(--surface-3)}
+.sdots i.on{background:var(--k)}
+.dh{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.dm{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tpill{display:inline-flex;align-items:center;font-size:11px;line-height:18px;padding:0 9px;border-radius:999px;background:color-mix(in srgb,var(--ac) 16%,var(--surface));color:color-mix(in srgb,var(--ac) 45%,var(--ink));border:1px solid color-mix(in srgb,var(--ac) 40%,var(--surface))}
+.does{font-size:14px;line-height:1.55}
+.mini{display:flex;gap:3px;flex-wrap:wrap}
+.mi{display:inline-flex;align-items:center;gap:4px;font-size:11px;line-height:18px;padding:0 7px;border-radius:999px;border:1px dashed var(--line-2);color:var(--muted)}
+.mi i{width:7px;height:7px;border-radius:50%;background:var(--surface-3)}
+.mi.on{border-style:solid;background:var(--kb);color:var(--ki);border-color:color-mix(in srgb,var(--k) 40%,var(--surface))}
+.mi.on i{background:var(--k)}
+.rq-chip{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:6px 10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--focus) 35%,var(--surface));background:color-mix(in srgb,var(--focus) 7%,var(--surface));cursor:pointer;color:inherit;margin-bottom:4px}
+.rq-chip>span:nth-child(2){flex:1}
+.empty{display:flex;gap:10px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line-2);color:var(--muted)}
+.empty b{color:var(--ink)}
+.lo{font-size:12px;color:var(--muted);margin:2px 0}
+.kv{width:100%;border-collapse:collapse;margin-top:10px}
+.kv th{width:104px;text-align:left;vertical-align:top;color:var(--muted);font-size:12px;padding:5px 8px 5px 0;border-bottom:1px solid var(--line)}
+.kv td{padding:5px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.bt{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+.bt th,.bt td{text-align:left;padding:3px 6px;border-bottom:1px solid var(--line)}
+.bt th{color:var(--muted)}
+.C .tf{display:flex;flex-direction:column;gap:2px}
+.tfb{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;text-align:left;color:inherit}
+.tfb:hover{background:var(--surface-2)}
+.tfb .sub{margin-left:auto}
+.tfb[aria-pressed="true"]{background:color-mix(in srgb,var(--ac) 14%,var(--surface));border-color:color-mix(in srgb,var(--ac) 40%,var(--surface))}
+.C .tbl{padding:0;overflow-x:auto}
+.at{width:100%;border-collapse:collapse;min-width:560px}
+.at th{text-align:left;font-size:12px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+.at td{padding:4px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.at tr.sel td{background:color-mix(in srgb,var(--focus) 8%,var(--surface))}
+.alink{display:flex;gap:8px;align-items:center;background:none;border:0;padding:2px 0;cursor:pointer;text-align:left;color:inherit;border-radius:8px}
+.alink>span{display:flex;flex-direction:column}
+
+/* narrow frames: container queries on the app width */
+@container app (max-width:1100px){
+  .C .cgrid{grid-template-columns:220px minmax(0,1fr)}
+  .C .insp{grid-column:1/-1;position:static;max-height:none}
+}
+@container app (max-width:700px){
+  .C .cgrid{grid-template-columns:minmax(0,1fr)}
+  .C .reqs,.C .mid{display:contents}
+  .C .tfc,.C .rl{order:0}
+  .C .board,.C .tbl{order:1}.C .transport{order:2}.C .insp{order:3;grid-column:auto}.C .live{order:4;margin-top:0}.C .wif{order:5}.C .clock{order:6}.C .legend{order:7}
+  .C .rqs{display:flex;gap:6px;overflow-x:auto}
+  .C .rq{min-width:230px;margin:0}
+  .C .tf{flex-direction:row;flex-wrap:wrap}
+}
+@container app (max-width:560px){
+  .top{flex-direction:column;align-items:flex-start}
+  .ctl{width:100%}
+  .ir{grid-template-columns:minmax(0,1fr)}
+  .ir code{grid-column:auto}
+  .tr{grid-template-columns:auto minmax(0,1fr)}
+  .tr>.sub{grid-column:1/-1}
+  .ctrls .sp{display:none}
+  .crow{grid-template-columns:84px minmax(0,1fr) 64px}
+  .gate .gq{font-size:15px}
+}
+/* the other lanes: no task (do it, check) and product mode stages share the task tints; product review and stories get their own */
+.k-product{--k:var(--a7);--kb:color-mix(in srgb,var(--a7) 15%,var(--surface));--ki:color-mix(in srgb,var(--a7) 45%,var(--ink))}
+.k-stories{--k:var(--a6);--kb:color-mix(in srgb,var(--a6) 16%,var(--surface));--ki:color-mix(in srgb,var(--a6) 40%,var(--ink))}
 [hidden]{display:none!important}
-@media (max-width:1000px){.va{grid-template-columns:1fr}.vb .lower{grid-template-columns:1fr}.steps{max-height:none;display:flex;flex-wrap:wrap}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+a{color:var(--lilac-ink)}
+.foot{margin-top:14px}
+/* live tracker: replay command, link, and the demo task's live page in a frame */
+.copy{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.copy code{flex:1 1 220px;min-width:0;padding:4px 8px}
+.lv-links{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline}
+.lv-off{margin-top:10px}
+.lv-wrap{position:relative;margin-top:10px}
+.lv-wrap .lv-load{position:absolute;inset:0;background:var(--surface)}
+.lv-wrap iframe{display:block;width:100%;height:760px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+/* tables inside a step */
+.tscroll{overflow-x:auto;margin:8px 0}
+.st-t{width:100%;border-collapse:collapse;font-size:12px}
+.st-t th,.st-t td{text-align:left;vertical-align:top;padding:4px 10px 4px 0;border-bottom:1px solid var(--line)}
+.st-t th{color:var(--muted)}
+/* long names and text wrap instead of widening the page */
+.kv td{overflow-wrap:anywhere}
+.dh>div{min-width:0}
+.dh h2{overflow-wrap:anywhere}
+.gact .btn{white-space:normal;text-align:left}
+@container app (max-width:560px){.tr .tn{white-space:normal;flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div><h1>How the agent flow works</h1><div class="sub" id="subt">Pick a request and step through what the agents do. Nothing here touches your code.</div></div>
-    <div class="ctl">
-      <label class="sub" for="pick">Request</label>
-      <select id="pick"></select>
-      <span class="seg" role="group" aria-label="View"><button id="wFlow" aria-pressed="true" title="Step through one request">Flow</button><button id="wAg" aria-pressed="false" title="Every agent: what it does, when it joins, what it reads and writes">Agents</button></span>
-      <span class="seg" role="group" aria-label="Layout" id="abseg"><button id="vA" aria-pressed="true" title="A: a stepper with a why panel">A stepper</button><button id="vB" aria-pressed="false" title="B: a pipeline board with agents moving across stages">B board</button></span>
-      <button class="btn ghost sm" id="thm" title="Light, dark or follow the computer">Theme: light</button>
-    </div>
+<div class="app" id="app"><div class="C">
+  <div id="top"></div>
+  <div id="follow"></div>
+  <div class="cgrid" id="flowv">
+    <nav class="reqs" id="f-reqs" aria-label="Requests"></nav>
+    <main class="mid">
+      <section class="card board" id="f-board"></section>
+      <section class="card transport" id="f-transport"></section>
+      <section class="card live" id="livebox">
+        <div class="lh"><h3><svg class="ic " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Live tracker</h3><span class="sub" id="liveid"></span></div>
+        <div id="livebody"></div>
+        <div class="lv-wrap" id="lvwrap" hidden>
+          <div class="lv-load" id="lvload" aria-busy="true"><div class="sub">Loading the live tracker...</div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
+          <iframe id="liveframe" title="Live tracker"></iframe>
+        </div>
+      </section>
+      <div class="legend" id="f-legend"></div>
+    </main>
+    <aside class="card insp" id="f-insp" aria-label="This step"></aside>
   </div>
-  <div class="ctl" style="margin-top:10px" role="group" aria-label="What if" id="whatif">
-    <span class="sub">What if:</span>
-    <label class="tg" id="tg-bug"><input type="checkbox" id="t-bug"> a bug slips into Build</label>
-    <label class="tg" id="tg-unp"><input type="checkbox" id="t-unp"> an agent edits a file nobody planned</label>
-    <label class="tg" id="tg-app"><input type="checkbox" id="t-app"> the app is running</label>
+  <div class="cgrid" id="agv" hidden>
+    <nav class="reqs" id="a-reqs" aria-label="Filters"></nav>
+    <main class="card tbl" id="a-tbl"></main>
+    <aside class="card insp" id="a-insp" aria-label="Agent"></aside>
   </div>
-  <div class="ask" id="askrow"><q id="askq"></q><span id="askchips" class="chips" style="margin:0"></span></div>
-  <div class="hlbar" id="hlbar" hidden></div>
-
-  <!-- variant A: stepper with a why panel -->
-  <div id="VA" class="va">
-    <div class="card" style="padding:4px"><ol class="steps" id="a-steps"></ol></div>
-    <div><div class="card" id="a-main"></div></div>
-    <div class="side" id="a-side"></div>
-  </div>
-
-  <!-- variant B: pipeline board -->
-  <div id="VB" class="vb" hidden>
-    <div class="board" id="b-board"></div>
-    <div class="lower">
-      <div class="card" id="b-main"></div>
-      <div class="side" id="b-side"></div>
-    </div>
-  </div>
-  <div class="card" id="livebox" style="margin-top:12px" hidden>
-    <div class="st-h"><b>Live tracker</b><span class="sub" id="livehint"></span></div>
-    <iframe id="liveframe" title="Live tracker" style="width:100%;height:760px;border:1px solid var(--line);border-radius:8px;background:var(--bg)"></iframe>
-  </div>
-  <!-- roster: every agent -->
-  <div id="VR" class="vr" hidden>
-    <div class="card" id="r-list"></div>
-    <div class="side" id="r-side"></div>
-  </div>
-  <p class="sub" style="margin-top:14px">Built from the agent core's own flow (sdlc and factory skills). Times are estimates for the new flow against a measured old run; the impact maps and numbers in the scenarios are made-up samples.</p>
-</div>
+  <p class="sub foot">Built from the agent core's own flow (sdlc and factory skills). Times are estimates for the new flow against a measured old run; the impact maps and numbers in the scenarios are made-up samples.</p>
+</div></div>
 
 <script type="application/json" id="sim-data">
 {
-"version": "1.4.2",
+"version": "1.4.3",
 "baseline": {"from": "review-next16", "kind": "measured", "min": {"spec": 45, "design": 14, "build": 47, "review": 29}},
 "models": {"main session": "You"},
 "bug": {"finding": "MUST JV1: the new code reads a joined row's title without a null check; a favourite whose item was deleted gives a 500 (review.md, path:line).", "fix": "Null-check the joined row and skip it; add a test with a deleted item.", "lesson": "- <date> <task>: a value from a joined row that can be deleted is null-checked before use (src/main/java/**)", "min": 8},
@@ -308,9 +488,7 @@ a{color:var(--cur)}
   {"t": "context", "min": 3, "why": "sdlc 2.4: the impact map comes from impact.py: callers, endpoints, the screens calling them, each as path:line."},
   {"t": "risk", "why": "sdlc 2.5: medium = a shared method with callers outside the change, a new screen, or 3+ files across layers."},
   {"t": "team", "why": "sdlc 3: a new screen brings ux-designer; a change across layers brings solution-architect; medium risk brings qa-engineer to lock today's outputs."},
-  {"t": "stage", "stage": "design", "agents": ["solution-architect", "ux-designer"], "say": "Both design experts run at once. solution-architect writes the plan file by file and the D3 card for the new endpoint; ux-designer the card's states (empty, loading, error, many items).", "files": ["design.md", "decisions/D3-api.md", "ui.md"], "min": 12, "why": "sdlc 4: all Design experts in one message, in parallel. Each reads context.md first and does not explore beyond it."},
-  {"t": "note", "stage": "design", "title": "Prototype", "agents": ["main session"], "say": "You get one HTML file with 3 lettered variants of the card at real size. Your pick is the D5 card.", "files": ["prototype.html", "decisions/D5-ui.md"], "why": "New UI: prototype first, build only the variant you pick (prototype skill)."},
-  {"t": "stage", "stage": "design", "title": "Characterization tests", "agents": ["qa-engineer"], "say": "qa-engineer locks what addFavourite returns today for 6 inputs, in the scratchpad. The 'before' run passes.", "files": ["safety.md"], "cmds": ["python .claude/core/scripts/char_test.py run <id> before"], "min": 5, "why": "sdlc 5: at medium and high risk, today's outputs of every changed shared method are locked before Build, so a side effect shows up as a diff."},
+  {"t": "stage", "stage": "design", "agents": ["solution-architect", "ux-designer", "qa-engineer"], "say": "Three experts run at once. solution-architect writes the plan file by file and the D3 card for the new endpoint; ux-designer the card's states and one HTML file with 3 lettered variants at real size (your pick is the D5 card); qa-engineer locks what addFavourite returns today for 6 inputs, in the scratchpad (the 'before' run passes).", "files": ["design.md", "ui.md", "safety.md", "decisions/D3-api.md", "prototype.html", "decisions/D5-ui.md"], "owners": {"ui.md": "ux-designer", "prototype.html": "ux-designer", "decisions/D5-ui.md": "ux-designer", "safety.md": "qa-engineer"}, "cmds": ["python .claude/core/scripts/char_test.py run <id> before"], "cmdsBy": "qa-engineer", "min": 12, "why": "sdlc 4: all Design experts in one message, in parallel, each reading context.md only; the live page shows who is working, each one's latest step and its calls. New UI is a prototype first; at medium risk today's outputs are locked before Build."},
   {"t": "gate", "stage": "design", "q": "Approve the plan, the API (D3) and the card (D5)?", "files": ["triage.md", "design.md", "decisions/D3-api.md", "decisions/D5-ui.md"], "by": "solution-architect", "qa": {"q": "Does the old /api/items call change?", "a": "No. design.md lists it under 'Stays unchanged', and the characterization tests prove it."}, "why": "sdlc 7: medium risk has one gate, at the end of the last planning stage, covering understanding and plan together."},
   {"t": "check", "stage": "build", "name": "Before Build", "say": "Files baseline, compile, full unit suite.", "cmds": ["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>"], "cmdsUp": ["python .claude/core/scripts/scope_check.py baseline <id>", "compile: your IDE", "mvn -o -q surefire:test"], "result": "412 pass, 0 fail", "why": "sdlc 5: the same steps at every risk level."},
   {"t": "build", "stage": "build", "agents": ["main session"], "say": "The main session builds the endpoint, the service method and the card exactly as the approved plan says.", "files": ["src/main/java/com/acme/items/FavouriteController.java", "src/main/java/com/acme/items/ItemService.java", "src/main/resources/static/js/dashboard/cards.js", "src/main/resources/messages.properties"], "min": 25, "why": "Build follows the approved cards; anything they do not cover needs a change card, never a silent change."},
@@ -484,17 +662,29 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 const COLS={none:[["triage","Triage"],["do","Do it"],["check","Check"],["end","Done"]],
   task:[["triage","Triage"],["plan","Context and team"],["spec","Spec"],["design","Design"],["build","Build"],["review","Review"],["test","Test"],["verify","Verify"],["wrap","Wrap-up"]],
   product:[["triage","Triage"],["intake","S0 Intake"],["base","S1 Base"],["requirements","S2 Requirements"],["product","S3 Product review"],["prototype","SP Prototype"],["stories","S4 Stories"],["design","S5 Design"],["build","S6 Build"],["review","S7 Review"],["audit","S8 Audit"],["release","S9 Release"]]};
+const TN=Object.assign(Object.fromEntries(COLS.task),{release:"Release"});
+const CK=COLS.task.map(c=>c[0]);
 const RISKNET={low:"Safety net: compile and the full suite before and after, scope check. No gate.",
   medium:"Safety net: + characterization tests, every caller checked, smoke list. One gate.",
   high:"Safety net: as medium. Two gates: spec, then design."};
-const S={sc:null,tg:{bug:false,unp:false,app:false},steps:[],i:0,asked:{},variant:"A",view:"flow",agent:null};
+const THEMES=["light","dark","system"];
+const SERVED=/^https?:$/.test(location.protocol);
+const S={view:"flow",sc:null,steps:[],i:0,max:0,asked:{},dec:{},tg:{bug:false,unp:false,app:false},agent:null,speed:1,auto:null,team:"all",copied:false};
 
-function modelOf(sc,agent){const r=(sc.team||[]).find(x=>x.agent===agent&&x.model);return r?r.model:(D.models[agent]||(D.agents[agent]||{}).model||D.defaultModel||"Opus")}
-function badge(sc,agent,cls){const m=modelOf(sc,agent);return '<span class="ag '+(cls||"")+(agent===S.agent?" hl":"")+'">'+esc(agent)+' <i class="m m-'+m.toLowerCase()+'">'+esc(m==="You"?"main":m)+'</i></span>'}
-function colOf(s){if(s.t==="triage")return "triage";if(["context","risk","team"].includes(s.t))return "plan";if(s.t==="end")return null;return s.stage||"plan"}
-function lastCol(sc){const c=COLS[sc.mode];return c[c.length-1][0]}
+const IC={back:'<path d="M15 18l-6-6 6-6"/>',next:'<path d="M9 18l6-6-6-6"/>',play:'<path d="M7 5l12 7-12 7z"/>',pause:'<path d="M9 5v14M15 5v14"/>',
+ restart:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',x:'<path d="M7 7l10 10M17 7L7 17"/>',skip:'<path d="M6 12h12"/>',
+ loop:'<path d="M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4"/><path d="M20 12a8 8 0 0 1-14 5.3"/><path d="M6 21v-4h4"/>',
+ bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+ flag:'<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>',file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',users:'<circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21 20a6 6 0 0 0-4-5.6"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>',auto:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+ live:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',shield:'<path d="M12 21s7-3.5 7-9V5.5L12 3 5 5.5V12c0 5.5 7 9 7 9z"/>',
+ route:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.5"/>',
+ book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/>',warn:'<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/>'};
+const ic=(n,c)=>'<svg class="ic '+(c||"")+'" viewBox="0 0 24 24" aria-hidden="true">'+(IC[n]||"")+'</svg>';
 
-/* the same expansion as simulate.py's expand(): toggles add steps */
+/* ---------- the flow engine: the same expansion as simulate.py's expand(), toggles add steps ---------- */
 function expand(sc,tg){
   const out=[],bug=sc.mustFail||(tg.bug&&sc.mode==="task"?D.bug:null);
   for(const s of sc.steps){
@@ -510,264 +700,262 @@ function expand(sc,tg){
   }
   return out;
 }
-
-function title(s,sc){
-  switch(s.t){
-    case "triage":return "Triage: "+sc.lane;
-    case "context":return "Context pack";
-    case "risk":return "Risk: "+sc.risk;
-    case "team":return "The team";
-    case "gate":return "Gate: "+s.q;
-    case "build":return "Build";
-    case "review":return s.again?"Review again":"Review";
-    case "reviewFail":return "Review fails";
-    case "rebuild":return "Back to Build";
-    case "lessons":return "A lesson is recorded";
-    case "scope":return "Scope check blocks";
-    case "guard":return "The guard";
-    case "revise":return "Changes, then the gate again";
-    case "check":return s.name;
-    case "end":return "Done";
-    default:return s.title||(s.stage?stageName(sc,s.stage):"Step");
-  }
-}
+function load(id){S.sc=D.scenarios.find(x=>x.id===id)||D.scenarios[0];S.steps=expand(S.sc,S.tg);S.i=0;S.max=0;S.asked={};S.dec={};stop();try{history.replaceState(null,"","#"+S.sc.id)}catch(e){}}
+/* the stage columns of a request's mode (the end step shows as Done in the transport, not as a column) */
+function cols(sc){return (COLS[(sc||S.sc).mode]||COLS.task).filter(c=>c[0]!=="end")}
 function stageName(sc,k){const c=(COLS[sc.mode]||[]).find(x=>x[0]===k);return c?c[1]:k}
-function colour(k){return "var(--"+(k||"cur")+")"}
-
-/* clock: estimated minutes per stage against the measured baseline */
-function minutes(upto){const est={},all={};S.steps.forEach((s,j)=>{const k=s.stage;if(!k||!s.min)return;all[k]=(all[k]||0)+s.min;if(j<upto)est[k]=(est[k]||0)+s.min});return {est,all}}
-function clockHTML(){
-  const sc=S.sc;
-  if(sc.mode==="none")return '<div class="card clk"><h3>Clock</h3><div class="muted">No task, no stages: minutes, not hours. Nothing to compare.</div></div>';
-  if(sc.mode==="product")return '<div class="card clk"><h3>Clock</h3><div class="muted">A whole product runs for days, so there is no stage budget or baseline; the live page shows working time and gate waits per stage.</div></div>';
-  const {est,all}=minutes(S.i+1),B=D.baseline.min;
-  const keys=["spec","design","build","review","test","verify","wrap"];
-  const max=Math.max(...keys.map(k=>Math.max(all[k]||0,B[k]||0)),1);
-  let rows="",tn=0,tb=0;
-  for(const k of keys){
-    const a=all[k]||0,b=B[k],e=est[k]||0;
-    if(b!=null){tn+=a;tb+=b}
-    if(!a&&b==null)continue;
-    rows+='<div class="row" style="--sc:'+colour(k)+'"><span>'+esc(stageName(sc,k))+'</span><div class="bar">'+(b!=null?'<span class="b" style="width:'+(b/max*100)+'%"></span>':'')+'<span class="e" style="width:'+(a/max*100)+'%"></span><span class="p" style="width:'+(e/max*100)+'%"></span></div><span class="sub">'+a+(b!=null?' / '+b:'')+' min</span></div>';
-  }
-  return '<div class="card clk"><h3>Clock: agent minutes per stage</h3>'+rows+
-    '<div style="margin-top:6px"><b style="font-weight:500">'+tn+' min</b> <span class="sub">estimated, against</span> <b style="font-weight:500">'+tb+' min</b> <span class="sub">measured on the old flow ('+esc(D.baseline.from)+'), spec + design + build + review</span></div>'+
-    '<div class="legend"><span><i style="background:var(--build)"></i>done so far</span><span><i style="background:color-mix(in srgb,var(--build) 30%,var(--card))"></i>planned (estimated)</span><span><i style="border:1px dashed var(--faint)"></i>old run (measured)</span></div>'+
-    '<div class="sub" style="margin-top:4px">Gate waits are your time, not agent time, and are left out (as on the live page).</div></div>';
+function nm(k){return k==="fail"?"Review":k==="ok"?"Done":stageName(S.sc,k)}
+function colOf(s){if(s.t==="triage")return "triage";if(["context","risk","team"].includes(s.t))return "plan";if(s.t==="end")return null;return s.stage||"plan"}
+function kOf(s){return s.t==="end"?"ok":s.t==="reviewFail"?"fail":colOf(s)}
+const kc=k=>"k-"+(k||"ok");
+function title(s){const sc=S.sc;switch(s.t){
+  case "triage":return "Triage: "+sc.lane;case "context":return "Context pack";case "risk":return "Risk: "+sc.risk;case "team":return "The team";
+  case "gate":return (s.again?"Gate again: ":"Gate: ")+s.q;case "build":return "Build";case "review":return s.again?"Review again":"Review";case "reviewFail":return "Review fails";
+  case "rebuild":return "Back to Build";case "lessons":return "A lesson is recorded";case "scope":return "Scope check blocks";case "guard":return "The guard";
+  case "revise":return "Changes, then the gate again";case "check":return s.name;case "end":return "Done";default:return s.title||(s.stage?nm(s.stage):"Step")}}
+function short(s){switch(s.t){case "triage":return "Triage";case "context":return "Context pack";case "risk":return "Risk";case "team":return "Team";case "gate":return s.again?"Gate again":"Gate";
+  case "check":return s.name;case "build":return "Build";case "rebuild":return "Fix";case "review":return s.again?"Review again":"Review";case "reviewFail":return "Review fails";
+  case "lessons":return "Lesson";case "guard":return "Guard";case "scope":return "Scope check";case "revise":return "Changes";case "end":return "Done";default:return s.title||(s.stage?nm(s.stage):"Step")}}
+function who(s){
+  if(s.t==="gate")return ["You"];
+  if(["triage","risk","team","check","guard","scope","lessons"].includes(s.t))return ["main session"];
+  if(s.t==="context")return ["explorer"];
+  if(s.t==="revise")return [s.by||"main session"];
+  if(s.t==="end")return [];
+  return s.agents||["main session"];
 }
-function liveHTML(){
-  const sc=S.sc;
-  if(sc.mode==="none")return '<div class="card"><h3>On the live page</h3><div class="muted">This lane opens no task, so the live page shows nothing. That is the point: only real work gets a task.</div></div>';
-  const flags=(S.tg.bug&&!sc.mustFail?" --bug":"")+(S.tg.unp&&sc.mode==="task"?" --unplanned":"")+(S.tg.app&&sc.mode==="task"?" --app-up":"");
-  const cmd="python .claude/core/scripts/simulate.py "+sc.id+flags;
-  return '<div class="card"><h3>See it on the live page</h3><div class="sub">Run this in the repo; it replays this request as the demo task <code>demo-'+esc(sc.id)+'</code> through the real live-status script and opens its live page (also shown below):</div>'+
-    '<div class="copy" style="margin:6px 0"><code id="cmd">'+esc(cmd)+'</code><button class="btn ghost sm" id="cp">Copy</button></div>'+
-    '<a href="live.html?task=demo-'+encodeURIComponent(sc.id)+'" target="_blank" rel="noopener">Open live.html?task=demo-'+esc(sc.id)+'</a>'+
-    '<div class="sub" style="margin-top:4px">Demo tasks never bind to a session, are left out of timing reports, and go with <code>simulate.py --clean</code>.</div></div>';
+function stageState(k){
+  const idx=[];S.steps.forEach((x,j)=>{if(colOf(x)===k)idx.push(j)});
+  if(!idx.length)return "skip";
+  const cur=S.steps[S.i];if(cur.t==="end")return "done";
+  const fi=S.steps.findIndex(x=>x.t==="reviewFail"),ai=S.steps.findIndex(x=>x.t==="review"&&x.again);
+  if(k==="review"&&fi>=0&&fi<=S.i&&ai>S.i)return "fail";
+  if(colOf(cur)===k)return "cur";
+  return idx[0]<S.i?"done":"todo";
 }
-function teamHTML(){
-  const sc=S.sc;if(sc.mode==="none")return "";
-  const seen=new Set(),cur=new Set((S.steps[S.i].agents)||[]);
-  S.steps.slice(0,S.i).forEach(s=>(s.agents||[]).forEach(a=>seen.add(a)));
-  if(S.i>0||S.steps[S.i].t!=="triage")seen.add("explorer");
-  let h='<div class="card"><h3>Team</h3><div class="chips">';
-  const shown=new Set();
-  for(const r of sc.team||[]){const k=r.agent;if(shown.has(k))continue;shown.add(k);h+=badge(sc,k,cur.has(k)?"on":seen.has(k)?"done":"")}
-  if(sc.mode==="task")h+=badge(sc,"explorer",S.steps[S.i].t==="context"?"on":seen.has("explorer")?"done":"");
-  h+='</div>';
-  if((sc.notNeeded||[]).length)h+='<div class="sub" style="margin-top:4px">Not needed:</div>'+(sc.notNeeded.map(n=>'<div class="sub">'+esc(n.agent)+': '+esc(n.why)+'</div>').join(""));
-  return h+'</div>';
+function gateWaiting(){const s=S.steps[S.i];return s.t==="gate"&&!S.dec[S.i]}
+function stWord(k,st){if(st==="cur"&&gateWaiting()&&colOf(S.steps[S.i])===k)return "waiting for you";return {done:"done",cur:"now",todo:"to come",skip:"skipped",fail:"failed"}[st]}
+function agentsIn(sc){const a=new Set(["main session"]);if(sc.mode==="task")a.add("explorer");(sc.team||[]).forEach(r=>a.add(r.agent));sc.steps.forEach(s=>(s.agents||[]).forEach(x=>a.add(x)));return a}
+function stagesIn(sc,n){const k=new Set();(sc.team||[]).filter(r=>r.agent===n).forEach(r=>k.add(stageName(sc,r.stage)));sc.steps.filter(s=>(s.agents||[]).includes(n)).forEach(s=>s.stage&&k.add(stageName(sc,s.stage)));if(n==="explorer"&&sc.mode==="task")k.add("Context pack");if(n==="main session")k.add("Triage");return [...k]}
+function uses(n){return D.scenarios.filter(sc=>agentsIn(sc).has(n))}
+function mins(){let d=0,a=0;const per={};S.steps.forEach((s,j)=>{if(!s.min)return;const k=s.stage||"plan";per[k]=per[k]||{d:0,a:0};per[k].a+=s.min;a+=s.min;if(j<S.i){d+=s.min;per[k].d+=s.min}});return {d,a,per}}
+
+/* ---------- small parts ---------- */
+function modelOf(n){const r=((S.sc&&S.sc.team)||[]).find(x=>x.agent===n&&x.model);const m=r?r.model:((D.models||{})[n]||(D.agents[n]||{}).model||D.defaultModel||"Opus");return m==="You"?"session":m}
+function initials(n){if(n==="You")return "You";const p=n.split(/[- ]/).filter(Boolean);return (p.length>1?p[0][0]+p[1][0]:n.slice(0,2)).toUpperCase()}
+function teamOf(n){return n==="You"?"You":((D.agents[n]||{}).team||"Helpers")}
+const slug=t=>String(t).replace(/\s+/g,"-");
+function av(n,size){return '<span class="av '+(size||"")+' t-'+slug(teamOf(n))+(S.agent===n?" hl":"")+'" title="'+esc(n==="You"?"You decide":n+" ("+teamOf(n)+")")+'">'+esc(initials(n))+'</span>'}
+const mdl=n=>'<span class="m">'+esc(modelOf(n))+'</span>';
+const pill=(k,t)=>'<span class="pill '+kc(k)+'">'+esc(t)+'</span>';
+const riskPill=r=>'<span class="pill r-'+esc(r)+'">Risk: '+esc(r)+'</span>';
+const files=fs=>(fs||[]).length?'<div class="files">'+fs.map(f=>'<span class="fc">'+ic("file")+esc(f)+'</span>').join("")+'</div>':"";
+const agentsRow=a=>(a||[]).length?'<div class="agrow">'+a.map(n=>'<span class="agc">'+av(n,"s")+esc(n)+mdl(n)+'</span>').join("")+'</div>':"";
+const markDot=sc=>S.agent&&agentsIn(sc).has(S.agent)?'<span class="mark" title="'+esc(S.agent)+' works on this request"></span>':"";
+function tableHTML(t){return t?'<div class="tscroll"><table class="st-t"><thead><tr>'+t.head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+t.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table></div>':""}
+function ticks(){return S.steps.map((s,j)=>'<button class="tk '+kc(kOf(s))+(j<S.i?" done":j===S.i?" cur":"")+(s.t==="gate"?" g":"")+'" data-act="jump" data-arg="'+j+'"'+(j>S.max?" disabled":"")+' aria-label="Step '+(j+1)+': '+esc(title(s))+'" title="'+(j+1)+'. '+esc(title(s))+'"></button>').join("")}
+function controls(){
+  const last=S.i>=S.steps.length-1,g=gateWaiting();
+  return '<div class="ctrls"><button class="btn" data-act="back"'+(S.i?"":" disabled")+'>'+ic("back")+'Back</button>'+
+    '<button class="btn pri" data-act="next"'+(g||last?" disabled":"")+'>'+(g?"Decide at the gate":last?"Done":"Next")+ic("next")+'</button>'+
+    '<button class="btn" data-act="play"'+(last?" disabled":"")+' aria-pressed="'+!!S.auto+'">'+(S.auto?ic("pause")+"Pause":ic("play","fill")+"Play")+'</button>'+
+    '<span class="seg sm" role="group" aria-label="Speed">'+[[0.5,"Slow"],[1,"Normal"],[2,"Fast"]].map(([v,n])=>'<button data-act="speed" data-arg="'+v+'" aria-pressed="'+(S.speed===v)+'">'+n+'</button>').join("")+'</span>'+
+    '<span class="sp"></span><button class="btn ghost" data-act="restart">'+ic("restart")+'Restart</button></div>';
+}
+function stepHead(s){const k=kOf(s);return '<div class="sh">'+pill(k,nm(k)||"Step")+'<h2>'+esc(title(s))+'</h2><span class="sub n">Step '+(S.i+1)+' of '+S.steps.length+'</span></div>'}
+function topHTML(){const t=document.documentElement.dataset.theme||"light";
+  return '<header class="top"><div class="brand"><span class="logo">'+ic("route")+'</span><div><h1>How a request flows</h1><div class="sub">'+(META.name?esc(META.name)+": pick":"Pick")+' a request and step through what the agents do. Nothing here touches your code.</div></div></div>'+
+  '<div class="ctl"><div class="seg" role="group" aria-label="View"><button data-act="view" data-arg="flow" aria-pressed="'+(S.view==="flow")+'">'+ic("route")+'Flow</button><button data-act="view" data-arg="agents" aria-pressed="'+(S.view==="agents")+'">'+ic("users")+'Agents <span class="cnt">'+Object.keys(D.agents).length+'</span></button></div>'+
+  '<button class="btn icon" data-act="theme" title="Theme: '+esc(t)+'" aria-label="Theme: '+esc(t)+'">'+ic(t==="dark"?"moon":t==="light"?"sun":"auto")+'</button></div></header>';
+}
+function followHTML(){if(!S.agent)return "";const on=agentsIn(S.sc).has(S.agent);
+  return '<div class="follow">'+av(S.agent,"s")+'<span>Following <b>'+esc(S.agent)+'</b>: '+(on?"ringed wherever it works in this request.":"it does not work on this request.")+'</span><button class="btn ghost sm" data-act="agent" data-arg="">Stop following</button></div>'}
+/* the what-if toggles change a task only; for other lanes they are greyed out */
+function whatIf(){const task=S.sc.mode==="task",hb=!!S.sc.mustFail;
+  const row=(k,on,off,label)=>'<label class="tg'+(off?" off":"")+'"><input type="checkbox" data-act="tg" data-arg="'+k+'"'+(on?" checked":"")+(off?" disabled":"")+'><span>'+label+'</span></label>';
+  return '<section class="card wif"><h3>What if</h3>'+
+  row("bug",S.tg.bug||hb,!task||hb,'a bug slips into Build'+(hb?' <span class="sub">(this request has one already)</span>':""))+
+  row("unp",S.tg.unp,!task,"an agent edits a file nobody planned")+
+  row("app",S.tg.app,!task,"the app is running")+'</section>'}
+function clockHTML(){const sc=S.sc,h='<section class="card clock"><h3>'+ic("clock")+'Agent time</h3>';
+  if(sc.mode==="none")return h+'<div class="sub">No task, no stages: minutes, not hours. Nothing to compare.</div></section>';
+  if(sc.mode==="product")return h+'<div class="sub">A whole product runs for days, so there is no stage budget or baseline; the live page shows working time and gate waits per stage.</div></section>';
+  const m=mins(),b=D.budgets[sc.risk]||{},B=(D.baseline||{}).min||{};
+  let tn=0,tb=0;Object.keys(B).forEach(k=>{tb+=B[k];tn+=(m.per[k]||{a:0}).a});
+  return h+'<div class="ct"><b>'+m.d+'</b> of about '+m.a+' min so far</div>'+
+  cols().filter(([k])=>m.per[k]).map(([k,n])=>{const p=m.per[k],bb=b[k]||p.a||1,w=Math.min(100,Math.round(p.a/bb*100)),dw=Math.min(100,Math.round(p.d/bb*100));
+    return '<div class="crow '+kc(k)+'"><span>'+esc(n)+'</span><span class="cbar" aria-hidden="true"><i class="ce" style="width:'+w+'%"></i><i class="cd" style="width:'+dw+'%"></i></span><span class="sub">'+p.a+(b[k]?' / '+b[k]:"")+' min</span></div>'}).join("")+
+  '<div class="sub">Estimate, against the stage budget for '+esc(sc.risk)+' risk.</div>'+
+  (tb?'<div class="sub"><b>'+tn+'</b> min for '+Object.keys(B).map(k=>stageName(sc,k).toLowerCase()).join(" + ")+', against <b>'+tb+'</b> min measured on the old flow ('+esc(D.baseline.from)+').</div>':"")+
+  '<div class="sub">Gate waits are your time, not agent time, and are left out (as on the live page).</div></section>'}
+function legend(){return cols().map(([k,n])=>'<span class="'+kc(k)+'"><i></i>'+esc(n)+'</span>').join("")+'<span class="lg-you"><i></i>Your decision</span><span class="k-fail"><i></i>Failed</span>'}
+
+/* ---------- live tracker: the replay command, and the demo task's live page in a frame when the page is served ---------- */
+function liveCmd(){const sc=S.sc;return "python .claude/core/scripts/simulate.py "+sc.id+(S.tg.bug&&!sc.mustFail?" --bug":"")+(S.tg.unp&&sc.mode==="task"?" --unplanned":"")+(S.tg.app&&sc.mode==="task"?" --app-up":"")}
+function liveHTML(){const sc=S.sc,id="demo-"+sc.id;
+  if(sc.mode==="none")return '<div class="note-box">'+ic("live")+'<span>This lane opens no task, so the live page shows nothing. That is the point: only real work gets a task.</span></div>';
+  return '<div class="sub">Run this in the repo; it replays this request as the demo task <code>'+esc(id)+'</code> through the real live-status script and opens its live page'+(SERVED?" (also shown below)":"")+':</div>'+
+  '<div class="copy"><code id="cmd">'+esc(liveCmd())+'</code><button class="btn sm" data-act="copy">'+(S.copied?ic("check")+"Copied":"Copy")+'</button></div>'+
+  '<div class="lv-links"><a href="live.html?task='+encodeURIComponent(id)+'" target="_blank" rel="noopener">Open live.html?task='+esc(id)+'</a><span class="sub">Demo tasks never bind to a session, are left out of timing reports, and go with <code>simulate.py --clean</code>.</span></div>'+
+  (SERVED?"":'<div class="lv-off">'+ic("warn")+'<div><b>The live tracker is not shown here.</b><div>It shows only when this page is served, not opened as a file. Run the command above and open the link it prints.</div></div></div>');
+}
+function liveFrame(){
+  const sc=S.sc,on=S.view==="flow"&&sc.mode!=="none"&&SERVED,f=$("liveframe");
+  $("lvwrap").hidden=!on;if(!on)return;
+  const src="live.html?task=demo-"+encodeURIComponent(sc.id);
+  if(f.dataset.src!==src){f.dataset.src=src;$("lvload").hidden=false;f.src=src}
 }
 
-function cmdsOf(s){return (S.tg.app&&s.cmdsUp)?s.cmdsUp:(s.cmds||[])}
-function filesHTML(fs,cls){return (fs||[]).length?'<div class="chips">'+fs.map(f=>'<span class="fc '+(cls||"new")+'">'+esc(f)+'</span>').join("")+'</div>':""}
-function tableHTML(t){return t?'<table><thead><tr>'+t.head.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+t.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join("")+'</tr>').join("")+'</tbody></table>':""}
-
+/* ---------- step body ---------- */
+function gateHTML(s){const j=S.i,d=S.dec[j];
+  return '<div class="gate"><div class="gh">'+ic("flag")+'<span>Your decision'+(s.again?" (again)":"")+'</span></div><div class="gq">'+esc(s.q)+'</div>'+
+  '<div class="gs">'+av(s.by||"main session","s")+'<span>'+esc(s.by||"main session")+' wrote these. The full text is in the chat and on the live page, with line comments.</span></div>'+files(s.files)+
+  (S.asked[j]&&s.qa?'<div class="qa"><div><b>You asked:</b> '+esc(s.qa.q)+'</div><div><b>Answer:</b> '+esc(s.qa.a)+'</div><div class="sub">Logged and added to the document\'s questions. The gate stays open.</div></div>':"")+
+  (d==="ok"?'<div class="decided">'+ic("check")+'You approved. It is recorded in decisions.md.</div>':d==="change"?'<div class="decided">'+ic("loop")+'You asked for changes.</div>':
+  '<div class="gact"><button class="btn go" data-act="ok">'+ic("check")+'Approve</button><button class="btn" data-act="change">'+ic("loop")+'Change</button>'+(s.qa&&!S.asked[j]?'<button class="btn" data-act="ask">Ask: '+esc(s.qa.q)+'</button>':"")+'</div>')+'</div>'}
+function doneHTML(s){const g=S.steps.filter(x=>x.t==="gate").length,l=S.steps.filter(x=>x.t==="reviewFail").length,m=mins();
+  return '<div class="donebox">'+ic("check")+'<div><div class="dt">'+esc(s.say)+'</div><div class="stats"><span><b>'+g+'</b> gate'+(g===1?"":"s")+'</span><span><b>'+l+'</b> review loop'+(l===1?"":"s")+'</span><span>about <b>'+m.a+'</b> min of agent time</span></div></div></div>'}
 function bodyHTML(s){
   const sc=S.sc;let h="";
-  if(s.t==="triage"){
-    h+=(sc.mode==="product"?'<p class="say"><b style="font-weight:500">"Hold on - I won\'t start building from this directly."</b></p>':"")+
-      '<p class="say">Lane: <span class="lane">'+esc(sc.lane)+'</span> '+esc(sc.laneWhy)+'</p>';
-    if(sc.mode==="task")h+='<p class="muted">Next: a task folder <code>demo-'+esc(sc.id)+'</code> (normally the ticket id), started with <code>live_status.py init</code>.</p>';
-  }else if(s.t==="context"){
-    const c=sc.context;
-    h+='<p class="say">'+badge(sc,"explorer","on")+' writes <code>context.md</code>: what the change touches, so nobody explores twice.</p>'+
-      tableHTML({head:["Kind","What","Where","Note"],rows:c.impact})+
-      '<p class="muted" style="margin:6px 0 0">Rules that apply: '+esc(c.rules.join("; "))+'. Risk signals: '+esc(c.signals.join("; "))+'.</p>'+filesHTML(["context.md"]);
-  }else if(s.t==="risk"){
-    h+='<p class="say">Risk <span class="lane risk-'+esc(sc.risk)+'">'+esc(sc.risk)+'</span>, from the evidence:</p><ul>'+sc.riskWhy.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul><p class="muted">'+esc(RISKNET[sc.risk])+'</p>';
-  }else if(s.t==="team"){
-    h+='<p class="say">Each agent joins for a reason in <code>triage.md</code> (Who will work on this). Stages with nobody on them are skipped.</p><table><thead><tr><th>Stage</th><th>Agent and model</th><th>Why</th></tr></thead><tbody>'+
-      sc.team.map(r=>'<tr><td>'+esc(stageName(sc,r.stage))+'</td><td>'+badge(sc,r.agent)+(r.focus?' <span class="sub">('+esc(r.focus)+')</span>':'')+'</td><td>'+esc(r.why)+'</td></tr>').join("")+'</tbody></table>'+
-      ((sc.notNeeded||[]).length?'<p class="muted" style="margin:8px 0 2px">Left out, and why:</p><table><tbody>'+sc.notNeeded.map(n=>'<tr><td>'+esc(n.agent)+'</td><td>'+esc(n.why)+'</td></tr>').join("")+'</tbody></table>':'')+filesHTML(["triage.md"]);
-  }else if(s.t==="gate"||s.t==="revise"){
-    if(s.t==="revise")h+='<p class="say">'+badge(sc,s.by||"main session","on")+' changes the documents as you asked, then opens the gate again.</p>';
-    else{
-      h+='<div class="gatebox"><div class="q">'+esc(s.q)+'</div><div class="sub">Waiting for you. '+esc(s.by||"")+' wrote these; the full text is in the chat and on the live page, with line comments:</div>'+filesHTML(s.files)+
-        (S.asked[S.i]&&s.qa?'<div class="qa"><b style="font-weight:500">You asked:</b> '+esc(s.qa.q)+'<br><b style="font-weight:500">Answer:</b> '+esc(s.qa.a)+'<div class="sub">Logged with live_status.py ask, added to the document\'s Q&amp;A; the gate stays open.</div></div>':'')+
-        '<div class="nav"><button class="btn you" data-act="ok">Approve</button><button class="btn ghost" data-act="change">Change</button>'+(s.qa?'<button class="btn ghost" data-act="ask"'+(S.asked[S.i]?' disabled':'')+'>Ask: '+esc(s.qa.q)+'</button>':'')+'</div></div>';
-    }
-  }else if(s.t==="reviewFail"){
-    h+='<div class="blk"><b style="font-weight:500">FAIL.</b> '+esc(s.finding)+'</div><p class="muted">The Review stage is marked failed; the task goes back to Build.</p>';
-  }else if(s.t==="scope"){
-    h+='<p class="say">'+esc(s.say)+'</p><div class="blk"><code>scope_check.py check</code>: <code>'+esc(s.file)+'</code> is not planned (MUST).</div><p class="muted">The agent drops the change to that file (or, if it is really needed, accepts it with a reason). The stop hook would send the turn back while it is left open.</p>';
-  }else if(s.t==="lessons"){
-    h+='<p class="say">One line goes into <code>.claude/review/lessons.md</code>:</p><pre>'+esc(s.line)+'</pre><p class="muted">In the demo replay it goes into the demo folder, never your real lessons file.</p>';
-  }else if(s.t==="guard"){
-    h+='<div class="okbox">'+esc(s.say)+'</div>';
-  }else{
-    if(s.agents)h+='<div class="chips">'+s.agents.map(a=>badge(sc,a,"on")).join("")+'</div>';
-    if(s.say)h+='<p class="say">'+esc(s.say)+'</p>';
-    h+=tableHTML(s.table)+(s.table2?'<div style="height:8px"></div>'+tableHTML(s.table2):'');
+  switch(s.t){
+    case "triage":h+=(sc.mode==="product"?'<p><b>"Hold on - I won\'t start building from this directly."</b></p>':"")+'<p>Lane '+pill("triage",sc.lane)+' '+esc(sc.laneWhy)+'</p>'+
+      (sc.mode==="task"?'<p class="muted">Next: a task folder <code>demo-'+esc(sc.id)+'</code> (normally the ticket id), with its own live page.</p>':"");break;
+    case "context":{const c=sc.context;
+      h+='<p>'+av("explorer","s")+' <b>explorer</b> writes <code>context.md</code>: everything this change touches, so nobody explores twice.</p><div class="imp">'+
+      c.impact.map(r=>'<div class="ir"><span class="kind">'+esc(r[0])+'</span><span>'+esc(r[1])+'</span><span class="sub">'+esc(r[3])+'</span><code>'+esc(r[2])+'</code></div>').join("")+'</div>'+
+      '<p class="muted"><b>Rules that apply:</b> '+esc(c.rules.join("; "))+'.</p><p class="muted"><b>Risk signals:</b> '+esc(c.signals.join("; "))+'.</p>'+files(["context.md"]);break}
+    case "risk":h+='<p>'+riskPill(sc.risk)+' set from the evidence:</p><ul>'+sc.riskWhy.map(w=>'<li>'+esc(w)+'</li>').join("")+'</ul><div class="note-box">'+ic("shield")+'<span>'+esc(RISKNET[sc.risk])+'</span></div>';break;
+    case "team":h+='<p>Each agent joins for a reason. A stage with nobody on it is skipped.</p><div class="team">'+sc.team.map(r=>'<div class="tr">'+pill(r.stage,stageName(sc,r.stage))+'<span class="tn">'+av(r.agent,"s")+esc(r.agent)+mdl(r.agent)+'</span><span class="sub">'+(r.focus?'('+esc(r.focus)+') ':"")+esc(r.why)+'</span></div>').join("")+'</div>'+
+      ((sc.notNeeded||[]).length?'<details class="out"><summary>'+sc.notNeeded.length+' agents left out, and why</summary>'+sc.notNeeded.map(n=>'<div class="tr">'+av(n.agent,"s")+'<span>'+esc(n.agent)+'</span><span class="sub">'+esc(n.why)+'</span></div>').join("")+'</details>':"")+files(["triage.md"]);break;
+    case "gate":h+=gateHTML(s);break;
+    case "revise":h+='<p>'+av(s.by||"main session","s")+' <b>'+esc(s.by||"main session")+'</b> changes only the parts you marked, then opens the gate again.</p>';break;
+    case "reviewFail":h+=agentsRow(s.agents)+'<div class="failbox">'+ic("x")+'<div><b>Review failed.</b> '+esc(s.finding)+'<div>The task goes back to Build. Only what failed runs again.</div></div></div>';break;
+    case "rebuild":h+='<div class="loopnote">'+ic("loop")+'Back to Build to fix the finding</div>'+agentsRow(s.agents)+'<p>'+esc(s.say)+'</p>';break;
+    case "lessons":h+='<p>One line goes into <code>.claude/review/lessons.md</code>. Agents read the lines for their area; the reviewer fails a repeat.</p><pre>'+esc(s.line)+'</pre><p class="muted">In the demo replay it goes into the demo folder, never your real lessons file.</p>';break;
+    case "scope":h+='<p>'+esc(s.say)+'</p><div class="failbox">'+ic("warn")+'<div><b>Scope check blocks.</b> <code>'+esc(s.file)+'</code> is in no plan.<div>The agent drops that change, or accepts it with a reason.</div></div></div>';break;
+    case "guard":h+='<div class="okbox">'+ic("shield")+'<div>'+esc(s.say)+'</div></div>';break;
+    case "end":h+=doneHTML(s);break;
+    default:h+=agentsRow(s.agents)+(s.say?'<p>'+esc(s.say)+'</p>':"")+tableHTML(s.table)+tableHTML(s.table2);
   }
-  const cm=cmdsOf(s);
-  if(cm.length)h+=(S.tg.app&&s.cmdsUp?'<p class="muted" style="margin:6px 0 0">'+esc(D.appUp)+'</p>':'')+'<pre>'+cm.map(esc).join("\n")+'</pre>'+(s.result?'<div class="okbox">'+esc(s.result)+'</div>':'');
-  if(s.files&&!["gate","context","team"].includes(s.t))h+=filesHTML(s.files);
-  if(s.min)h+='<div class="sub">About '+s.min+' min of agent time (estimated).</div>';
+  const cm=(S.tg.app&&s.cmdsUp)?s.cmdsUp:(s.cmds||[]);
+  if(cm.length)h+=(S.tg.app&&s.cmdsUp?'<p class="muted">'+esc(D.appUp)+'</p>':"")+'<pre>'+cm.map(esc).join("\n")+'</pre>'+(s.result?'<div class="okbox">'+ic("check")+'<div>'+esc(s.result)+'</div></div>':"");
+  if(s.files&&!["gate","context","team"].includes(s.t))h+=files(s.files);
+  if(s.min)h+='<div class="sub mins">'+ic("clock")+'About '+s.min+' min of agent time (estimated)</div>';
   return h;
 }
-function navHTML(){
-  const s=S.steps[S.i],atGate=s.t==="gate",last=S.i>=S.steps.length-1;
-  return '<div class="nav"><button class="btn ghost sm" data-act="back"'+(S.i===0?' disabled':'')+'>Back</button><button class="btn sm" data-act="next"'+(atGate||last?' disabled':'')+'>'+(atGate?'Decide at the gate':'Next')+'</button><button class="btn ghost sm" data-act="play"'+(last?' disabled':'')+'>'+(S.auto?'Pause':'Play')+'</button><span class="sp"></span><button class="btn ghost sm" data-act="restart">Restart</button><span class="sub">Step '+(S.i+1)+' of '+S.steps.length+'</span></div>';
-}
-function stepCard(){
-  const s=S.steps[S.i],k=colOf(s)||lastCol(S.sc);
-  return '<div class="st-h" style="--sc:'+colour(k)+'"><span class="dot"></span><b>'+esc(title(s,S.sc))+'</b><span class="pill">'+esc(stageName(S.sc,k))+'</span></div>'+bodyHTML(s)+navHTML();
-}
-function whyHTML(){const s=S.steps[S.i];return '<div class="card why"><h3>Why this step</h3><div>'+esc(s.why||"")+'</div></div>'}
 
-function renderA(){
-  const sc=S.sc;
-  $("a-steps").innerHTML=S.steps.map((s,j)=>{const k=colOf(s)||lastCol(sc);return '<li class="'+(j<S.i?"done":j===S.i?"cur":"")+(s.t==="reviewFail"||s.t==="scope"?" bad":"")+'" style="--sc:'+colour(k)+'"><span class="n">'+(j+1)+'</span><span>'+esc(title(s,sc))+'</span></li>'}).join("");
-  $("a-main").innerHTML=stepCard();
-  $("a-side").innerHTML=whyHTML()+teamHTML()+clockHTML()+liveHTML();
-  const cur=$("a-steps").querySelector(".cur");if(cur)cur.scrollIntoView({block:"nearest"});
+/* ---------- Studio: requests, board, transport, inspector ---------- */
+function reqList(){return '<section class="card rl"><h3>Requests</h3><div class="rqs">'+D.scenarios.map(sc=>'<button class="rq" data-act="'+(S.view==="flow"?"load":"open")+'" data-arg="'+esc(sc.id)+'" aria-pressed="'+(S.view==="flow"&&sc.id===S.sc.id)+'">'+markDot(sc)+
+  '<span class="rt">'+esc(sc.label)+'</span><span class="ra">'+esc(sc.ask)+'</span><span class="rp">'+pill("triage",sc.lane)+(sc.risk?riskPill(sc.risk):"")+(sc.size?'<span class="pn">size '+esc(sc.size)+'</span>':"")+'<span class="sub">'+expand(sc,S.tg).length+' steps</span></span></button>').join("")+
+  '</div></section>'}
+function tileC(s,j){const k=kOf(s),cls=j<S.i?"done":j===S.i?"cur":j<=S.max?"seen":"todo";
+  return '<button class="tile '+kc(k)+' '+cls+(s.t==="gate"?" g":"")+'" data-act="jump" data-arg="'+j+'"'+(j>S.max?" disabled":"")+' title="Step '+(j+1)+': '+esc(title(s))+'">'+(j<S.i?ic(s.t==="reviewFail"?"x":"check"):s.t==="gate"?ic("flag"):"")+esc(short(s))+'</button>'}
+function boardC(){
+  const C=cols(),lanes=["You"];S.steps.forEach(s=>who(s).forEach(a=>{if(!lanes.includes(a))lanes.push(a)}));
+  const head='<div class="corner">Who</div>'+C.map(([k,n])=>{const st=stageState(k);return '<div class="bh '+kc(k)+' is-'+st+'"><span class="bn">'+esc(n)+'</span><span class="bs">'+stWord(k,st)+'</span></div>'}).join("");
+  const rows=lanes.map(l=>'<div class="bl'+(S.agent===l?" hlrow":"")+'" title="'+esc(l==="You"?"You decide":l)+'">'+av(l,"s")+'<span class="ln">'+(l==="You"?"You decide":esc(l))+'</span></div>'+
+    C.map(([k])=>'<div class="bcell '+kc(k)+' is-'+stageState(k)+'">'+S.steps.map((s,j)=>[s,j]).filter(([s])=>colOf(s)===k&&who(s).includes(l)).map(([s,j])=>tileC(s,j)).join("")+'</div>').join("")).join("");
+  return '<div class="bscroll"><div class="bgridC" role="group" aria-label="Who works in which stage" style="grid-template-columns:128px repeat('+C.length+',minmax(64px,1fr));min-width:'+(128+64*C.length)+'px">'+head+rows+'</div></div>';
 }
-function renderB(){
-  const sc=S.sc,s=S.steps[S.i],curCol=colOf(s)||lastCol(sc);
-  const used=new Set(S.steps.map(x=>colOf(x)).filter(Boolean));used.add(lastCol(sc));
-  const {all}=minutes(0),B=D.baseline.min;
-  let h="";
-  for(const [k,name] of COLS[sc.mode]){
-    const past=S.steps.slice(0,S.i+1).filter(x=>(colOf(x)||lastCol(sc))===k);
-    let body="";const ags=new Map(),files=[];
-    past.forEach((x,j)=>{(x.agents||[]).forEach(a=>ags.set(a,x===s?"on":"done"));if(x.t==="context")ags.set("explorer",x===s?"on":"done");(x.files||[]).forEach(f=>files.includes(f)||files.push(f))});
-    ags.forEach((st,a)=>body+=badge(sc,a,st));
-    past.filter(x=>x.t==="gate").forEach(x=>body+='<div class="gatemini'+(x===s?'':' ok')+'">'+(x===s?'Waiting: ':'Approved: ')+esc(x.q)+'</div>');
-    past.filter(x=>x.t==="reviewFail"||x.t==="scope").forEach(x=>body+='<div class="mustmini">'+(x.t==="scope"?'Unplanned file blocked':'MUST: back to Build')+'</div>');
-    if(files.length)body+='<div>'+files.slice(-6).map(f=>'<span class="fc new">'+esc(f.split("/").pop())+'</span>').join("")+'</div>';
-    const est=all[k],bl=sc.mode==="task"?B[k]:null;
-    h+='<div class="col'+(k===curCol?" cur":"")+(used.has(k)?"":" skip")+'" style="--sc:'+colour(k)+'"><div class="ch"><b>'+esc(name)+'</b><span class="sub">'+(used.has(k)?(est?est+" min est.":"")+(bl!=null?" / old "+bl:""):"skipped")+'</span></div><div class="cb">'+body+'</div></div>';
-  }
-  $("b-board").innerHTML=h;
-  $("b-main").innerHTML=stepCard()+'<div style="margin-top:10px">'+whyHTML()+'</div>';
-  const feed=S.steps.slice(0,S.i+1).map((x,j)=>'<li><b>'+(j+1)+'. '+esc(title(x,sc))+'</b>'+(x.agents?' - '+esc(x.agents.join(", ")):"")+'</li>').reverse().join("");
-  $("b-side").innerHTML=clockHTML()+liveHTML()+'<div class="card"><h3>What happened</h3><ul class="feed">'+feed+'</ul></div>';
-  const c=$("b-board").querySelector(".col.cur");if(c)c.scrollIntoView({block:"nearest",inline:"nearest"});
+function renderFlow(){
+  const s=S.steps[S.i],k=kOf(s),w=who(s),skips=cols().filter(([c])=>stageState(c)==="skip");
+  $("f-reqs").innerHTML=reqList()+whatIf()+clockHTML();
+  $("f-board").innerHTML=boardC();
+  $("f-transport").innerHTML='<div class="tpt">'+(s.t==="end"?'<span class="pill k-ok">'+ic("check")+'Done</span>':gateWaiting()?'<span class="gc">'+ic("flag")+' Waiting for you</span>':"")+
+    '<span>Step '+(S.i+1)+' of '+S.steps.length+': <b>'+esc(title(s))+'</b></span>'+(skips.length?'<span class="sub">Skipped: '+skips.map(([c,n])=>esc(n)).join(", ")+'</span>':"")+'</div><div class="ticks">'+ticks()+'</div>'+controls();
+  $("liveid").textContent=S.sc.mode==="none"?"no task":"demo-"+S.sc.id;
+  $("livebody").innerHTML=liveHTML();
+  $("f-legend").innerHTML=legend();
+  const ins=$("f-insp");ins.className="card insp "+kc(k);
+  ins.innerHTML='<div class="whybig"><div class="wl">'+ic("bulb")+'Why this step</div><p>'+esc(s.why||"")+'</p></div>'+stepHead(s)+
+    (w.length?'<div class="whoC">'+w.map(n=>'<span class="agc">'+av(n,"s")+(n==="You"?"You decide":esc(n))+'</span>').join("")+'</div>':"")+'<div class="body">'+bodyHTML(s)+'</div>';
 }
-/* roster: every agent, and the requests it works on */
-function agentsIn(sc){const a=new Set();(sc.team||[]).forEach(r=>a.add(r.agent));sc.steps.forEach(s=>(s.agents||[]).forEach(x=>a.add(x)));if(sc.mode==="task")a.add("explorer");return a}
-function stagesIn(sc,agent){const k=new Set();(sc.team||[]).filter(r=>r.agent===agent).forEach(r=>k.add(stageName(sc,r.stage)));
-  sc.steps.filter(s=>(s.agents||[]).includes(agent)).forEach(s=>s.stage&&k.add(stageName(sc,s.stage)));if(agent==="explorer"&&sc.mode==="task")k.add("Context pack");return [...k]}
+
+/* ---------- Agents view ---------- */
+function teamGroups(){const g={},o=[];Object.entries(D.agents).forEach(([n,a])=>{if(!g[a.team]){g[a.team]=[];o.push(a.team)}g[a.team].push(n)});return o.map(t=>[t,g[t]])}
+function ensureAgent(){if(!S.agent||!D.agents[S.agent])S.agent="code-reviewer"}
+function sdots(n){const st=(D.agents[n]||{}).stages||[];return '<span class="sdots" title="Stages: '+esc(st.filter(k=>CK.includes(k)).map(k=>TN[k]).join(", ")||"none in a task")+'">'+COLS.task.map(([k])=>'<i class="'+kc(k)+(st.includes(k)?" on":"")+'"></i>').join("")+'</span>'}
+const modelName=a=>a.model==="You"?"session":(a.model||D.defaultModel||"Opus");
 function budgetHTML(a){
-  if(a.model==="You")return '<div>Your session: no turn cap. The stage budgets below are the time the whole stage should take.</div>'+stageBudget(a);
-  return '<div>About '+(a.calls||20)+' tool calls, stops at '+a.turns+' turns'+(a.web?', at most 3 web lookups':'')+'; writes its file first, replies in 10 lines or fewer.</div>'+stageBudget(a);
-}
-function stageBudget(a){
   const ks=(a.stages||[]).filter(k=>D.budgets.low[k]!=null);
-  if(!ks.length)return '<div class="sub">No task-stage budget: it works in product mode or before the stages start. A product has no stage budget; the live page shows its working time.</div>';
-  return '<table style="margin-top:4px"><thead><tr><th>Stage</th><th>low</th><th>medium</th><th>high</th></tr></thead><tbody>'+ks.map(k=>'<tr><td>'+esc(stageName({mode:"task"},k))+'</td><td>'+D.budgets.low[k]+' min</td><td>'+D.budgets.medium[k]+' min</td><td>'+D.budgets.high[k]+' min</td></tr>').join("")+
-    '</tbody></table><div class="sub">Minutes for the whole stage (shared with everyone on it), by the task\'s risk; the live page flags an overrun.</div>';
+  return '<p>'+(a.model==="You"?"Your session: no turn limit.":"About "+(a.calls||20)+" tool calls, stops at "+a.turns+" turns"+(a.web?", at most 3 web lookups":"")+". Writes its file first, replies in 10 lines or fewer.")+'</p>'+
+  (ks.length?'<table class="bt"><thead><tr><th>Stage budget</th><th>low</th><th>medium</th><th>high</th></tr></thead><tbody>'+ks.map(k=>'<tr><td>'+pill(k,TN[k]||k)+'</td><td>'+D.budgets.low[k]+' min</td><td>'+D.budgets.medium[k]+' min</td><td>'+D.budgets.high[k]+' min</td></tr>').join("")+'</tbody></table><div class="sub">Minutes for the whole stage, shared with everyone on it, by the task\'s risk; the live page flags an overrun.</div>'
+  :'<div class="sub">No task-stage budget: it works in product mode or before the stages start. A product has no stage budget; the live page shows its working time.</div>')}
+function agentDetail(n){
+  const a=D.agents[n];if(!a)return "";
+  const ins=uses(n),outs=D.scenarios.map(sc=>[sc,(sc.notNeeded||[]).find(x=>x.agent===n)]).filter(x=>x[1]),st=a.stages||[];
+  const head='<div class="dh t-'+slug(a.team)+'">'+av(n,"l")+'<div><h2>'+esc(n)+'</h2><div class="dm"><span class="tpill">'+esc(a.team)+'</span><span class="m">'+esc(modelName(a))+'</span>'+(a.own?'<span class="pn">this repo\'s own agent</span>':"")+'</div></div></div>';
+  const track='<h4>Stages it joins in a task</h4><div class="mini">'+COLS.task.map(([k,t])=>'<span class="mi '+kc(k)+(st.includes(k)?" on":"")+'"><i></i>'+t+'</span>').join("")+'</div>';
+  const kv='<table class="kv"><tbody>'+[["Joins when",a.joins],["Left out when",a.skipped],["Reads",a.reads],["Writes",a.writes],["Hands to",a.hands]].map(r=>'<tr><th>'+r[0]+'</th><td>'+esc(r[1])+'</td></tr>').join("")+'</tbody></table>';
+  const works='<h4>Works on</h4>'+(ins.length?ins.map(sc=>'<button class="rq-chip" data-act="open" data-arg="'+esc(sc.id)+'"><span class="mark"></span><span><b>'+esc(sc.label)+'</b> <span class="sub">'+esc(stagesIn(sc,n).join(", "))+'</span></span>'+ic("next")+'</button>').join(""):
+    '<div class="empty">'+ic("users")+'<div><b>None of these requests use it.</b><div>It joins when: '+esc(a.joins)+'</div></div></div>');
+  const lo=outs.length?'<h4>Left out, and why</h4>'+outs.map(([sc,x])=>'<div class="lo"><b>'+esc(sc.label)+':</b> '+esc(x.why)+'</div>').join(""):"";
+  return head+'<p class="does">'+esc(a.does)+'</p>'+kv+track+works+lo+'<h4>'+ic("clock")+'Budget</h4>'+budgetHTML(a);
 }
-function renderR(){
-  const groups={},order=[];
-  Object.entries(D.agents).forEach(([n,a])=>{if(!groups[a.team]){groups[a.team]=[];order.push(a.team)}groups[a.team].push(n)});
-  const uses=n=>D.scenarios.filter(sc=>agentsIn(sc).has(n));
-  if(!S.agent||!D.agents[S.agent])S.agent=Object.keys(D.agents)[0];
-  $("r-list").innerHTML='<div class="sub" style="margin-bottom:8px">'+Object.keys(D.agents).length+' agents. Pick one to see what it does and which requests it works on.</div>'+order.map(t=>'<h3>'+esc(t)+'</h3><div class="agrid">'+groups[t].map(n=>{
-    const a=D.agents[n],k=uses(n).length,m=(a.model||D.defaultModel||"Opus");
-    return '<button class="agc'+(n===S.agent?" sel":"")+(k?"":" none")+'" data-ag="'+esc(n)+'"><span class="nm">'+esc(n)+' <i class="m m-'+m.toLowerCase()+'">'+esc(m==="You"?"main":m)+'</i></span><span class="sub">'+(k?k+' request'+(k>1?'s':''):'in no request')+(a.own?' - this repo':'')+'</span></button>'}).join("")+'</div>').join("");
-  const n=S.agent,a=D.agents[n],m=a.model||D.defaultModel||"Opus";
-  const ins=uses(n),outs=D.scenarios.map(sc=>[sc,(sc.notNeeded||[]).find(x=>x.agent===n)]).filter(x=>x[1]);
-  $("r-side").innerHTML='<div class="card"><div class="st-h"><b>'+esc(n)+'</b><i class="m m-'+m.toLowerCase()+'">'+esc(m==="You"?"main":m)+'</i><span class="pill">'+esc(a.team)+'</span>'+(a.own?'<span class="pill">this repo\'s own agent</span>':'')+'</div>'+
-    '<table class="kv"><tbody>'+[["Does",a.does],["Joins when",a.joins],["Left out when",a.skipped],["Reads",a.reads],["Writes",a.writes],["Hands to",a.hands],
-      ["Model",m==="You"?"the model of your session":m]].map(r=>'<tr><th>'+r[0]+'</th><td>'+esc(r[1])+'</td></tr>').join("")+
-    '<tr><th>Time budget</th><td>'+budgetHTML(a)+'</td></tr></tbody></table>'+
-    '<h3 style="margin-top:12px">Works on</h3>'+(ins.length?'<div class="chips">'+ins.map(sc=>'<button class="sc-chip" data-open="'+esc(sc.id)+'"><b>'+esc(sc.label)+'</b> <span class="sub">'+esc(stagesIn(sc,n).join(", "))+'</span></button>').join("")+'</div>':'<div class="sub">No request in this simulator uses it.</div>')+
-    (outs.length?'<h3>Left out, and why</h3>'+outs.map(([sc,x])=>'<div class="sub"><b style="font-weight:500;color:var(--text)">'+esc(sc.label)+':</b> '+esc(x.why)+'</div>').join(""):'')+
-    '<div class="sub" style="margin-top:8px">Open a request to follow '+esc(n)+' through it; the picker marks every request it works on.</div></div>';
-  markPicker();
-}
-function markPicker(){[...$("pick").options].forEach(o=>{const sc=D.scenarios.find(x=>x.id===o.value);o.textContent=(S.agent&&agentsIn(sc).has(S.agent)?"\u25CF ":"")+sc.label})}
-function setView(v){S.view=v;$("wFlow").setAttribute("aria-pressed",v==="flow");$("wAg").setAttribute("aria-pressed",v==="agents");
-  ["whatif","askrow","abseg"].forEach(id=>$(id).hidden=v!=="flow");$("VR").hidden=v!=="agents";
-  $("VA").hidden=v!=="flow"||S.variant!=="A";$("VB").hidden=v!=="flow"||S.variant!=="B";render()}
-
-/* the live page of this request's demo task, beside the flow (only when the page is served, not from a file) */
-function liveFrame(){
-  const sc=S.sc,box=$("livebox"),on=S.view==="flow"&&sc.mode!=="none"&&/^https?:$/.test(location.protocol);
-  box.hidden=!on;if(!on)return;
-  const src="live.html?task=demo-"+encodeURIComponent(sc.id);
-  if($("liveframe").dataset.src!==src){$("liveframe").dataset.src=src;$("liveframe").src=src}
-  $("livehint").textContent="demo-"+sc.id+": fills in while the command runs (python .claude/core/scripts/simulate.py "+sc.id+")";
-}
-function render(){
-  liveFrame();
-  if(S.view==="agents"){$("hlbar").hidden=true;renderR();return}
-  const sc=S.sc;
-  const hl=S.agent&&agentsIn(sc).has(S.agent);
-  $("hlbar").hidden=!S.agent;
-  $("hlbar").innerHTML=S.agent?(hl?'Following <b style="font-weight:500;color:var(--text)">'+esc(S.agent)+'</b> (outlined) in this request.':esc(S.agent)+' does not work on this request.')+' <button class="btn ghost sm" data-clear="1">Stop following</button>':"";
-  $("askq").textContent=sc.ask;
-  $("askchips").innerHTML='<span class="lane">'+esc(sc.lane)+'</span>'+(sc.risk?'<span class="lane risk-'+esc(sc.risk)+'">risk '+esc(sc.risk)+'</span>':'')+(sc.size?'<span class="pill">size '+esc(sc.size)+'</span>':'');
-  const taskOnly=sc.mode==="task";
-  [["tg-bug",taskOnly&&!sc.mustFail],["tg-unp",taskOnly],["tg-app",taskOnly]].forEach(([id,on])=>{$(id).classList.toggle("off",!on);$(id).querySelector("input").disabled=!on});
-  $("t-bug").checked=!!(S.tg.bug||sc.mustFail);
-  $("t-bug").title=sc.mustFail?"This request already has a review MUST":"";
-  if(S.variant==="A")renderA();else renderB();
-  const cp=$("cp");if(cp)cp.onclick=()=>{try{navigator.clipboard.writeText($("cmd").textContent);cp.textContent="Copied"}catch(e){}};
+function renderAgents(){ensureAgent();const g=teamGroups(),all=Object.keys(D.agents),list=all.filter(n=>S.team==="all"||D.agents[n].team===S.team);
+  $("a-reqs").innerHTML='<section class="card tfc"><h3>Teams</h3><div class="tf">'+
+    [["all","All teams",all.length]].concat(g.map(([t,ns])=>[t,t,ns.length])).map(([id,t,c])=>'<button class="tfb t-'+slug(id)+'" data-act="team" data-arg="'+esc(id)+'" aria-pressed="'+(S.team===id)+'"><span class="tdot"></span>'+esc(t)+'<span class="sub">'+c+'</span></button>').join("")+'</div></section>'+reqList();
+  $("a-tbl").innerHTML='<table class="at"><thead><tr><th>Agent</th><th>Model</th><th>Stages</th><th>Requests</th><th>Budget</th></tr></thead><tbody>'+
+    list.map(n=>{const a=D.agents[n],u=uses(n).length;return '<tr class="'+(n===S.agent?"sel":"")+'"><td><button class="alink" data-act="agent" data-arg="'+esc(n)+'" aria-pressed="'+(n===S.agent)+'">'+av(n,"s")+'<span><span>'+esc(n)+'</span><span class="sub">'+esc(a.team)+'</span></span></button></td><td><span class="m">'+esc(modelName(a))+'</span></td><td>'+sdots(n)+'</td><td>'+(u||'<span class="sub">none</span>')+'</td><td class="sub">'+(a.model==="You"?"no limit":(a.calls||20)+" calls, "+a.turns+" turns")+'</td></tr>'}).join("")+
+    '</tbody></table>';
+  $("a-insp").innerHTML=agentDetail(S.agent);
 }
 
-function load(id){S.sc=D.scenarios.find(x=>x.id===id)||D.scenarios[0];S.steps=expand(S.sc,S.tg);S.i=0;S.asked={};stop();render();try{history.replaceState(null,"","#"+S.sc.id)}catch(e){}}
+/* ---------- actions ---------- */
+function start(){if(S.auto)return;S.auto=setInterval(()=>{if(gateWaiting()||S.i>=S.steps.length-1){stop();render();return}S.i++;S.max=Math.max(S.max,S.i);render()},1600/S.speed)}
 function stop(){if(S.auto){clearInterval(S.auto);S.auto=null}}
-function act(a){
+function act(a,arg){
   const s=S.steps[S.i];
-  if(a==="next"&&S.i<S.steps.length-1&&s.t!=="gate")S.i++;
-  else if(a==="back"&&S.i>0)S.i--;
-  else if(a==="restart"){S.steps=expand(S.sc,S.tg);S.i=0;S.asked={}}
-  else if(a==="ok"&&s.t==="gate")S.i++;
-  else if(a==="ask")S.asked[S.i]=true;
-  else if(a==="change"&&s.t==="gate"){S.steps.splice(S.i+1,0,{t:"revise",stage:s.stage,by:s.by,agents:[s.by||"main session"],why:"You asked for changes: live_status.py changes marks the cards, the author changes only those and gates again. Nothing goes ahead on a card you did not approve."},Object.assign({},s,{again:true}));S.i++}
-  else if(a==="play"){if(S.auto)stop();else S.auto=setInterval(()=>{const c=S.steps[S.i];if(c.t==="gate"||S.i>=S.steps.length-1){stop();render();return}S.i++;render()},1600)}
-  if(a!=="play"&&(a==="back"||a==="restart"))stop();
+  if(a!=="copy")S.copied=false;
+  switch(a){
+    case "next":if(S.i<S.steps.length-1&&!gateWaiting())S.i++;break;
+    case "back":stop();if(S.i>0)S.i--;break;
+    case "restart":stop();S.steps=expand(S.sc,S.tg);S.i=0;S.max=0;S.asked={};S.dec={};break;
+    case "ok":if(gateWaiting()){S.dec[S.i]="ok";S.i++}break;
+    case "change":if(gateWaiting()){S.dec[S.i]="change";S.steps.splice(S.i+1,0,{t:"revise",stage:s.stage,by:s.by,agents:[s.by||"main session"],why:"You asked for changes: live_status.py changes marks the cards, the author changes only those and gates again. Nothing goes ahead on a card you did not approve."},Object.assign({},s,{again:true}));S.max=S.i;S.i++}break;
+    case "ask":S.asked[S.i]=true;break;
+    case "play":if(S.auto)stop();else start();break;
+    case "speed":S.speed=+arg;if(S.auto){stop();start()}break;
+    case "jump":{const j=+arg;if(j>=0&&j<=S.max){stop();S.i=j}break}
+    case "load":load(arg);S.view="flow";break;
+    case "open":S.view="flow";load(arg);break;
+    case "view":stop();S.view=arg;try{history.replaceState(null,"","#"+(arg==="agents"?"agents":S.sc.id))}catch(e){}break;
+    case "agent":S.agent=arg||null;break;
+    case "team":S.team=arg;break;
+    case "theme":{const t=THEMES[(THEMES.indexOf(document.documentElement.dataset.theme)+1)%3];document.documentElement.dataset.theme=t;try{localStorage.setItem("sim:theme",t)}catch(e){}break}
+    case "copy":{const c=$("cmd");if(c&&navigator.clipboard)navigator.clipboard.writeText(c.textContent).then(()=>{S.copied=true;render()},()=>{});break}
+    case "tg":S.tg[arg]=!S.tg[arg];S.steps=expand(S.sc,S.tg);S.i=Math.min(S.i,S.steps.length-1);S.max=Math.min(S.max,S.steps.length-1);S.asked={};break;
+  }
+  S.max=Math.max(S.max,S.i);
   render();
 }
-document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(b&&!b.disabled)return act(b.dataset.act);
-  const g=e.target.closest("[data-ag]");if(g){S.agent=g.dataset.ag;return render()}
-  const o=e.target.closest("[data-open]");if(o){$("pick").value=o.dataset.open;S.view="flow";load(o.dataset.open);return setView("flow")}
-  if(e.target.closest("[data-clear]")){S.agent=null;markPicker();render()}});
-$("wFlow").onclick=()=>setView("flow");$("wAg").onclick=()=>setView("agents");
-$("wAg").textContent="Agents ("+Object.keys(D.agents).length+")";
+function after(){
+  if(S.view==="flow"){const t=document.querySelector(".C .tile.cur");if(t){const sc=t.closest(".bscroll");sc.scrollLeft=Math.max(0,t.closest(".bcell").offsetLeft-sc.clientWidth/2)}}
+}
+function render(){
+  const ae=document.activeElement,fk=ae&&ae.dataset&&ae.dataset.act?[ae.dataset.act,ae.dataset.arg||""]:null;
+  $("top").innerHTML=topHTML();
+  $("follow").innerHTML=S.view==="flow"?followHTML():"";
+  $("flowv").hidden=S.view!=="flow";$("agv").hidden=S.view!=="agents";
+  if(S.view==="flow")renderFlow();else renderAgents();
+  liveFrame();
+  if(fk){const all=[...document.querySelectorAll("[data-act]")];
+    let el=all.find(e=>e.dataset.act===fk[0]&&(e.dataset.arg||"")===fk[1]&&!e.disabled&&e.offsetParent!==null);
+    if(!el&&fk[0]==="next")el=document.querySelector('[data-act="ok"]');
+    if(!el&&["ok","change"].includes(fk[0]))el=document.querySelector('[data-act="next"]:not([disabled])');
+    if(el)el.focus({preventScroll:true})}
+  after();
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(!b||b.disabled||b.tagName==="INPUT")return;act(b.dataset.act,b.dataset.arg)});
+document.addEventListener("change",e=>{const t=e.target;if(t.matches&&t.matches("input[data-act]"))act(t.dataset.act,t.dataset.arg)});
+document.addEventListener("keydown",e=>{if(S.view!=="flow"||e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.key==="ArrowRight"){e.preventDefault();act("next")}else if(e.key==="ArrowLeft"){e.preventDefault();act("back")}});
+$("liveframe").addEventListener("load",()=>{if($("liveframe").dataset.src)$("lvload").hidden=true});
 
-/* controls */
-const groups={};D.scenarios.forEach(x=>(groups[x.group]=groups[x.group]||[]).push(x));
-$("pick").innerHTML=Object.entries(groups).map(([g,xs])=>'<optgroup label="'+esc(g)+'">'+xs.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>').join("")+'</optgroup>').join("");
-$("pick").onchange=()=>load($("pick").value);
-[["t-bug","bug"],["t-unp","unp"],["t-app","app"]].forEach(([id,k])=>$(id).onchange=()=>{S.tg[k]=$(id).checked;S.steps=expand(S.sc,S.tg);S.i=Math.min(S.i,S.steps.length-1);S.asked={};render()});
-function setVariant(v){S.variant=v;$("VA").hidden=v!=="A"||S.view!=="flow";$("VB").hidden=v!=="B"||S.view!=="flow";$("vA").setAttribute("aria-pressed",v==="A");$("vB").setAttribute("aria-pressed",v==="B");try{localStorage.setItem("sim:variant",v)}catch(e){}render()}
-$("vA").onclick=()=>setVariant("A");$("vB").onclick=()=>setVariant("B");
-const THEMES=["light","dark","system"];
-function showTheme(){$("thm").textContent="Theme: "+document.documentElement.dataset.theme}
-$("thm").onclick=()=>{const t=THEMES[(THEMES.indexOf(document.documentElement.dataset.theme)+1)%3];document.documentElement.dataset.theme=t;try{localStorage.setItem("sim:theme",t)}catch(e){}showTheme()};
-showTheme();
-if(META.name)$("subt").textContent=META.name+": pick a request and step through what the agents do. Nothing here touches your code.";
-let v="A";try{v=localStorage.getItem("sim:variant")||"A"}catch(e){}
 const first=(location.hash||"").slice(1);
-if(first==="agents")S.view="agents";
-$("pick").value=D.scenarios.some(x=>x.id===first)?first:"medium";
-S.variant=v;$("VA").hidden=v!=="A";$("VB").hidden=v!=="B";$("vA").setAttribute("aria-pressed",v==="A");$("vB").setAttribute("aria-pressed",v==="B");
-load($("pick").value);
-if(S.view==="agents")setView("agents");
+load(D.scenarios.some(x=>x.id===first)?first:"medium");
+if(first==="agents"){S.view="agents";try{history.replaceState(null,"","#agents")}catch(e){}}
+render();
 </script>
 </body>
 </html>
