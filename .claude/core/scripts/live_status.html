@@ -215,6 +215,9 @@ animation:aurora 9s ease-in-out infinite alternate}
 .row.live .nm,.row.done .nm{color:color-mix(in srgb,var(--c) 70%,var(--text))}
 .whoa{color:var(--muted);font-size:12px}
 .row.skip .whoa{font-style:italic}
+/* the agent of the running stage stands out: a tag in the stage colour with a breathing dot */
+.row.live .whoa,.row.fail .whoa{display:inline-flex;gap:6px;align-items:center;font-weight:500;padding:0 9px;border-radius:999px;color:color-mix(in srgb,var(--cur) 80%,var(--text));background:color-mix(in srgb,var(--cur) 10%,var(--card));border:1px solid color-mix(in srgb,var(--cur) 30%,var(--card))}
+.row.live .whoa::before,.row.fail .whoa::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cur);animation:breathe 1.4s ease-in-out infinite}
 .bud{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .bud.over{padding:0 7px;border-radius:4px;color:color-mix(in srgb,var(--you) 80%,var(--text));background:color-mix(in srgb,var(--you) 14%,var(--card))}
 .bud.past{font-size:12px;color:var(--faint)}
@@ -449,7 +452,7 @@ function apply(d){
   if(par)say(par.working.length+" agents working in parallel: "+pn2+(par.done.length?" · "+par.done.length+" done":""),!first,
     '<span class="n">'+par.working.length+" agents working in parallel</span>: "+esc(pn2)+(par.done.length?' <span class="sub">· '+par.done.length+" done</span>":""));
   else say(ov==="wait"?(d.gate?gname(d.gate)+": "+whoWaits(d.gate):"Waiting for you"):ov==="done"?"All stages done":ov==="idle"?"No activity for "+fmt(ms(d.updated)):ov==="fail"?NAMES[c.k]+" found problems":c.state==="done"?between(d,c):
-    ev&&ms(ev.t)<90000&&ev.kind!=="gate"?ev.text:(c.actor||ACTOR[c.k])+" "+(VERB[c.k]||"is working"),!first&&ov==="live");
+    ev&&ms(ev.t)<90000&&ev.kind!=="gate"?(ev.actor&&ev.actor!=="you"?ev.actor+": ":"")+ev.text:(c.actor||ACTOR[c.k])+" "+(VERB[c.k]||"is working"),!first&&ov==="live");
   d.stages.forEach(s=>{const li=rows[s.k],was=prev?(prev.stages.find(x=>x.k===s.k)||{}).state:null;
     li.className="row s-"+s.k+" "+s.state+(li.classList.contains("open")?" open":"");
     if(was&&was!=="done"&&s.state==="done"){li.classList.add("just");setTimeout(()=>li.classList.remove("just"),1700)}
@@ -463,9 +466,9 @@ function apply(d){
   const n=d.counts||{};count("#c-read",n.read||0);count("#c-edit",n.edit||0);count("#c-run",n.run||0);
   gate();agentsCard();crew();tick();
 }
-/* who is working: shown while the stage has 2 or more experts or a background agent; one row per agent, main
+/* who is working: shown while a stage runs, waits or is being fixed; one row per agent, main
    session first, with its latest action, tool calls against the "about N" of its Speed line, and time; below it
-   the stage's activity, newest first, with an agent filter kept in this browser */
+   the stage's activity (when 2 or more agents work on it), newest first, with an agent filter kept in this browser */
 const TCOL={lead:"wrap",product:"product",design:"design",architecture:"spec",engineering:"build",domain:"verify",quality:"review",audit:"stories",operations:"release",helpers:"base"};
 let NOW=null,HID=new Set(),actSeen=0,actId="";try{HID=new Set(JSON.parse(localStorage.getItem("ls:hide")||"[]"))}catch(e){}
 function acol(a,team){if(a==="main session")return "var(--wrap)";
@@ -476,7 +479,6 @@ function agentsNow(){const c=cur(D);if(!c||!["live","wait","fail"].includes(c.st
   const t0=Date.parse(c.run||c.start)||0,N=D.now||{},XST={live:"working",done:"done",todo:"planned"};
   const ex=((D.plan&&D.plan.rows)||[]).filter(r=>r.stage===c.k&&r.state!=="skip"&&r.agent!=="main session");
   const bg=(D.bg||[]).filter(b=>Date.parse(b.start)>=t0-60000&&!ex.some(r=>r.agent===b.agent));
-  if(ex.length<2&&!bg.length)return null;
   const A=ex.map(r=>({id:r.expert,agent:r.agent,team:r.team||benchTeam(r.agent),why:r.why||"",st:XST[r.state]||r.state,start:r.start,end:r.end,out:r.out}))
     .concat(bg.map(b=>({id:b.agent,agent:b.agent,team:benchTeam(b.agent),why:"in the background",st:"working",start:b.start})));
   const w=A.filter(a=>a.st==="working"),g=D.gate&&D.gate.stage===c.k,mn=N["main session"]||{};
@@ -491,10 +493,10 @@ function stateLabel(a){return a.st==="done"?'<span class="pill st-done">done'+(a
   :a.st==="working"?'<span class="pill st-live" style="--cur:'+a.c+'"'+(a.start?' data-s="'+esc(a.start)+'">'+fmt(ms(a.start)):">working")+"</span>":'<span class="pill">planned</span>'}
 function agentsCard(){const box=$("#now"),act=$("#act");
   if(!NOW){box.hidden=act.hidden=true;box.innerHTML=act.innerHTML="";return}
-  box.hidden=act.hidden=false;
+  box.hidden=false;act.hidden=NOW.rows.length<3;if(act.hidden)act.innerHTML="";
   box.innerHTML='<div class="now">'+NOW.rows.map(a=>'<div class="nr '+a.st+'" style="--c:'+a.c+'"><div class="who"><span class="adot"></span><div style="min-width:0"><div class="anm">'+esc(a.id)+
     '</div><div class="role">'+esc(tname(a.team)+": "+a.why)+'</div></div></div><div class="act" title="'+esc(a.act)+'">'+esc(a.act)+'</div><div class="calls">'+meter(a)+"</div><div>"+stateLabel(a)+"</div></div>").join("")+"</div>";
-  activity()}
+  if(!act.hidden)activity()}
 function activity(){const n=NOW,ids=n.rows.map(a=>a.id),col=Object.fromEntries(n.rows.map(a=>[a.id,a.c]));
   if(actId!==D.id+":"+n.k){actId=D.id+":"+n.k;actSeen=0}
   const by=e=>ids.includes(e.actor)?e.actor:(n.rows.find(a=>a.agent===e.actor)||{}).id||"main session";

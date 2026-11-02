@@ -23,7 +23,7 @@
   ".claude/agents/story-sizer.md": "740828585ba272fb",
   ".claude/agents/ux-designer.md": "8c986345eebd1501",
   ".claude/agents/verifier.md": "1dd2d22e6574eed7",
-  ".claude/core/VERSION": "bd31e8d9cf8d14a1",
+  ".claude/core/VERSION": "d03d8b268b417132",
   ".claude/core/hooks/flow_check.py": "f72398a29c8650b6",
   ".claude/core/hooks/guard.py": "9cae8ef9390278ca",
   ".claude/core/hooks/rules_check.py": "675a34146155e2ef",
@@ -51,7 +51,7 @@
   ".claude/core/scripts/handoff_check.py": "69659206be8bf99b",
   ".claude/core/scripts/impact.py": "8516348559ffdf22",
   ".claude/core/scripts/install.py": "bd8835089717dfe2",
-  ".claude/core/scripts/live_status.html": "263dbf898cf17d6c",
+  ".claude/core/scripts/live_status.html": "c794c31d0e25ecac",
   ".claude/core/scripts/live_status.py": "742f52f61f4bae93",
   ".claude/core/scripts/md_to_html.py": "3703404ebc37334e",
   ".claude/core/scripts/project.py": "c41d55803eb5a098",
@@ -76,5 +76,5 @@
   ".claude/skills/sdlc/SKILL.md": "6891ebb04d176ba0",
   ".claude/skills/verify-push/SKILL.md": "fd8fc629262e4643"
  },
- "version": "1.4.3"
+ "version": "1.4.4"
 }
