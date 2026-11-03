@@ -399,3 +399,34 @@ and never ships a change that breaks something else.
   summary, right of the time) opens a glass panel (right, 410 px; a bottom sheet at 620 px or less) with a ring,
   done items with their tick time and steps, the current item with its last steps and live step, and the rest
   faint; the card's up-next line is the next item. Esc or x closes it and focus goes back to the pill.
+
+## 28. 1.6.0 - every agent works as a certified expert
+- Zakvan (3 Nov): "I want those agents to work as certified experts ... provide best solution without adding any
+  complexity ... all the agents should be best in the industry type knowledge and perform superfast."
+- Each of the 23 agent files has a `Certified as:` line (a real certification or industry standard for the role:
+  for example OCP Java SE 17 and Spring Professional for backend-developer, AWS Solutions Architect Professional,
+  SAP BTP Solution Architect and TOGAF for solution-architect, Google engineering practices, Effective Java and
+  OWASP ASVS L2 for code-reviewer) and a `## Expert standard` block of 8-15 checkable rules. Files grew by at most
+  15 lines: the Summary-and-plan and Context lines moved to `reference/agents/common.md`.
+- `reference/agents/common.md`: the start batch (common.md, context.md and, for code work, a Grep of the stack in
+  `.claude/project.json`, in one message), the output file layout, context rules, speed habits (budgets are a
+  ceiling, independent reads batched, web only for version-specific facts) and the expert bar every agent shares
+  (smallest good solution, reuse first, over-engineering is a defect, one rejected alternative per choice,
+  evidence, versions as a ceiling).
+- Stack packs in `reference/stacks/`: `java17-spring-boot3.md` (Java 17 and never above it, correctness traps,
+  collections, concurrency, Spring proxies, JPA with EclipseLink, HANA and PostgreSQL, tests), `ui5-plainjs.md`,
+  `react-ts.md`. `.claude/project.json` gets a `stack` key (java, spring_boot, orm, db, ui, packs), filled in all
+  four repos from their pom.xml and package.json; the agents that design, write or review code read the packs it
+  names.
+- `review_pack.py --design` adds `## Complexity count` (new files, classes, endpoints, tables or columns, config
+  keys, dependencies, each with its reason) and a "Rejected:" line to the design.md skeleton.
+- Proof: an exam (3 scenarios from Blend code each for solution-architect, backend-developer and code-reviewer),
+  run on the 1.5.0 and 1.6.0 files with the same prompts and graded blind against a fixed rubric, and one
+  independent read of all 23 files (certifications real, rules specific, no contradiction with the hard rules,
+  common.md, the packs or another agent).
+- Results (3 Nov, Sonnet as the exam taker, blind grader): 1.5.0 scored 39/45 (architect 10, backend 14, reviewer 15),
+  1.6.0 scored 45/45; the architect gain is the over-built parts it now cuts (a per-tenant switch, new config keys)
+  and a complexity count per scenario. The independent read found outdated or wrong names (OWASP Top 10:2025 and ASVS
+  5.0 now, SAP P_BTPA, C_ADBTP, C_HAMOD, C_FIORD, ITIL 4 Practitioner), task-mode files that three descriptions still
+  placed in design.md, a 3 s page budget against LCP 2.5 s, a keyset example JPQL cannot run, and 19 Speed lines that
+  allowed web lookups without a web tool; all fixed.

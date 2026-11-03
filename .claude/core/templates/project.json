@@ -118,6 +118,14 @@
   "rules": [],
   "checks": [],
   "deploy": {},
+  "stack": {
+    "java": "",
+    "spring_boot": "",
+    "orm": "",
+    "db": "",
+    "ui": "",
+    "packs": []
+  },
   "setup_paths": [],
   "experts": [],
   "expert_docs": {},

@@ -892,6 +892,10 @@ def skeleton(c, acs, irows, rules, dn):
         or ["| %s | %s | %s |" % (F, F, F)]
     L += ["", "## Planned files", "", "- %s (one bullet per file or glob, `- path - why`)" % F, "",
           "## Design patterns", "", F, "",
+          "## Complexity count", "", "| added | count | why it is needed (criterion or number) |", "|---|---|---|"]
+    L += ["| %s | %s | %s |" % (k, F, F) for k in ("new files", "new classes or modules", "new endpoints",
+                                                 "new tables or columns", "new config keys", "new dependencies")]
+    L += ["", "Rejected: %s (the bigger option and why it is not needed yet)" % F, "",
           "## Rules that apply", ""]
     L += ["- `%s`: %s (the traps that shape this design, or delete the line)" % (r[0], F) for r in rules] \
         or ["- %s" % F]

@@ -6,6 +6,14 @@
   "default_mode": "task",
   "products_root": "D:/products",
   "newline": "lf",
+  "stack": {
+    "java": "17",
+    "spring_boot": "3.5.15",
+    "orm": "EclipseLink 4.0.5 (no Hibernate)",
+    "db": "PostgreSQL (products built from the base spec)",
+    "ui": "React + TypeScript + Vite (base spec B2)",
+    "packs": ["java17-spring-boot3", "react-ts"]
+  },
   "app": {
     "url": "",
     "status": ""

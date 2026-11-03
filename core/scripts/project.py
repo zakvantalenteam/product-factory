@@ -86,6 +86,7 @@ DEFAULTS = {
         "read_only_roots": [],
     },
     "deploy": {},
+    "stack": {},
     "setup_paths": [],
     "newline": "lf",
     "quick_fix": {"max_files": 3, "max_lines": 30, "never": []},
