@@ -495,7 +495,7 @@ def now_rows(st):
                 and (e.get("actor") == ex or (alone and e.get("actor") == ag))]
         acts = [e for e in mine if e["kind"] not in ("gate", "ok", "changes", "plan", "risk")]
         wrote = [e for e in mine if e["kind"] == "edit" and e.get("file")]
-        out[ex] = {"n": sum(1 for e in mine if e["kind"] in TOOL_KINDS), "last": acts[-1]["text"] if acts else "",
+        out[ex] = {"k": k, "n": sum(1 for e in mine if e["kind"] in TOOL_KINDS), "last": acts[-1]["text"] if acts else "",
                    "wrote": wrote[-1]["file"] if wrote else ""}
     return out
 
@@ -509,7 +509,7 @@ def save(st):
     st["budgets"] = {k: v for k, v in timing.budgets_for(st["risk"], mode_of(st), CFG).items() if k in keys}
     for r in (st.get("plan") or {}).get("rows", []):
         r["team"] = team_of(r.get("agent") or r.get("expert") or "")
-    ags = {r["agent"] for r in (st.get("plan") or {}).get("rows", [])} | {b["agent"] for b in st.get("bg") or []}
+    ags = {r["agent"] for r in (st.get("plan") or {}).get("rows", []) + (st.get("runs") or [])} |         {b["agent"] for b in st.get("bg") or []}
     st["calls"] = {a: n for a in sorted(ags) if a != "main session" for n in [call_budget(a, mode_of(st))] if n}
     st["now"] = now_rows(st)
     d = path(st["id"])
@@ -929,9 +929,13 @@ def close_rows(st, stage):
     for r in team_rows(st, stage, None, ("live", "todo")):
         ran = r["state"] == "live" or r["agent"] == "main session"
         r["state"], r["end"] = ("done" if ran else "skip"), now()
+    finish_runs(st, stage)
 
 
-def agent_stage(st, name, cur):
+STAGE_WORD = re.compile(r"^\W*(spec|design|build|review|test|verify|release)\b", re.I)
+
+
+def agent_stage(st, name, cur, job=""):
     """The stage an agent works in: the current one when the team plans it there, else its first open row."""
     rows = (st.get("plan") or {}).get("rows", [])
     if not rows:
@@ -940,7 +944,16 @@ def agent_stage(st, name, cur):
             if cur in owns:
                 return cur
             return next((s["k"] for s in st["stages"] if s["k"] in owns and s["state"] not in ("done", "skip")), None)
-        return AGENT_STAGE.get(name) or ("design" if name in experts_list() else None)
+        # a domain expert works in the stage its job names ("Build card 2: ..."), else its own, else the one that runs
+        k = (STAGE_WORD.match(job or "") or [None, ""])[1].lower()
+        if (name in DOMAIN_CORE or name in experts_list()) and \
+                any(s["k"] == k and s["state"] not in ("done", "skip") for s in st["stages"]):
+            return k
+        if name in AGENT_STAGE:
+            return AGENT_STAGE[name]
+        if name not in experts_list():
+            return None
+        return cur if cur != "spec" and stage_of(st, cur)["state"] in ("live", "fail") else "design"
     if team_rows(st, cur, name, ("todo", "live")):
         return cur
     # not on the team (or all its rows finished): log it in the current stage, never reopen a finished one
@@ -1068,6 +1081,8 @@ def cmd_expert(a):
         r["start" if a.action == "start" else "end"] = now()
         if a.out:
             r["out"] = a.out[:200]
+        if a.action != "start":
+            finish_runs(st, a.stage, r["expert"])
         add(st, a.stage, "agent", r["expert"] + {"start": " started", "done": " finished", "skip": " not needed"}[a.action]
             + (": " + a.out if a.out else ""), r["agent"])
         save(st)
@@ -1476,31 +1491,284 @@ def tool_path(inp):
                  if isinstance(inp.get(k), str) and inp.get(k)), "")
 
 
+PROGS = ("python", "python3", "py", "node", "bash", "sh", "pwsh", "powershell", "npx", "uv", "uvx", "deno", "bun", "ruby")
+TOOLS = ("git", "npm", "mvn", "mvnw", "gradle", "gradlew", "docker", "kubectl", "cf", "yarn", "pnpm", "dotnet", "cargo",
+         "go", "make")
+
+
+def short_cmd(cmd):
+    """A command in a few plain words, for a step whose agent gave no description (Cursor sends none):
+    "Run git status", "Run check_rules.py", "Read build.md", "Search for "token""."""
+    for seg in re.split(r"\s*(?:&&|\|\||;|\|)\s*", cmd):
+        toks = seg.split()
+        while toks and (re.match(r"^[A-Za-z_]\w*=", toks[0]) or toks[0].lower() in ("sudo", "env", "time", "&", "call")):
+            toks = toks[1:]
+        if not toks or toks[0].lower() in ("cd", "set", "export", "pushd", "popd", "echo", "set-location", "printf"):
+            continue
+        prog = re.sub(r"\.(exe|cmd|bat)$", "", os.path.basename(toks[0].strip("\"'")).lower())
+        rest = [t.strip("\"'") for t in toks[1:] if not t.startswith("-")]
+        name = os.path.basename(rest[0].replace("\\", "/")) if rest else ""
+        if prog in PROGS and name:
+            return "Run " + name
+        if prog in TOOLS and name:
+            return "Run %s %s" % (prog, name)
+        if prog in ("cat", "head", "tail", "less", "more", "type", "get-content", "sed", "awk") and rest:
+            return "Read " + os.path.basename(rest[-1].replace("\\", "/"))[:60]
+        if prog in ("grep", "rg", "findstr", "select-string") and rest:
+            return 'Search for "%s"' % rest[0][:40]
+        if prog in ("ls", "dir", "find", "tree", "get-childitem"):
+            return "List files" + (" in " + name[:40] if name else "")
+        if prog == "wc":
+            return "Count lines"
+        return "Run " + prog[:30]
+    return "Run a command"
+
+
 def describe(tool, inp, root=""):
+    """(kind, step, extra) of one tool call: the step is an imperative in plain words ("Read context.md", the
+    Bash call's own description); the page turns it into "Reading ..." and "Read ...". A command is kept in the
+    event behind the step only when it passes secret_command."""
     p = tool_path(inp)
+    name = os.path.basename(rel(p, root)) if p else ""
     if tool == "Read":
-        return ("read", "Reading " + rel(p, root), {}) if p else None
+        return ("read", "Read " + name, {}) if p else None
     if tool in ("Edit", "Write", "MultiEdit", "StrReplace", "NotebookEdit"):
-        r = rel(p, root)
-        x = {"file": os.path.basename(r)}
+        x = {"file": name}
         hit = repo_file(p, [ROOT] + ([root] if root and os.path.isdir(root) else [])) if p else None
         if hit:
             x["path"] = hit[1]  # the page opens it with /_file
-        return ("edit", ("Wrote " if tool == "Write" else "Edited ") + r, x) if p else None
+        return ("edit", ("Write " if tool == "Write" else "Edit ") + name, x) if p else None
     if tool == "Delete":
-        return ("edit", "Deleted " + rel(p, root), {}) if p else None
+        return ("edit", "Delete " + name, {}) if p else None
     if tool in ("Bash", "PowerShell", "Shell"):
         cmd = " ".join(str(inp.get("command") or "").split())
         if not cmd or secret_command(cmd) or "live_status.py" in cmd:
             return None
-        return ("run", "Ran " + cmd[:90] + ("..." if len(cmd) > 90 else ""), {})
+        desc = " ".join(str(inp.get("description") or "").split())
+        step = (desc[:1].upper() + desc[1:])[:140] if desc else short_cmd(cmd)
+        return ("run", step, {"cmd": cmd[:300]})
     if tool in ("Grep", "Glob"):
-        return ("search", "Searched " + str(inp.get("pattern") or inp.get("query") or "")[:60], {})
+        pat = str(inp.get("pattern") or inp.get("query") or "")[:50]
+        if tool == "Glob":
+            return ("search", "List files " + pat, {})
+        return ("search", ("Search %s for" % name if name else "Search for") + ' "%s"' % pat, {})
     if tool == "Skill":
-        return ("skill", "Using the " + str(inp.get("skill") or inp.get("name") or "") + " skill", {})
-    if tool in ("WebFetch", "WebSearch"):
-        return ("search", "Looked up " + str(inp.get("url") or inp.get("query") or "")[:70], {})
+        return ("skill", "Use the " + str(inp.get("skill") or inp.get("name") or "") + " skill", {})
+    if tool == "WebFetch":
+        host = re.sub(r"^[a-z]+://", "", str(inp.get("url") or "")).split("/")[0]
+        return ("search", "Look up " + host[:60], {})
+    if tool == "WebSearch":
+        return ("search", 'Look up "%s"' % str(inp.get("query") or "")[:60], {})
     return None
+
+
+# ---- agent runs: one card per run on the page -----------------------------------------------------
+
+KEEP_RUNS = 30
+KEEP_STEPS = 60
+BRIEF_STEP = re.compile(r"context|pack|triage|status|brief|task folder|decision|card|design file|spec\b|questions", re.I)
+SUMMARY_HEAD = re.compile(r"(?im)(?:^[ \t]*#{1,6}[ \t]*|<!--[ \t]*)summary for people[ \t]*:?[ \t]*(?:-->)?[ \t]*$")
+TURN_LIMIT = re.compile(r"max(?:imum)?[ _-]?turns|turn[ _-]?limit", re.I)
+PLAN_HEAD = re.compile(r"(?im)^[ \t]*(?:#{1,6}[ \t]*)?plan[ \t]*:?[ \t]*$")
+PLAN_ITEM = re.compile(r"^\s*[-*]\s*\[([ xX])\]\s+(\S.*?)\s*$")
+
+
+def job_of(text):
+    """The Agent call's description as one plain sentence; a trailing id in brackets ("(F-A8-008)") is dropped."""
+    t = re.sub(r"\s*\([^()\s]*\d[^()\s]*\)\s*$", "", " ".join(str(text or "").split()))
+    return (t[:1].upper() + t[1:])[:120]
+
+
+def new_run(st, agent, expert, stage, job="", use="", aid=""):
+    """One run of an agent: its job, the steps it takes, its calls against its Speed line, its job phase
+    (0 read the brief, 1 look into it, 2 write its file, 3 check and finish) and, when it stops, its summary."""
+    st["runN"] = st.get("runN", 0) + 1
+    r = dict(id="r%d" % st["runN"], agent=agent, expert=expert, stage=stage, job=job, start=now(), state="live",
+             n=0, ph=0, b=call_budget(agent, mode_of(st)) if agent != "main session" else 0, steps=[])
+    if use:
+        r["use"] = use
+    if aid:
+        r["aid"] = aid
+    st["runs"] = (st.get("runs") or [])[-(KEEP_RUNS - 1):] + [r]
+    return r
+
+
+def find_run(st, aid="", use="", name="", oldest=False):
+    """The live run of a hook call: by its run id, else by the Agent call that launched it, else the newest (or
+    oldest) live run of that agent not yet bound to another run id."""
+    runs = [r for r in st.get("runs") or [] if r["state"] == "live"]
+    if not oldest:
+        runs.reverse()
+    for key, v in (("aid", aid), ("use", use)):
+        hit = next((r for r in runs if v and r.get(key) == v), None)
+        if hit:
+            return hit
+    low = name.lower()
+    return next((r for r in runs if low and not (aid and r.get("aid")) and low in (r["agent"].lower(), r["expert"].lower())), None)
+
+
+def plain(line):
+    s = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s+", "", line.strip())
+    s = re.sub(r"\*\*|__|`|<[^>]+>|\[([^\]]*)\]\([^)]*\)", lambda m: m.group(1) or "", s)
+    return " ".join(s.split())[:200]
+
+
+def summary_of(p, reply=""):
+    """Up to 5 plain lines for people: the "## Summary for people" block of a run's output file (read once, when the
+    run stops), else the file's first lines, else the first lines of the agent's reply."""
+    text = ""
+    try:
+        with open(p, encoding="utf-8", errors="replace") as f:
+            text = f.read(24000)
+    except (OSError, TypeError):
+        pass
+    m = SUMMARY_HEAD.search(text)
+    out = []
+    if m:
+        for ln in text[m.end():].splitlines():
+            s = ln.strip()
+            if PLAN_HEAD.match(s) or PLAN_ITEM.match(s):
+                break
+            if re.match(r"^(#|-->|<!--|---|\||```|</)", s):
+                if out or not s.startswith("<!--"):
+                    break
+            if s and plain(s):
+                out.append(plain(s))
+            if len(out) == 5:
+                break
+        if out:
+            return out
+    if str(p).lower().endswith((".html", ".htm")):
+        title = re.search(r"(?is)<title>(.*?)</title>", text)
+        body = re.sub(r"(?is)<(script|style|head)\b.*?</\1>", " ", text)
+        text = (title.group(1) + "\n" if title else "") + re.sub(r"<[^>]+>", "\n", body)
+    for src in (text, reply):
+        for ln in re.sub(r"(?s)^---\n.*?\n---\n", "", src or "").splitlines():
+            s = ln.strip()
+            if not s or re.match(r"^(#|\||```|---|<|>)", s) or PLAN_ITEM.match(s) or len(s.split()) < 3:
+                continue
+            out.append(plain(s))
+            if len(out) == 3:
+                return out
+        if out:
+            return out
+    return out
+
+
+def plan_of(p):
+    """The "## Plan" checklist of a run's output file (an HTML file holds it in its top comment): its items in order,
+    each with whether it is ticked; None when the file has none."""
+    try:
+        with open(p, encoding="utf-8", errors="replace") as f:
+            text = f.read(40000)
+    except (OSError, TypeError):
+        return None
+    for m in PLAN_HEAD.finditer(text):
+        out = []
+        for ln in text[m.end():].splitlines():
+            hit = PLAN_ITEM.match(ln)
+            if hit:
+                out.append((plain(hit.group(2))[:120], hit.group(1) != " "))
+                if len(out) == 12:
+                    break
+            elif ln.strip():
+                break
+        if out:
+            return out
+    return None
+
+
+def tick_plan(r, items):
+    """The run's live plan from its file: an item keeps the time it was first seen ticked; a step belongs to the
+    first item not yet ticked when it ran."""
+    old = {x["text"]: x.get("at") for x in r.get("plan") or [] if x.get("at")}
+    r["plan"] = [dict(text=t, done=d, at=(old.get(t) or now()) if d else "") for t, d in items]
+
+
+def stop_state(*objs):
+    """done, stopped or failed, and why in plain words, from a stop hook's input or an Agent call's result."""
+    for o in objs:
+        if not isinstance(o, dict):
+            continue
+        s = str(o.get("status") or o.get("stop_reason") or o.get("subtype") or "").lower()
+        why = " ".join(str(o.get(k) or "") for k in ("status", "stop_reason", "subtype", "reason", "error"))
+        if TURN_LIMIT.search(why):
+            return "stopped", "stopped at its turn limit"
+        if s in ("aborted", "cancelled", "canceled", "interrupted", "killed", "stopped"):
+            return "stopped", "stopped before it finished"
+        if o.get("is_error") or o.get("error") or s in ("error", "failed", "failure"):
+            msg = " ".join(str(o.get("error") or o.get("message") or "").split())[:100]
+            return "failed", "failed" + (": " + msg if msg and msg not in ("True", "true") else "")
+    return "done", ""
+
+
+def reply_text(resp):
+    """The text an agent handed back (an Agent call's result, or a stop hook's last message)."""
+    if isinstance(resp, str):
+        return resp
+    if not isinstance(resp, dict):
+        return ""
+    c = resp.get("content") or resp.get("result") or resp.get("last_assistant_message") or ""
+    if isinstance(c, list):
+        c = "\n".join(str(x.get("text") or "") for x in c if isinstance(x, dict))
+    return str(c)[:6000]
+
+
+def finish_run(st, r, state="done", why="", reply="", again=False):
+    """A run stops: its state, why when it did not finish, and its summary for people. A stop hook that comes
+    after the run's row was marked done (again) only reads the summary once more."""
+    if r["state"] != "live" and not again:
+        return
+    if r["state"] == "live":
+        r["state"], r["end"] = state, now()
+        if why:
+            r["why"] = why
+    out = os.path.join(WORK, r["out"]) if r.get("out") else ""
+    lines = summary_of(out, reply)
+    if lines:
+        r["summary"] = lines
+    items = plan_of(out)
+    if items:
+        tick_plan(r, items)
+    for x in r.get("plan") or [] if r["state"] == "done" else []:  # a run that finished did its plan
+        if not x["done"]:
+            x["done"], x["at"] = True, r["end"]
+
+
+def finish_runs(st, stage, expert=None):
+    """The rows of a stage (or one expert's row) are marked done: their runs stop with them."""
+    for r in st.get("runs") or []:
+        if r["state"] == "live" and r["stage"] == stage and (expert is None or r["expert"].lower() == expert.lower()):
+            finish_run(st, r)
+
+
+def run_step(st, r, kind, text, extra, p):
+    """One step of a run: counted against its Speed line, kept for the page's roll, and moving its job phase."""
+    if kind in TOOL_KINDS:
+        r["n"] += 1
+    r["steps"] = (r["steps"] + [[now(), text] + ([extra["cmd"]] if extra.get("cmd") else [])])[-KEEP_STEPS:]
+    own = False
+    if kind == "edit" and p:
+        a = os.path.abspath(p)
+        if not r.get("out") and os.path.normcase(a).startswith(os.path.normcase(os.path.abspath(path(st["id"])) + os.sep)):
+            r["out"], r["file"], r["fw"] = os.path.relpath(a, WORK).replace("\\", "/"), os.path.basename(a), 0
+            if extra.get("path"):
+                r["href"] = extra["path"]
+        own = bool(r.get("out")) and os.path.normcase(a) == os.path.normcase(os.path.abspath(os.path.join(WORK, r["out"])))
+    if r["ph"] == 0 and not BRIEF_STEP.search(text):
+        r["ph"] = 1
+    if own:
+        r["fw"] = r.get("fw", 0) + 1
+        if r["ph"] < 2 and (r["fw"] > 1 or (r["b"] and r["n"] >= 0.4 * r["b"])):  # the first write is its skeleton
+            r["ph"] = 2
+        items = plan_of(a)
+        if items:
+            tick_plan(r, items)
+    elif r["ph"] == 2 and kind == "run":
+        r["ph"] = 3
+    pat = r.setdefault("pat", [])  # when each job phase ended: the page's plan when the file has none
+    while len(pat) < r["ph"]:
+        pat.append(now())
 
 
 def bind(st, aid, name):
@@ -1550,7 +1818,13 @@ def on_tool(tid, data, sid=""):
         aid = re.sub(r"[^A-Za-z0-9._-]", "", str(data.get("subagent_id") or data.get("agent_id") or ""))[:80]
         name = canon(data.get("subagent_type") or data.get("agent_type") or "")
         if aid and name:
-            bind(st, aid, name)
+            ex = bind(st, aid, name)
+            run = find_run(st, aid, "", name)
+            if run:
+                run["aid"] = aid
+            else:
+                job = job_of(data.get("description") or data.get("task") or "")
+                new_run(st, name, ex, agent_stage(st, name, cur, job) or cur, job, aid=aid)
             os.makedirs(path(".sessions"), exist_ok=True)
             write(path(".sessions", aid), tid)
             save(st)
@@ -1565,18 +1839,22 @@ def on_tool(tid, data, sid=""):
         r = live[0] if live else None
         bg = next((b for b in st.get("bg") or [] if aid and b.get("aid") == aid), None) or \
             next((b for b in st.get("bg") or [] if name and b["agent"].lower() == name.lower()), None)
+        run = find_run(st, aid, "", name, oldest=not aid) or \
+            next((x for x in reversed(st.get("runs") or []) if aid and x.get("aid") == aid), None)
+        if run:
+            finish_run(st, run, *stop_state(data), reply=reply_text(data), again=True)
         if r:
             r["state"], r["end"] = "done", now()
             add(st, r["stage"], "agent", r["expert"] + " finished", r["expert"])
-            save(st)
         elif bg:
             st["bg"].remove(bg)
+        if run or r or bg:
             save(st)
         return
     if tool in ("Agent", "Task"):
         name = canon(next((inp[k] for k in ("subagent_type", "subagent_name", "agent", "name", "type")
                            if isinstance(inp.get(k), str) and inp.get(k)), "agent"))
-        stage = agent_stage(st, name, cur)
+        stage = agent_stage(st, name, cur, str(inp.get("description") or ""))
         resp = data.get("tool_response")  # a background launch returns at once: {"isAsync": true, "status": "async_launched"}
         hint = " ".join(str(inp.get(k) or "") for k in ("description", "prompt"))[:4000]
         use = str(data.get("tool_use_id") or "")
@@ -1586,6 +1864,7 @@ def on_tool(tid, data, sid=""):
             r = mark_expert(st, stage, name, "live", hint)
             if r and use:  # the launch's result names the run (agentId): its tool calls then show on this row
                 st["launch"] = dict(list((st.get("launch") or {}).items())[-9:] + [(use, r["expert"])])
+            new_run(st, name, r["expert"] if r else name, stage, job_of(inp.get("description")) or (r or {}).get("why", ""), use)
             if s["state"] == "live":  # another expert of a stage that is already running
                 add(st, stage, "agent", (r["expert"] if r else name) + " started", r["expert"] if r else name)
             else:
@@ -1594,26 +1873,34 @@ def on_tool(tid, data, sid=""):
                 s.setdefault("start", s["run"])
                 add(st, stage, "start", s["name"] + " started", r["expert"] if r else name)
         elif pre:
+            new_run(st, name, name, cur, job_of(inp.get("description")), use)
             add(st, cur, "agent", name + " agent started" + (": " + str(inp["description"])[:80] if inp.get("description") else ""), name)
         elif inp.get("run_in_background") or (isinstance(resp, dict) and (resp.get("isAsync") or resp.get("status") == "async_launched")) \
                 or "async_launched" in str(resp)[:400]:
             # the call returns at launch: the agent keeps working until its result comes back
             ex = (st.get("launch") or {}).pop(use, None)
+            run = find_run(st, "", use, "" if use else name)
             if rid:
                 st.setdefault("aids", {})[rid] = {"expert": ex or name, "t": now()}
+                if run:
+                    run["aid"] = rid
             if not (stage and team_rows(st, stage, name, ("live",))):  # off the team: flow_check waits for it too
                 st["bg"] = (st.get("bg") or [])[-9:] + [dict({"agent": name, "start": now()}, **({"aid": rid} if rid else {}))]
             add(st, stage or cur, "agent", (ex or name) + " is working in the background", name)
-        elif stage and team_rows(st, stage):
-            # planned team: the stage ends with `stage done`, not when its first expert finishes
-            r = mark_expert(st, stage, name, "done", hint)
-            add(st, stage, "agent", (r["expert"] if r else name) + " finished", r["expert"] if r else name)
-        elif stage and stage_of(st, stage)["state"] == "live":
-            s = stage_of(st, stage)
-            s["state"], s["end"] = "done", now()
-            add(st, stage, "done", name + " finished", name)
         else:
-            add(st, stage or cur, "agent", name + " finished", name)
+            run = find_run(st, "", use, name)  # a foreground agent is back: its run stops with its result
+            if run:
+                finish_run(st, run, *stop_state(resp), reply=reply_text(resp))
+            if stage and team_rows(st, stage):
+                # planned team: the stage ends with `stage done`, not when its first expert finishes
+                r = mark_expert(st, stage, name, "done", hint)
+                add(st, stage, "agent", (r["expert"] if r else name) + " finished", r["expert"] if r else name)
+            elif stage and stage_of(st, stage)["state"] == "live":
+                s = stage_of(st, stage)
+                s["state"], s["end"] = "done", now()
+                add(st, stage, "done", name + " finished", name)
+            else:
+                add(st, stage or cur, "agent", name + " finished", name)
         save(st)
         return
     if pre:
@@ -1625,6 +1912,16 @@ def on_tool(tid, data, sid=""):
     actor, aid = who(st, data, sid)
     if aid:
         extra["aid"] = aid[-8:]  # two runs of one agent stay apart on the page
+    if actor != "main session":
+        run = find_run(st, aid, "", actor)
+        if run is None and aid:  # launched before this hook saw it
+            run = new_run(st, base_agent(actor), actor, cur, aid=aid)
+        if run is not None:
+            if aid:
+                run["aid"] = aid
+            tp = tool_path(inp)
+            run_step(st, run, kind, text, extra, os.path.join(ROOT, tp) if tp else "")
+            extra["run"] = run["id"]
     add(st, cur, kind, text, actor, **extra)
     save(st)
 

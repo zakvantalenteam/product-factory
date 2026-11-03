@@ -360,3 +360,42 @@ and never ships a change that breaks something else.
   under it stays for 2 or more agents (the stage row already lists one agent's activity).
 - The running stage's agent stands out: a tag in the stage colour with a breathing dot instead of grey text, and
   the header names the agent before its latest action ("main session: Ran ...").
+
+## 27. 1.5.0 - the live page shows each agent's work in plain words
+- Zakvan (3 Nov): "card per agent with rolling 3 items per agent"; the steps felt like loading, not working; no
+  card on the page should look like a typical website card; inside each stage the working agent must be clear.
+  Approved design: variant B of Blend `.claude/work/live-rolling/prototype.html` (a replay of review-next9-p2).
+- Runs: the hook keeps one run per agent launch (`runs` in status.json): its job (the Agent call's description,
+  else the plan row's why), its steps, its calls against the "about N" of its Speed line, its job phase (read the
+  brief, look into it, write its file, check and finish) and, when it stops, its summary for people. A run is
+  bound by Claude's `agent_id` (from the background launch's `agentId`, else the first call), Cursor's
+  `subagentStart`, else the newest live run of that agent; it stops on SubagentStop, Cursor's subagentStop, the
+  foreground Agent result, or its row marked done. A turn limit, an abort or an error is said plainly.
+- Plain steps: a Bash call shows its `description` (Cursor sends none: a short command summary); the raw command
+  stays in the event, behind a details toggle, only when secret_command passes it. Read, Grep, Edit and Write
+  show a verb and the file name. Steps are stored as imperatives; the page reads them as "-ing" now and past tense
+  once done (a verb table).
+- Summary for people: every core agent opens the output file it writes first with `## Summary for people`
+  (3-5 plain lines: what it looked at, what it found or changed, the verdict or decision, what is left; an HTML
+  file holds them in a comment). The hook reads the block once, when the run stops, from the first file the run
+  wrote in the task folder; without it, the file's first lines, then the agent's reply.
+- The page: glass panels over a slow colour field (blur, a lit top edge and tint, no shadows). Inside each stage
+  one card per run, side by side: avatar with initials, name, job, calls bar, and a three-line roll (just done,
+  now typing itself out, up next in its own job); a sheen crosses the card and the avatar nods on each new step;
+  planned agents are dashed cards, an "Up next" line names the next agent or stage, the main session gets a card
+  when it works a stage alone. Finished runs fold into a summary card (check, first line, time; opened: the
+  other lines, the output file and the steps). The 1.4.3 now-working card and activity list are gone; the
+  header line stays.
+
+- Additions the same day (Zakvan): the three lines roll like variant A (all slide up one slot on a step, the up-next
+  line fades in), only on the card that stepped; the other cards are not redrawn. A working agent is an orb in its
+  colour that floats, blinks and glances at its step; the step's icon is a small drawn scene (reading, searching,
+  writing, running) picked from its verb; the caret is hidden. The main session shows as "Tech Lead" (TL)
+  everywhere on the page; status.json, events and hooks keep "main session".
+- Live plan: the output file also holds `## Plan`, 4-8 `- [ ]` items the agent ticks in writes it makes anyway.
+  The hook reads it on each write of that file (`run.plan`: text, done, the time first seen ticked; a finished
+  run ticks the rest); a step belongs to the first item not ticked when it ran. Without a plan, the job phases
+  and the times they ended; the Tech Lead's plan is the task's stages. A "Plan d/N" pill on every card (on a
+  summary, right of the time) opens a glass panel (right, 410 px; a bottom sheet at 620 px or less) with a ring,
+  done items with their tick time and steps, the current item with its last steps and live step, and the rest
+  faint; the card's up-next line is the next item. Esc or x closes it and focus goes back to the pill.
