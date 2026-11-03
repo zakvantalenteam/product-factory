@@ -7,6 +7,7 @@
   "products_root": "D:/products",
   "newline": "lf",
   "stack": {
+    "platform": "sap-btp",
     "java": "17",
     "spring_boot": "3.5.15",
     "orm": "EclipseLink 4.0.5 (no Hibernate)",

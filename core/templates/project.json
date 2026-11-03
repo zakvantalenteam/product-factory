@@ -119,6 +119,7 @@
   "checks": [],
   "deploy": {},
   "stack": {
+    "platform": "",
     "java": "",
     "spring_boot": "",
     "orm": "",

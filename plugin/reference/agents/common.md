@@ -5,8 +5,10 @@ standard, your call budget and your modes. The hard rules in `AGENTS.md`, confir
 win over this file and over your own habits; when one conflicts with your standard, follow it and say so.
 
 ## Start (no extra round trip)
-- First message, in parallel: this file, `<work>/<id>/context.md` when the task has one (or the pack your file
-  names), and, when you design, write or review code, a Grep of `.claude/project.json` for `"stack"` (8 lines after).
+- First message, in parallel: this file, your practice pack (`.claude/core/reference/practice/<your name>.md`: the
+  practical knowledge behind your credentials), `<work>/<id>/context.md` when the task has one (or the pack your
+  file names), and, when you design, write or review code, a Grep of `.claude/project.json` for `"stack"` (8 lines
+  after).
 - Next message, next to your first code reads: the stack packs `stack.packs` names that match the files you touch
   (`.claude/core/reference/stacks/<pack>.md`), and the lines of `.claude/review/lessons.md` for your area
   (mistakes this repo has already made).
@@ -44,6 +46,13 @@ agent has it.
 5. Versions are a ceiling: never use a language, framework or library feature above what `stack` names.
 6. Name the trade-off, the risk and the check that proves it (a test, a query, a live step).
 7. Precise terms for code, plain words for people.
+
+## Credentials and platform
+Your `Certified as:` line (generated from the `certifications:` list in your frontmatter) names general credentials
+first (valid at any software company, startup to enterprise), then after `SAP:` the SAP ones. You work to the
+practical knowledge those exams test (your practice pack); you do not claim to hold them. A rule, or the part of a rule, marked (SAP) applies only when `stack.platform` in
+`.claude/project.json` is `sap-btp`; every other rule always applies. On another platform use its own services and
+docs, and bring no SAP advice (XSUAA, destinations, HANA, UI5, Fiori, SAP Activate) to it.
 
 ## Stack packs (`.claude/core/reference/stacks/`)
 | Pack | For | Read by |

@@ -430,3 +430,36 @@ and never ships a change that breaks something else.
   5.0 now, SAP P_BTPA, C_ADBTP, C_HAMOD, C_FIORD, ITIL 4 Practitioner), task-mode files that three descriptions still
   placed in design.md, a 3 s page budget against LCP 2.5 s, a keyset example JPQL cannot run, and 19 Speed lines that
   allowed web lookups without a web tool; all fixed.
+
+## 29. 1.7.0 - agents tagged with verified credentials and their practical knowledge
+- Zakvan (3 Nov): "we need SAP certified engineers, but those engineers should be generally expert and should have
+  most precious certifications in the field that applies to any software engineering company, from start up to
+  enterprise, and of course Talenteam"; then "we want to get benefit of practical knowledge of such certificates" and
+  "certifications should be tagged to our agents.. and read me should clearly state those".
+- Each agent's frontmatter has `role:` and `certifications:` (1-4, general first, then SAP; each checked on its
+  official page on 3 Nov). `project.certified_line()` writes the `Certified as:` line from that list;
+  `build_plugin.py` fails on drift and writes the README "Certified agents" table between its markers (`--check`
+  fails when the table is stale). cursor_sync strips the new keys (Cursor frontmatter is rebuilt from name,
+  description and readonly).
+- Dropped or swapped: NVIDIA NCP-AAI (not released), AWS ML Specialty (retired 31 Mar 2026), n8n Level 2 (a course,
+  retired), SVPG (workshops only), Pragmatic PMC (gone), CSPO (PSPO II), ITIL 4 (ITIL Version 5), "TOGAF 10" (not a
+  name), SAP-C02 (SAP-C03), EDB Associate/Professional (Essentials/Advanced), C_CPE (tests CAP, we build Spring Boot).
+  No SAP BTP security credential and no respected general front-end credential exists. Watch: 1Z0-829 retires
+  28 Feb 2027, the CISSP outline changes 15 Apr 2027.
+- `reference/practice/<agent>.md` (23 packs, 40-80 lines): what a holder of each credential does differently on the
+  job, as decision rules, checklists, traps and numbers. Each agent reads its pack in the first message with
+  common.md and context.md. Agent files keep 8-12 headline rules (body +0 to +3 lines).
+- `stack.platform` in project.json (template empty; `sap-btp` in all four repos). Rules marked (SAP) apply only
+  there; common.md "Credentials and platform" says the agents work to the practical knowledge and do not hold the
+  credentials, and bring no SAP advice to another platform.
+- Live page: the plan panel shows the agent's credentials under its name (muted, 12px, separated by ·).
+- Proof (3 Nov, Sonnet exam taker, blind Sonnet graders, fixed rubric, 5 points per scenario): 9 exams (sa, be, cr
+  from 1.6.0, new ux, da, sec, fe, qa, ai), 1.6.0 131/135, 1.7.0 134/135. New six 87 -> 90; old three 44 -> 44 (cr +1,
+  be -1 on one rubric point in all three 1.7.0 runs: it drops a pointless `@Async` for sound reasons but does not name
+  the self-call caveat). One independent Opus read of the 23 packs found 3 wrong (EN 301 549 V4.1.1 now cites WCAG
+  2.2 AA), 6 risky (AI Act: advisory is no exemption; SuccessFactors upserts can start workflows; Kubernetes-only
+  lines read as general; the CF memory calculator; CI credentials; 403 or 404) and 4 wrong (SAP) marks; all fixed.
+  The exam premise says SkillsOS is not on SAP (it is on BTP); both runs saw the same text. The pack writers did not
+  see the exams; the exam author also wrote the agent rules.
+- Cost: one more Read in the same first message (+1 tool call per run, no extra round trip) and about 60 lines of
+  context; exam time 1326 s -> 1471 s over 9 runs (+16 s a run, inside the run-to-run spread: da 218 s and 253 s).

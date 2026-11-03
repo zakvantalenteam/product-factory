@@ -88,6 +88,48 @@ Every agent runs on Opus. The agents that decide get about 35 tool calls, the ot
 Each repo's own facts for the domain experts live in its `.claude/experts/<sf|ai|n8n>.md`.
 Skills: `sdlc` (triage and task mode), `factory` (new products), `prototype`, `dev-handoff`, `commit-msg`, `verify-push`, `live-check`.
 
+## Certified agents
+
+Each agent is tagged with the most respected credentials for its role: general ones first (valid at any software
+company, startup to enterprise), then SAP ones, because TalenTeam builds on SAP BTP and SuccessFactors. What this
+means: the agents work to the practical knowledge those exams test (one practice pack per agent in
+`core/reference/practice/`); they do not hold the credentials. SAP rules apply only when `.claude/project.json`
+`stack.platform` is `sap-btp`.
+
+How to read the exam scores: each examined agent answered the same 3 tasks taken from our own code (5 points each,
+15 in all), once on the previous core (1.6.0) and once on this one (1.7.0). A separate grader marked both answers
+against a fixed answer key without knowing which version wrote which. A higher score means the agent caught more of
+what an expert would catch. "-" means the agent has not taken the exam yet. Scores live in `core/exam-scores.json`.
+
+<!-- certified-agents:start (build_plugin.py writes this table from the agent files) -->
+| Agent | Role | Certifications (general) | SAP | Exam 1.6.0 | Exam 1.7.0 |
+|---|---|---|---|---|---|
+| `ai-engineer` | AI engineer (LLM features, retrieval, agents, evals, cost) | AWS Certified Generative AI Developer - Professional (AIP-C01)<br>Google Cloud Professional Machine Learning Engineer | SAP Certified - SAP Generative AI Developer (C_AIG) | 15/15 | 15/15 |
+| `audit-expert` | Go-live auditor | ISACA Certified Information Systems Auditor (CISA)<br>PECB Certified ISO/IEC 27001 Lead Auditor | - | - | - |
+| `backend-developer` | Backend engineer (Java 17, Spring Boot) | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | - | 15/15 | 14/15 |
+| `base-builder` | Base project builder | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
+| `bug-investigator` | Root-cause investigator | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
+| `code-reviewer` | Code reviewer | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISC2 Certified Secure Software Lifecycle Professional (CSSLP) | - | 14/15 | 15/15 |
+| `data-architect` | Data architect | DAMA Certified Data Management Professional (CDMP Practitioner)<br>Google Cloud Professional Data Engineer<br>EDB Advanced for PostgreSQL | SAP Certified - Data Engineer - SAP HANA (C_HAMOD) | 15/15 | 15/15 |
+| `devops-engineer` | Build, deploy and operations engineer | CNCF Certified Kubernetes Administrator (CKA)<br>AWS Certified DevOps Engineer - Professional (DOP-C02)<br>Google Cloud Professional Cloud DevOps Engineer | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
+| `explorer` | Code search and impact analysis | Oracle Certified Professional: Java SE 17 Developer (1Z0-829) | - | - | - |
+| `frontend-developer` | Frontend engineer (UI5, plain JS, React) | IAAP Web Accessibility Specialist (WAS) | SAP Certified - SAP Fiori Application Developer (C_FIORD) | 15/15 | 15/15 |
+| `integration-engineer` | Integration engineer | Salesforce Certified MuleSoft Platform Integration Architect | SAP Certified - Integration Developer (C_CPI) | - | - |
+| `n8n-expert` | n8n workflow engineer | AWS Certified Generative AI Developer - Professional (AIP-C01) | - | - | - |
+| `performance-engineer` | Performance engineer | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Performance Testing (CT-PT) | - | - | - |
+| `product-critic` | Product reviewer | Pragmatic Institute Certified Product Manager<br>Scrum.org Professional Scrum Product Owner II (PSPO II)<br>ATD Certified Professional in Talent Development (CPTD) | - | - | - |
+| `qa-engineer` | Test engineer | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)<br>ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0) | - | 14/15 | 15/15 |
+| `release-manager` | Release manager | ITIL Managing Professional (ITIL Version 5) | SAP Certified - Solution Transformation Consultant with SAP Cloud ALM (C_STC) | - | - |
+| `security-architect` | Security and privacy architect | ISC2 Certified Information Systems Security Professional (CISSP)<br>ISC2 Certified Cloud Security Professional (CCSP)<br>IAPP Certified Information Privacy Professional/Europe (CIPP/E) | - | 14/15 | 15/15 |
+| `sf-expert` | SAP SuccessFactors consultant | SHRM Senior Certified Professional (SHRM-SCP) | SAP Certified - SAP SuccessFactors Employee Central Core and Position Management (C_THR81)<br>SAP Certified - SAP SuccessFactors Learning (C_THR88) | - | - |
+| `solution-architect` | Lead solution architect | AWS Certified Solutions Architect - Professional (SAP-C03)<br>Google Cloud Professional Cloud Architect<br>TOGAF Enterprise Architecture Practitioner | SAP Certified Professional - Solution Architect - SAP BTP (P_BTPA) | 15/15 | 15/15 |
+| `spec-analyst` | Business analyst (requirements and specs) | IIBA Certified Business Analysis Professional (CBAP)<br>IREB CPRE Practitioner (Requirements Elicitation, Requirements Modeling)<br>ATD Certified Professional in Talent Development (CPTD) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
+| `story-sizer` | Backlog and sizing (Scrum) | Scrum.org Professional Scrum Master II (PSM II)<br>Scrum.org Professional Scrum Product Owner II (PSPO II) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
+| `ux-designer` | UX and screen designer | Nielsen Norman Group UX Certification (Interaction Design specialty)<br>IAAP Certified Professional in Accessibility Core Competencies (CPACC) | - | 14/15 | 15/15 |
+| `verifier` | Independent verifier | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
+| **Total (9 examined)** | | | | **131/135** | **134/135** |
+<!-- certified-agents:end -->
+
 ## How work flows
 
 Every request is triaged first:

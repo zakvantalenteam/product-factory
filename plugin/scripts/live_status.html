@@ -437,6 +437,7 @@ dialog.fv::backdrop{background:rgba(16,18,28,.38)}
 .dr-x{margin-left:auto;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:var(--muted);width:30px;height:30px;border-radius:50%}
 .dr-x:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
 .dr-sub{padding:0 16px;color:var(--muted);font-size:12px}
+.dr-cert{padding:0 16px 4px;color:var(--muted);font-size:12px;line-height:1.4}
 .pl{list-style:none;margin:0;padding:6px 10px 16px;overflow:auto;flex:1}
 .pl>li{border-radius:11px;padding:6px 8px;margin:2px 0;border:1px solid transparent}
 .pi{display:flex;gap:9px;align-items:flex-start;width:100%;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit}
@@ -741,9 +742,9 @@ function working(){return (D.runs||[]).filter(r=>r.state==="live")}
 let OPENP=null,OPENER=null,DSIG="",LASTD={};
 function subject(id){if(id==="lead"){const ev=leadEvents("",0),cur=D.stages.find(s=>s.state==="live"||s.state==="fail"),st=D.stages.filter(s=>s.start);
     return {who:"main session",c:"var(--wrap)",on:!!cur,job:"Run the task's stages and the agents in them",L:leadPlan(),steps:ev.map(e=>[e.t,e.text]),start:st.length?st[0].start:"",end:"",n:ev.length,b:0,state:cur?"live":"done"}}
-  const r=(D.runs||[]).find(x=>x.id===id);if(r)return {who:r.expert,c:col(r),on:r.state==="live",job:r.job,L:planOf(r),steps:r.steps||[],start:r.start,end:r.end,n:r.n||0,b:r.b||0,state:r.state,why:r.why,file:r.file};
+  const r=(D.runs||[]).find(x=>x.id===id);if(r)return {who:r.expert,ag:r.agent,c:col(r),on:r.state==="live",job:r.job,L:planOf(r),steps:r.steps||[],start:r.start,end:r.end,n:r.n||0,b:r.b||0,state:r.state,why:r.why,file:r.file};
   const m=String(id).match(/^row:([^:]+):(.+)$/),w=m&&prow(m[1]).find(x=>x.expert===m[2]);if(!w)return null;
-  return {who:w.expert,c:acol(w.expert),on:w.state==="live",job:w.why||"",L:phases({}).map(t=>({text:t,done:false})),steps:[],start:w.start||"",n:0,b:0,state:w.state==="live"?"live":"todo"}}
+  return {who:w.expert,ag:w.agent,c:acol(w.expert),on:w.state==="live",job:w.why||"",L:phases({}).map(t=>({text:t,done:false})),steps:[],start:w.start||"",n:0,b:0,state:w.state==="live"?"live":"todo"}}
 function ring(p){return '<span class="ring" role="img" aria-label="'+p.d+" of "+p.N+' done"><svg viewBox="0 0 20 20" aria-hidden="true"><circle class="tr" cx="10" cy="10" r="8"/>'+
   (p.d?'<circle class="fg" cx="10" cy="10" r="8" pathLength="100" stroke-dasharray="'+(p.d/p.N*100)+' 100"/>':"")+"</svg>"+p.d+"/"+p.N+"</span>"}
 function drawer(){const el=$("#pdr");document.querySelectorAll("[data-plan]").forEach(b=>b.setAttribute("aria-expanded",b.dataset.plan===OPENP));
@@ -753,8 +754,9 @@ function drawer(){const el=$("#pdr");document.querySelectorAll("[data-plan]").fo
   el.style.setProperty("--a",S.c);el.setAttribute("aria-label","Plan of "+DN(S.who));
   const by=L.map(()=>[]);S.steps.forEach(x=>{const b=by[itemOf(L,x[0])];if(b)b.push(x)});
   const took=S.start?(S.on?'<span data-el="'+esc(S.start)+'">'+fmt(ms(S.start))+"</span>":S.end?fmt(ms(S.start,S.end)):""):"";
+  const C=(D.certs||{})[S.ag]||[];
   let h='<div class="dr-h">'+pres(S.who,S.on,"",S.c)+"<b>Plan</b>"+ring(p)+'<button type="button" class="dr-x" aria-label="Close the plan">×</button></div>'+
-    '<div class="dr-sub">'+esc(S.job)+(S.n?" · "+took+" · "+S.n+(S.b?"/"+S.b:"")+" calls":S.state==="todo"?" · planned":"")+'</div><ol class="pl">';
+    (C.length?'<div class="dr-cert">'+esc(C.join(" · "))+"</div>":"")+'<div class="dr-sub">'+esc(S.job)+(S.n?" · "+took+" · "+S.n+(S.b?"/"+S.b:"")+" calls":S.state==="todo"?" · planned":"")+'</div><ol class="pl">';
   L.forEach((it,i)=>{const key="p:"+OPENP+":"+i,o=OPEN.has(key),st=it.done?"d":i===p.cur&&S.state!=="todo"?"c":"u",steps=by[i];
     if(st==="d")h+='<li class="d'+(was!==undefined&&i>=was&&i<p.d?" just":"")+'"><button type="button" class="pi" data-o="'+key+'" aria-expanded="'+o+'"><span class="pn">✓</span><span class="pt">'+esc(DN(it.text))+
       '</span><span class="pw">'+(it.at?hm(it.at):"")+"</span></button>"+(o&&steps.length?'<ol class="ps">'+steps.map(s=>"<li>"+esc(past(s[1]))+"</li>").join("")+"</ol>":"")+"</li>";

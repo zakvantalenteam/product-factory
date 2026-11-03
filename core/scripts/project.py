@@ -211,3 +211,32 @@ def agent_name(name):
 
 def norm_dir(p):
     return os.path.normcase(os.path.abspath(p.replace("/", os.sep))).rstrip(os.sep) + os.sep
+
+
+SAP_CERT = "SAP Certified"
+
+
+def certifications(text):
+    """The `certifications:` list in an agent file's frontmatter (general credentials first, then SAP ones)."""
+    m = re.match(r"---\r?\n(.*?)\r?\n---", text, re.S)
+    if not m:
+        return []
+    out, inside = [], False
+    for line in m.group(1).splitlines():
+        if line.startswith("certifications:"):
+            inside = True
+        elif inside and line.startswith("  - "):
+            out.append(line[4:].strip().strip('"'))
+        elif inside:
+            break
+    return out
+
+
+def certified_line(certs):
+    """The `Certified as:` text an agent's frontmatter list stands for: general credentials, then `SAP:` ones."""
+    gen = [c for c in certs if not c.startswith(SAP_CERT)]
+    sap = [c for c in certs if c.startswith(SAP_CERT)]
+    parts = ["; ".join(gen)] if gen else []
+    if sap:
+        parts.append("SAP: " + "; ".join(sap))
+    return "Certified as: " + "; ".join(parts) + "."

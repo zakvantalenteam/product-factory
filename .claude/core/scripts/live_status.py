@@ -232,6 +232,24 @@ def call_budget(agent, mode):
     return CALLS[key]
 
 
+CERTS = {}
+
+
+def certs_of(agent):
+    """The credentials in an agent file's `certifications:` frontmatter, for the plan panel's quiet line."""
+    key = agent.lower()
+    if key not in CERTS:
+        CERTS[key] = []
+        for d in (os.path.join(ROOT, ".claude", "agents"), os.path.join(_HERE, "..", "agents")):
+            try:
+                with open(os.path.join(d, agent + ".md"), encoding="utf-8") as f:
+                    CERTS[key] = project.certifications(f.read())
+            except OSError:
+                continue
+            break
+    return CERTS[key]
+
+
 def teams_table(mode):
     """Every team with its bench of agents, for the page's team map (no project agent is hard-coded there)."""
     experts = experts_list()
@@ -511,6 +529,7 @@ def save(st):
         r["team"] = team_of(r.get("agent") or r.get("expert") or "")
     ags = {r["agent"] for r in (st.get("plan") or {}).get("rows", []) + (st.get("runs") or [])} |         {b["agent"] for b in st.get("bg") or []}
     st["calls"] = {a: n for a in sorted(ags) if a != "main session" for n in [call_budget(a, mode_of(st))] if n}
+    st["certs"] = {a: c for a in sorted(ags) if a != "main session" for c in [certs_of(a)] if c}
     st["now"] = now_rows(st)
     d = path(st["id"])
     os.makedirs(d, exist_ok=True)

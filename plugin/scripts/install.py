@@ -37,7 +37,7 @@ import sys
 sys.dont_write_bytecode = True
 CORE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 INSTALLED = os.path.basename(CORE) == "core" and os.path.basename(os.path.dirname(CORE)) == ".claude"
-SKIP_NAMES = {"__pycache__", "core-plan.md", ".claude-plugin", "hooks.json", "session_start.py", "build_plugin.py"}
+SKIP_NAMES = {"__pycache__", "core-plan.md", "exam-scores.json", ".claude-plugin", "hooks.json", "session_start.py", "build_plugin.py"}
 PLUGIN_ID = "product-factory@talenteam"  # plugin@marketplace, as in the home repo's .claude-plugin/marketplace.json
 OLD_PLUGIN_IDS = ("agent-core@talenteam",)  # the plugin's name before 1.4.0: its settings entry is removed
 BLOCK_START, BLOCK_END = "<!-- core:start -->", "<!-- core:end -->"
