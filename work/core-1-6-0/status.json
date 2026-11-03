@@ -1,0 +1,286 @@
+{
+ "id": "core-1-6-0",
+ "title": "Core 1.6.0: certified expert agents",
+ "size": "M",
+ "tool": "claude",
+ "mode": "task",
+ "root": "",
+ "started": "2026-11-03T12:14:13+05:30",
+ "seq": 12,
+ "events": [
+  {
+   "n": 1,
+   "t": "2026-11-03T12:14:13+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Task started: Core 1.6.0: certified expert agents"
+  },
+  {
+   "n": 2,
+   "t": "2026-11-03T12:14:55+05:30",
+   "stage": "spec",
+   "kind": "done",
+   "actor": "spec-analyst",
+   "text": "Spec done: design from the Blend session, 5 parts"
+  },
+  {
+   "n": 3,
+   "t": "2026-11-03T12:14:56+05:30",
+   "stage": "design",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Design started"
+  },
+  {
+   "n": 4,
+   "t": "2026-11-03T12:31:33+05:30",
+   "stage": "design",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Design done: core/reference/agents/common.md, stacks packs, 23 agents with Certified as and Expert standard"
+  },
+  {
+   "n": 5,
+   "t": "2026-11-03T12:31:33+05:30",
+   "stage": "build",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Build started"
+  },
+  {
+   "n": 6,
+   "t": "2026-11-03T12:35:24+05:30",
+   "stage": "build",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Build done: common.md, 3 stack packs, 23 agents, stack key in 4 repos, design skeleton complexity count; scratch tests pass"
+  },
+  {
+   "n": 7,
+   "t": "2026-11-03T12:35:24+05:30",
+   "stage": "review",
+   "kind": "start",
+   "actor": "independent read + blind exam grader",
+   "text": "Review started"
+  },
+  {
+   "n": 8,
+   "t": "2026-11-03T12:42:08+05:30",
+   "stage": "review",
+   "kind": "done",
+   "actor": "independent read + blind exam grader",
+   "text": "Review done: blind exam 1.5.0 39/45 -> 1.6.0 45/45; independent read: 11 files fixed (certs, contradictions, facts)"
+  },
+  {
+   "n": 9,
+   "t": "2026-11-03T12:42:08+05:30",
+   "stage": "test",
+   "kind": "start",
+   "actor": "qa-engineer",
+   "text": "Test started"
+  },
+  {
+   "n": 10,
+   "t": "2026-11-03T12:43:16+05:30",
+   "stage": "test",
+   "kind": "done",
+   "actor": "qa-engineer",
+   "text": "Test done: test_v160 and test_v150 pass"
+  },
+  {
+   "n": 11,
+   "t": "2026-11-03T12:43:16+05:30",
+   "stage": "verify",
+   "kind": "done",
+   "actor": "verifier",
+   "text": "Verify done: installed 1.6.0 in 4 repos + plugin; install --check, cursor_sync --check, build_plugin --check, sync --check-version clean"
+  },
+  {
+   "n": 12,
+   "t": "2026-11-03T12:43:17+05:30",
+   "stage": "wrap",
+   "kind": "done",
+   "actor": "commit-msg",
+   "text": "Wrap-up done: commit messages: side-session-notes core-1.6.0-commit-messages.md"
+  }
+ ],
+ "counts": {
+  "note": 1,
+  "done": 7,
+  "start": 4
+ },
+ "gate": null,
+ "stages": [
+  {
+   "k": "spec",
+   "name": "Spec",
+   "state": "done",
+   "actor": "spec-analyst",
+   "end": "2026-11-03T12:14:55+05:30",
+   "start": "2026-11-03T12:14:55+05:30",
+   "out": "design from the Blend session, 5 parts"
+  },
+  {
+   "k": "design",
+   "name": "Design",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T12:14:56+05:30",
+   "start": "2026-11-03T12:14:56+05:30",
+   "end": "2026-11-03T12:31:33+05:30",
+   "out": "core/reference/agents/common.md, stacks packs, 23 agents with Certified as and Expert standard"
+  },
+  {
+   "k": "build",
+   "name": "Build",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T12:31:33+05:30",
+   "start": "2026-11-03T12:31:33+05:30",
+   "end": "2026-11-03T12:35:24+05:30",
+   "out": "common.md, 3 stack packs, 23 agents, stack key in 4 repos, design skeleton complexity count; scratch tests pass"
+  },
+  {
+   "k": "review",
+   "name": "Review",
+   "state": "done",
+   "actor": "independent read + blind exam grader",
+   "run": "2026-11-03T12:35:24+05:30",
+   "start": "2026-11-03T12:35:24+05:30",
+   "end": "2026-11-03T12:42:08+05:30",
+   "out": "blind exam 1.5.0 39/45 -> 1.6.0 45/45; independent read: 11 files fixed (certs, contradictions, facts)"
+  },
+  {
+   "k": "test",
+   "name": "Test",
+   "state": "done",
+   "actor": "qa-engineer",
+   "run": "2026-11-03T12:42:08+05:30",
+   "start": "2026-11-03T12:42:08+05:30",
+   "end": "2026-11-03T12:43:16+05:30",
+   "out": "test_v160 and test_v150 pass"
+  },
+  {
+   "k": "verify",
+   "name": "Verify",
+   "state": "done",
+   "actor": "verifier",
+   "end": "2026-11-03T12:43:16+05:30",
+   "start": "2026-11-03T12:43:16+05:30",
+   "out": "installed 1.6.0 in 4 repos + plugin; install --check, cursor_sync --check, build_plugin --check, sync --check-version clean"
+  },
+  {
+   "k": "release",
+   "name": "Release",
+   "state": "skip",
+   "actor": "release-manager"
+  },
+  {
+   "k": "wrap",
+   "name": "Wrap-up",
+   "state": "done",
+   "actor": "commit-msg",
+   "end": "2026-11-03T12:43:17+05:30",
+   "start": "2026-11-03T12:43:17+05:30",
+   "out": "commit messages: side-session-notes core-1.6.0-commit-messages.md"
+  }
+ ],
+ "updated": "2026-11-03T12:43:17+05:30",
+ "project": "product-factory",
+ "teams": [
+  {
+   "id": "lead",
+   "name": "Lead",
+   "agents": [
+    "main session"
+   ]
+  },
+  {
+   "id": "product",
+   "name": "Product",
+   "agents": [
+    "spec-analyst"
+   ]
+  },
+  {
+   "id": "design",
+   "name": "Design",
+   "agents": [
+    "ux-designer"
+   ]
+  },
+  {
+   "id": "architecture",
+   "name": "Architecture",
+   "agents": [
+    "solution-architect",
+    "data-architect",
+    "security-architect"
+   ]
+  },
+  {
+   "id": "engineering",
+   "name": "Engineering",
+   "agents": []
+  },
+  {
+   "id": "domain",
+   "name": "Domain experts",
+   "agents": [
+    "sf-expert",
+    "ai-engineer"
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality",
+   "agents": [
+    "code-reviewer",
+    "qa-engineer",
+    "verifier",
+    "performance-engineer",
+    "bug-investigator"
+   ]
+  },
+  {
+   "id": "audit",
+   "name": "Audit",
+   "agents": []
+  },
+  {
+   "id": "operations",
+   "name": "Operations",
+   "agents": [
+    "release-manager"
+   ]
+  },
+  {
+   "id": "helpers",
+   "name": "Helpers",
+   "agents": [
+    "explorer"
+   ]
+  }
+ ],
+ "risk": "medium",
+ "budgets": {
+  "spec": 15,
+  "design": 20,
+  "build": 45,
+  "review": 20,
+  "test": 15,
+  "verify": 15,
+  "release": 15,
+  "wrap": 5
+ },
+ "calls": {},
+ "now": {
+  "main session": {
+   "k": "wrap",
+   "n": 0,
+   "last": "",
+   "wrote": ""
+  }
+ }
+}

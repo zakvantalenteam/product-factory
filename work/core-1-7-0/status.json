@@ -1,0 +1,721 @@
+{
+ "id": "core-1-7-0",
+ "title": "Core 1.7.0: general certifications first, SAP second, wider exams",
+ "size": "M",
+ "tool": "claude",
+ "mode": "task",
+ "root": "",
+ "started": "2026-11-03T13:48:42+05:30",
+ "seq": 42,
+ "events": [
+  {
+   "n": 1,
+   "t": "2026-11-03T13:48:42+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Task started: Core 1.7.0: general certifications first, SAP second, wider exams"
+  },
+  {
+   "n": 2,
+   "t": "2026-11-03T13:48:42+05:30",
+   "stage": "spec",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Spec started"
+  },
+  {
+   "n": 3,
+   "t": "2026-11-03T13:53:13+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Exams written for 6 more agents (ux, data, security, frontend, qa, ai); before-runs on 1.6.0 starting"
+  },
+  {
+   "n": 4,
+   "t": "2026-11-03T13:59:27+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Credentials checked for groups B and C; before-exams done on 9 agents (1.6.0); waiting on group A"
+  },
+  {
+   "n": 5,
+   "t": "2026-11-03T14:02:54+05:30",
+   "stage": "design",
+   "kind": "note",
+   "actor": "main session",
+   "text": "All credentials checked (certs-final: 6 dropped or renamed); practice packs for 23 agents being written by 5 writers"
+  },
+  {
+   "n": 6,
+   "t": "2026-11-03T14:09:09+05:30",
+   "stage": "build",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Agents tagged (certifications frontmatter, 8-12 rules, practice pack pointer); README table and live page line built; stack.platform set in 4 repos; packs still being written"
+  },
+  {
+   "n": 7,
+   "t": "2026-11-03T14:11:19+05:30",
+   "stage": "spec",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Spec done"
+  },
+  {
+   "n": 8,
+   "t": "2026-11-03T14:11:19+05:30",
+   "stage": "design",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Design started"
+  },
+  {
+   "n": 9,
+   "t": "2026-11-03T14:11:19+05:30",
+   "stage": "design",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Design done"
+  },
+  {
+   "n": 10,
+   "t": "2026-11-03T14:11:19+05:30",
+   "stage": "build",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Build started"
+  },
+  {
+   "n": 11,
+   "t": "2026-11-03T14:20:46+05:30",
+   "stage": "build",
+   "kind": "plan",
+   "actor": "main session",
+   "text": "Team planned: 13 experts over 5 stages (setup)"
+  },
+  {
+   "n": 12,
+   "t": "2026-11-03T14:21:20+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "solution-architect",
+   "text": "solution-architect (exam) started"
+  },
+  {
+   "n": 13,
+   "t": "2026-11-03T14:21:20+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (exam) started"
+  },
+  {
+   "n": 14,
+   "t": "2026-11-03T14:21:20+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "code-reviewer",
+   "text": "code-reviewer (exam) started"
+  },
+  {
+   "n": 15,
+   "t": "2026-11-03T14:21:21+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "ux-designer",
+   "text": "ux-designer (exam) started"
+  },
+  {
+   "n": 16,
+   "t": "2026-11-03T14:21:21+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "data-architect",
+   "text": "data-architect (exam) started"
+  },
+  {
+   "n": 17,
+   "t": "2026-11-03T14:21:21+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "security-architect",
+   "text": "security-architect (exam) started"
+  },
+  {
+   "n": 18,
+   "t": "2026-11-03T14:21:21+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (exam) started"
+  },
+  {
+   "n": 19,
+   "t": "2026-11-03T14:21:22+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (exam) started"
+  },
+  {
+   "n": 20,
+   "t": "2026-11-03T14:21:22+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "ai-engineer",
+   "text": "ai-engineer (exam) started"
+  },
+  {
+   "n": 21,
+   "t": "2026-11-03T14:21:22+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "solution-architect",
+   "text": "solution-architect (exam) finished: answers written"
+  },
+  {
+   "n": 22,
+   "t": "2026-11-03T14:21:22+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (exam) finished: answers written"
+  },
+  {
+   "n": 23,
+   "t": "2026-11-03T14:21:23+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "code-reviewer",
+   "text": "code-reviewer (exam) finished: answers written"
+  },
+  {
+   "n": 24,
+   "t": "2026-11-03T14:21:23+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "ux-designer",
+   "text": "ux-designer (exam) finished: answers written"
+  },
+  {
+   "n": 25,
+   "t": "2026-11-03T14:21:23+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (exam) finished: answers written"
+  },
+  {
+   "n": 26,
+   "t": "2026-11-03T14:21:23+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (exam) finished: answers written"
+  },
+  {
+   "n": 27,
+   "t": "2026-11-03T14:21:24+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "ai-engineer",
+   "text": "ai-engineer (exam) finished: answers written"
+  },
+  {
+   "n": 28,
+   "t": "2026-11-03T14:21:29+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "security-architect",
+   "text": "security-architect (exam) finished: answers written"
+  },
+  {
+   "n": 29,
+   "t": "2026-11-03T14:21:49+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "data-architect",
+   "text": "data-architect (exam) finished: answers written"
+  },
+  {
+   "n": 30,
+   "t": "2026-11-03T14:29:03+05:30",
+   "stage": "build",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Build done: 23 agents tagged, 23 practice packs, README table, live page cert line"
+  },
+  {
+   "n": 31,
+   "t": "2026-11-03T14:29:03+05:30",
+   "stage": "review",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Review started"
+  },
+  {
+   "n": 32,
+   "t": "2026-11-03T14:29:04+05:30",
+   "stage": "review",
+   "kind": "agent",
+   "actor": "main session",
+   "text": "main session (pack review fixes) started"
+  },
+  {
+   "n": 33,
+   "t": "2026-11-03T14:29:04+05:30",
+   "stage": "review",
+   "kind": "agent",
+   "actor": "main session",
+   "text": "main session (pack review fixes) finished: 13 findings fixed in 11 packs"
+  },
+  {
+   "n": 34,
+   "t": "2026-11-03T14:29:04+05:30",
+   "stage": "review",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Review done: independent pack review: 3 wrong, 6 risky, 4 unmarked; all fixed"
+  },
+  {
+   "n": 35,
+   "t": "2026-11-03T14:29:05+05:30",
+   "stage": "test",
+   "kind": "start",
+   "actor": "solution-architect",
+   "text": "Test started"
+  },
+  {
+   "n": 36,
+   "t": "2026-11-03T14:39:59+05:30",
+   "stage": "test",
+   "kind": "done",
+   "actor": "solution-architect",
+   "text": "Test done: 9 blind exams: 1.6.0 131/135, 1.7.0 134/135"
+  },
+  {
+   "n": 37,
+   "t": "2026-11-03T14:39:59+05:30",
+   "stage": "verify",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Verify started"
+  },
+  {
+   "n": 38,
+   "t": "2026-11-03T14:39:59+05:30",
+   "stage": "verify",
+   "kind": "agent",
+   "actor": "main session",
+   "text": "main session (install checks) started"
+  },
+  {
+   "n": 39,
+   "t": "2026-11-03T14:39:59+05:30",
+   "stage": "verify",
+   "kind": "agent",
+   "actor": "main session",
+   "text": "main session (install checks) finished: install, cursor_sync, plugin, sync checks clean in 4 repos"
+  },
+  {
+   "n": 40,
+   "t": "2026-11-03T14:39:59+05:30",
+   "stage": "verify",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Verify done: 4 repos clean; cert line seen in the served page"
+  },
+  {
+   "n": 41,
+   "t": "2026-11-03T14:40:00+05:30",
+   "stage": "wrap",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Wrap-up started"
+  },
+  {
+   "n": 42,
+   "t": "2026-11-03T14:40:00+05:30",
+   "stage": "wrap",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Wrap-up done: commit commands in the shared notes"
+  }
+ ],
+ "counts": {
+  "note": 5,
+  "start": 7,
+  "done": 7,
+  "plan": 1,
+  "agent": 22
+ },
+ "gate": null,
+ "stages": [
+  {
+   "k": "spec",
+   "name": "Spec",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T13:48:42+05:30",
+   "start": "2026-11-03T13:48:42+05:30",
+   "end": "2026-11-03T14:11:19+05:30"
+  },
+  {
+   "k": "design",
+   "name": "Design",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T14:11:19+05:30",
+   "start": "2026-11-03T14:11:19+05:30",
+   "end": "2026-11-03T14:11:19+05:30"
+  },
+  {
+   "k": "build",
+   "name": "Build",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T14:11:19+05:30",
+   "start": "2026-11-03T14:11:19+05:30",
+   "end": "2026-11-03T14:29:03+05:30",
+   "out": "23 agents tagged, 23 practice packs, README table, live page cert line"
+  },
+  {
+   "k": "review",
+   "name": "Review",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T14:29:03+05:30",
+   "start": "2026-11-03T14:29:03+05:30",
+   "end": "2026-11-03T14:29:04+05:30",
+   "out": "independent pack review: 3 wrong, 6 risky, 4 unmarked; all fixed"
+  },
+  {
+   "k": "test",
+   "name": "Test",
+   "state": "done",
+   "actor": "solution-architect",
+   "run": "2026-11-03T14:29:05+05:30",
+   "start": "2026-11-03T14:29:05+05:30",
+   "end": "2026-11-03T14:39:59+05:30",
+   "out": "9 blind exams: 1.6.0 131/135, 1.7.0 134/135"
+  },
+  {
+   "k": "verify",
+   "name": "Verify",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T14:39:59+05:30",
+   "start": "2026-11-03T14:39:59+05:30",
+   "end": "2026-11-03T14:39:59+05:30",
+   "out": "4 repos clean; cert line seen in the served page"
+  },
+  {
+   "k": "release",
+   "name": "Release",
+   "state": "skip",
+   "actor": "release-manager"
+  },
+  {
+   "k": "wrap",
+   "name": "Wrap-up",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T14:40:00+05:30",
+   "start": "2026-11-03T14:40:00+05:30",
+   "end": "2026-11-03T14:40:00+05:30",
+   "out": "commit commands in the shared notes"
+  }
+ ],
+ "updated": "2026-11-03T14:40:00+05:30",
+ "project": "product-factory",
+ "teams": [
+  {
+   "id": "lead",
+   "name": "Lead",
+   "agents": [
+    "main session"
+   ]
+  },
+  {
+   "id": "product",
+   "name": "Product",
+   "agents": [
+    "spec-analyst"
+   ]
+  },
+  {
+   "id": "design",
+   "name": "Design",
+   "agents": [
+    "ux-designer"
+   ]
+  },
+  {
+   "id": "architecture",
+   "name": "Architecture",
+   "agents": [
+    "solution-architect",
+    "data-architect",
+    "security-architect"
+   ]
+  },
+  {
+   "id": "engineering",
+   "name": "Engineering",
+   "agents": []
+  },
+  {
+   "id": "domain",
+   "name": "Domain experts",
+   "agents": [
+    "sf-expert",
+    "ai-engineer"
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality",
+   "agents": [
+    "code-reviewer",
+    "qa-engineer",
+    "verifier",
+    "performance-engineer",
+    "bug-investigator"
+   ]
+  },
+  {
+   "id": "audit",
+   "name": "Audit",
+   "agents": []
+  },
+  {
+   "id": "operations",
+   "name": "Operations",
+   "agents": [
+    "release-manager"
+   ]
+  },
+  {
+   "id": "helpers",
+   "name": "Helpers",
+   "agents": [
+    "explorer"
+   ]
+  }
+ ],
+ "risk": "medium",
+ "budgets": {
+  "spec": 15,
+  "design": 20,
+  "build": 45,
+  "review": 20,
+  "test": 15,
+  "verify": 15,
+  "release": 15,
+  "wrap": 5
+ },
+ "calls": {
+  "ai-engineer": 35,
+  "backend-developer": 20,
+  "code-reviewer": 20,
+  "data-architect": 35,
+  "frontend-developer": 20,
+  "qa-engineer": 20,
+  "security-architect": 35,
+  "solution-architect": 20,
+  "ux-designer": 35
+ },
+ "now": {
+  "main session": {
+   "k": "wrap",
+   "n": 0,
+   "last": "Wrap-up done: commit commands in the shared notes",
+   "wrote": ""
+  }
+ },
+ "riskSet": "plan",
+ "riskWhy": [
+  "Changes every core agent file, common.md and live_status.py; installs into 4 repos and the plugin."
+ ],
+ "plan": {
+  "kinds": [
+   "setup"
+  ],
+  "rows": [
+   {
+    "stage": "build",
+    "expert": "main session",
+    "agent": "main session",
+    "why": "agent files, practice packs, scripts, README table",
+    "state": "done",
+    "team": "lead",
+    "end": "2026-11-03T14:29:03+05:30"
+   },
+   {
+    "stage": "review",
+    "expert": "main session (pack review fixes)",
+    "agent": "main session",
+    "why": "an independent reviewer checks the 23 packs; findings fixed here",
+    "state": "done",
+    "team": "lead",
+    "start": "2026-11-03T14:29:04+05:30",
+    "end": "2026-11-03T14:29:04+05:30",
+    "out": "13 findings fixed in 11 packs"
+   },
+   {
+    "stage": "test",
+    "expert": "solution-architect (exam)",
+    "agent": "solution-architect",
+    "why": "blind before and after exam, re-run from 1.6.0",
+    "state": "skip",
+    "team": "architecture",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "backend-developer (exam)",
+    "agent": "backend-developer",
+    "why": "blind before and after exam, re-run from 1.6.0",
+    "state": "skip",
+    "team": "engineering",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "code-reviewer (exam)",
+    "agent": "code-reviewer",
+    "why": "blind before and after exam, re-run from 1.6.0",
+    "state": "skip",
+    "team": "quality",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "ux-designer (exam)",
+    "agent": "ux-designer",
+    "why": "blind before and after exam, new",
+    "state": "skip",
+    "team": "design",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "data-architect (exam)",
+    "agent": "data-architect",
+    "why": "blind before and after exam, new",
+    "state": "skip",
+    "team": "architecture",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "security-architect (exam)",
+    "agent": "security-architect",
+    "why": "blind before and after exam, new",
+    "state": "skip",
+    "team": "architecture",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "frontend-developer (exam)",
+    "agent": "frontend-developer",
+    "why": "blind before and after exam, new",
+    "state": "skip",
+    "team": "engineering",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "qa-engineer (exam)",
+    "agent": "qa-engineer",
+    "why": "blind before and after exam, new",
+    "state": "skip",
+    "team": "quality",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "ai-engineer (exam)",
+    "agent": "ai-engineer",
+    "why": "blind before and after exam, new",
+    "state": "skip",
+    "team": "domain",
+    "end": "2026-11-03T14:39:59+05:30"
+   },
+   {
+    "stage": "verify",
+    "expert": "main session (install checks)",
+    "agent": "main session",
+    "why": "install, cursor_sync, build_plugin and sync checks clean in 4 repos",
+    "state": "done",
+    "team": "lead",
+    "start": "2026-11-03T14:39:59+05:30",
+    "end": "2026-11-03T14:39:59+05:30",
+    "out": "install, cursor_sync, plugin, sync checks clean in 4 repos"
+   },
+   {
+    "stage": "wrap",
+    "expert": "main session",
+    "agent": "main session",
+    "why": "commit commands per repo",
+    "state": "done",
+    "team": "lead",
+    "start": "2026-11-03T14:40:00+05:30",
+    "end": "2026-11-03T14:40:00+05:30"
+   }
+  ],
+  "at": "2026-11-03T14:20:46+05:30",
+  "file": "triage.md",
+  "confirmed": false,
+  "changes": []
+ },
+ "certs": {
+  "ai-engineer": [
+   "AWS Certified Generative AI Developer - Professional (AIP-C01)",
+   "Google Cloud Professional Machine Learning Engineer",
+   "SAP Certified - SAP Generative AI Developer (C_AIG)"
+  ],
+  "backend-developer": [
+   "Oracle Certified Professional: Java SE 17 Developer (1Z0-829)",
+   "Spring Certified Professional (2V0-72.22)"
+  ],
+  "code-reviewer": [
+   "Oracle Certified Professional: Java SE 17 Developer (1Z0-829)",
+   "ISC2 Certified Secure Software Lifecycle Professional (CSSLP)"
+  ],
+  "data-architect": [
+   "DAMA Certified Data Management Professional (CDMP Practitioner)",
+   "Google Cloud Professional Data Engineer",
+   "EDB Advanced for PostgreSQL",
+   "SAP Certified - Data Engineer - SAP HANA (C_HAMOD)"
+  ],
+  "frontend-developer": [
+   "IAAP Web Accessibility Specialist (WAS)",
+   "SAP Certified - SAP Fiori Application Developer (C_FIORD)"
+  ],
+  "qa-engineer": [
+   "ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)",
+   "ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)",
+   "ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0)"
+  ],
+  "security-architect": [
+   "ISC2 Certified Information Systems Security Professional (CISSP)",
+   "ISC2 Certified Cloud Security Professional (CCSP)",
+   "IAPP Certified Information Privacy Professional/Europe (CIPP/E)"
+  ],
+  "solution-architect": [
+   "AWS Certified Solutions Architect - Professional (SAP-C03)",
+   "Google Cloud Professional Cloud Architect",
+   "TOGAF Enterprise Architecture Practitioner",
+   "SAP Certified Professional - Solution Architect - SAP BTP (P_BTPA)"
+  ],
+  "ux-designer": [
+   "Nielsen Norman Group UX Certification (Interaction Design specialty)",
+   "IAAP Certified Professional in Accessibility Core Competencies (CPACC)"
+  ]
+ }
+}

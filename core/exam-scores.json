@@ -1,0 +1,16 @@
+{
+  "about": "Blind exam scores shown in the README Certified agents table (build_plugin.py). Each exam: 3 scenarios from our code, 5 points each, graded blind against a fixed rubric; core-plan.md sections 28 and 29.",
+  "max": 15,
+  "versions": ["1.6.0", "1.7.0"],
+  "agents": {
+    "ai-engineer": {"1.6.0": 15, "1.7.0": 15},
+    "backend-developer": {"1.6.0": 15, "1.7.0": 14},
+    "code-reviewer": {"1.6.0": 14, "1.7.0": 15},
+    "data-architect": {"1.6.0": 15, "1.7.0": 15},
+    "frontend-developer": {"1.6.0": 15, "1.7.0": 15},
+    "qa-engineer": {"1.6.0": 14, "1.7.0": 15},
+    "security-architect": {"1.6.0": 14, "1.7.0": 15},
+    "solution-architect": {"1.6.0": 15, "1.7.0": 15},
+    "ux-designer": {"1.6.0": 14, "1.7.0": 15}
+  }
+}

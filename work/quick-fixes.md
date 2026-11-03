@@ -1,0 +1,1 @@
+- 2026-11-03 14:45 README Certified agents table: exam scores per agent from core/exam-scores.json
