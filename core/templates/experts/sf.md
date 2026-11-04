@@ -1,6 +1,6 @@
 # Where this repo uses SuccessFactors
 
-Read by `sf-expert` next to the generic reference (`.claude/core/reference/domains/successfactors.md`). Keep it
+Read by `sf-expert` and `sf-skills-expert` next to the generic reference (`.claude/core/reference/domains/successfactors.md`). Keep it
 to facts with `path:line`. No secrets, hosts, company ids, user ids or personal data: name the key only.
 Delete this line and the hints in brackets when you fill it in.
 

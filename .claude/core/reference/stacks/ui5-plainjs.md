@@ -50,6 +50,11 @@ the UI standard (`.claude/core/reference/standards/ui.md`) and the approved prot
 - Preload the component (`Component-preload.js` in the build); lazy-load views and libraries not on the first
   screen (`sap.ui.require` on demand); one backend call per screen state, never per row.
 
+## Tests
+- Where tests live: UI5 in `webapp/test/unit/<the same path>` (QUnit) and `webapp/test/integration/` (OPA5
+  journeys); plain JS widgets served from `src/main/resources/static/**` in `src/test/js/<the same path>`. Never next to
+  the code in a folder that ships (`webapp/` outside `test/`, `src/main/**`) and never in the repo root.
+
 ## Approuter
 - Routes in `xs-app.json`: the most specific first, `authenticationType` set per route, CSRF protection on for
   modifying calls, no route that exposes a backend path the UI does not need; never put a secret or host in it.

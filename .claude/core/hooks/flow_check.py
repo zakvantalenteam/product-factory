@@ -33,7 +33,8 @@ except Exception:  # fail open
 
 CFG = project.config()
 CORE_AGENTS = ("spec-analyst, bug-investigator, performance-engineer, product-critic, story-sizer, ux-designer, "
-               "solution-architect, data-architect, security-architect, code-reviewer, qa-engineer, verifier, "
+               "solution-architect, data-architect, security-architect, code-reviewer, qa-lead, qa-engineer, "
+               "ui-qa-expert, e2e-qa-expert, verifier, "
                "audit-expert, release-manager")
 
 PRD = re.compile(
@@ -92,11 +93,13 @@ def prompt_context(sid, prompt):
             "product" if st.get("mode") == "product" else "task", tid, st.get("size", "?"),
             ", ".join(left) or "none", "factory" if st.get("mode") == "product" else "sdlc")
     qf = CFG["quick_fix"]
-    return ("Triage each request first (sdlc skill): answer questions directly; do an obvious small change yourself "
-            "as a quick fix (up to ~%d lines in up to %d files, nothing to decide, then live_status.py quick "
-            "\"<what>\"); changes to the AI setup itself (.claude, .cursor, AGENTS.md) need no task; a new product "
-            "from an idea or a PRD goes to the factory skill; every other change is a task with just the agents it "
-            "needs (%s)." % (qf.get("max_lines", 30), qf.get("max_files", 3), agents_line()))
+    return ("Triage each request first (sdlc skill): answer questions directly; route an obvious small change to "
+            "its area agent as a quick fix with a quick brief (up to ~%d lines in up to %d files, nothing to decide: "
+            "the files and lines, the fix, the test; then live_status.py quick \"<what>\"); changes to the AI setup "
+            "itself (.claude, .cursor, AGENTS.md) you do with no task; a new product from an idea or a PRD goes to the "
+            "factory skill; every other change is a task with just the agents it needs (%s). You are the Tech Lead: "
+            "you decide and route, the agents write the product code." % (qf.get("max_lines", 30), qf.get("max_files", 3),
+                                                                          agents_line()))
 
 
 def recent(t, minutes=30):
@@ -120,7 +123,7 @@ def quick_marked(sid):
 
 
 def is_setup(r):
-    return project.match(r, [".claude/**", ".cursor/**", "agents.md", "claude.md"] + (CFG.get("setup_paths") or []))
+    return project.is_setup(r, CFG)
 
 
 def in_work(r):

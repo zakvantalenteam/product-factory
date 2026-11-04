@@ -18,8 +18,16 @@ Checks a regex can't do come from `checks`, one object each:
   The command runs as `<command> "<repo-relative path>"` in the repo root with the hook JSON on stdin. Exit 1 = a
   problem, one per stdout line (at most 5); exit 0, any other exit or over 10 s = fine.
 
+Plan check (every repo, no config): a write to a task file in the work folder whose `## Plan` is too generic (no
+Goal or Output line, or items that name nothing in the task; live_status.plan_issues) gets a note with how to fix
+it, once per file, as additional context (no error); the live page shows the same as a chip.
+
+Test location (every repo, no config): a new test file (a Write, or a Cursor edit) named like a test and holding test
+code, under `src/main/` or in the repo root, is a problem: tests go in the project's test folder, mirroring the
+package of the code under test (common.md, hard rule).
+
 Contract (Claude Code): exit 2 + a message on stderr reports the problems (the edit already happened, so the agent
-fixes it); exit 0 when clean. Cursor (`--cursor`, postToolUse): prints {"additional_context": "..."}; nothing when
+fixes it); exit 0 when clean, with the plan note as hookSpecificOutput.additionalContext when there is one. Cursor (`--cursor`, postToolUse): prints {"additional_context": "..."}; nothing when
 clean. Any internal error exits 0 (fail open).
 """
 import json
@@ -109,12 +117,53 @@ def run_checks(path, r, checks, data):
     return problems
 
 
+TEST_NAME = re.compile(r"(Tests?|IT|TestCase)\.(java|kt)$|\.(test|spec)\.[cm]?[jt]sx?$|^test_[^/]*\.py$|_test\.(py|go)$")
+TEST_BODY = re.compile(r"org\.junit|@Test\b|\bexpect\(|\bdescribe\(|\bQUnit\.|import pytest|\bassert\w*\(")
+
+
+def test_place(path, r, lines):
+    """A test written under src/main/ or in the repo root (built in, no config; name and body must both look like a test)."""
+    if ("/" in r and "src/main/" not in r) or not TEST_NAME.search(os.path.basename(path)):
+        return []
+    if not any(TEST_BODY.search(x) for x in lines):
+        return []
+    return ["test-location: %s is a test outside the test folder. Tests go in the project's test folder, mirroring "
+            "the package of the code under test (Java `src/test/java/<same package>/`, JavaScript the stack pack's test "
+            "folder); write it there and delete this file (common.md, hard rule)." % r]
+
+
 def live(text, data):
     try:
         import live_status
         live_status.record("flag", text, "rules check", data)
     except Exception:
         pass
+
+
+def plan_note(path):
+    """Once per output file in the work folder: its `## Plan` is too generic (no Goal or Output line, or items that
+    name nothing in the task: live_status.plan_issues), with how to fix it in the next write."""
+    w = project.work_dir()
+    a = os.path.abspath(path)
+    if not w or not os.path.normcase(a).startswith(os.path.normcase(os.path.abspath(w)) + os.sep):
+        return ""
+    import hashlib
+    import live_status as ls
+    parts = ls.plan_of(a)
+    if not parts or not parts[1]:
+        return ""
+    issues = ls.plan_issues(parts[0], parts[2])
+    flag = ls.path(".sessions", "plan-" + hashlib.md5(os.path.normcase(a).encode("utf-8")).hexdigest()[:12])
+    if not issues or os.path.exists(flag):
+        return ""
+    os.makedirs(os.path.dirname(flag), exist_ok=True)
+    ls.write(flag, "1")
+    return ("The plan in %s is too generic (%s). In your next write to this file, rewrite `## Plan`: `Goal:` what "
+            "this run must achieve for this task, `Output:` what the person gets (the files changed and the behaviour, "
+            "or the file and what is in it), `Done when:` the check that proves it, then 4-8 items that each name the "
+            "concrete thing: a file, endpoint, node, screen, criterion id, or a decision with its options. Process "
+            "steps (\"Read the brief\", \"Check every caller\", \"Write lessons\") are not plan items (common.md, "
+            "Output file).\n" % (os.path.basename(a), "; ".join(issues)))
 
 
 def main():
@@ -124,8 +173,6 @@ def main():
         return
     cfg = project.config()
     rules, checks = cfg.get("rules") or [], cfg.get("checks") or []
-    if not rules and not checks:
-        return
     tool = data.get("tool_name", "")
     inp = data.get("tool_input") or {}
     if isinstance(inp, str):
@@ -139,15 +186,24 @@ def main():
     r = project.rel(path) if path else None
     if not r:
         return
-    problems = check(r, lines, rules) + run_checks(path, r, checks, data)
+    try:
+        note = plan_note(path)
+    except Exception:
+        note = ""
+    problems = check(r, lines, rules) + run_checks(path, r, checks, data) if rules or checks else []
+    if CURSOR or tool == "Write":
+        problems += test_place(path, r, lines)
     if problems:
-        msg = "Hard-rule check on " + r + ":\n- " + "\n- ".join(problems[:10]) + "\n"
+        msg = "Hard-rule check on " + r + ":\n- " + "\n- ".join(problems[:10]) + "\n" + note
         live("Hard-rule check on " + r.rsplit("/", 1)[-1] + ": " + problems[0][:160], data)
         if CURSOR:
             print(json.dumps({"additional_context": msg}))
             return
         sys.stderr.write(msg)
         sys.exit(2)
+    if note:  # a quiet note, not an error: the agent fixes the plan in a write it makes anyway
+        print(json.dumps({"additional_context": note} if CURSOR else
+                         {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}))
 
 
 if __name__ == "__main__":

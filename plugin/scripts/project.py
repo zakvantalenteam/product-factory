@@ -88,6 +88,24 @@ DEFAULTS = {
     "deploy": {},
     "stack": {},
     "setup_paths": [],
+    # Product code (outside the AI setup and the work folder) is written by its area agent, never by the main
+    # session (the Tech Lead); the guard blocks the main session's edits there. First matching area wins.
+    "routing": {
+        "enforce": True,
+        "areas": [
+            {"agent": "qa-engineer", "paths": ["**/src/test/**", "**/test/**", "**/tests/**", "**/__tests__/**",
+                                               "*.test.*", "*.spec.*"]},
+            {"agent": "devops-engineer", "paths": ["manifest*.yml", "mta.yaml", "*.mtaext", "xs-security.json",
+                                                   "Dockerfile", "Jenkinsfile", "pom.xml", "build.gradle*",
+                                                   "package.json", "package-lock.json", ".github/**", "**/helm/**",
+                                                   "**/k8s/**"]},
+            {"agent": "n8n-expert", "paths": ["**/n8n*/**"]},
+            {"agent": "frontend-developer", "paths": ["*.js", "*.ts", "*.tsx", "*.jsx", "*.vue", "*.html", "*.css",
+                                                      "*.scss", "**/webapp/**", "**/i18n/**"]},
+            {"agent": "release-manager", "paths": ["*.md", "docs/**"]},
+            {"agent": "backend-developer", "paths": ["**"]},
+        ],
+    },
     "newline": "lf",
     "quick_fix": {"max_files": 3, "max_lines": 30, "never": []},
     "decisions": {},
@@ -196,6 +214,27 @@ def match(relpath, patterns):
         elif _glob_re(p).match(name):
             return True
     return False
+
+
+SETUP = [".claude/**", ".cursor/**", "agents.md", "claude.md"]
+
+
+def is_setup(relpath, cfg=None):
+    """The AI setup: .claude/, .cursor/, AGENTS.md, CLAUDE.md and the repo's `setup_paths`."""
+    return match(relpath, SETUP + ((cfg or config()).get("setup_paths") or []))
+
+
+def product_area(path, root=None):
+    """The area agent that owns a file of product code (routing.areas), or None when the path is the AI setup, the
+    work folder or outside the repo."""
+    root = root or repo_root()
+    r = rel(path, root)
+    cfg = config(root)
+    if not r or is_setup(r, cfg) or os.path.normcase(os.path.abspath(path)).startswith(
+            os.path.normcase(work_dir(root)) + os.sep):
+        return None
+    return next((a.get("agent") for a in (cfg.get("routing") or {}).get("areas") or [] if match(r, a.get("paths"))),
+                "backend-developer")
 
 
 def ticket_prefixes(cfg=None):

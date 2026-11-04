@@ -65,7 +65,7 @@ body[data-ov=wait] .kb{--kc:var(--you)}body[data-ov=done] .kb{--kc:var(--test)}b
 .beat::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cur);margin-right:5px;vertical-align:1px}
 .beat.pulse::before{animation:ping .9s ease-out}
 /* stats */
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 14px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 14px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 .stat b{display:block;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
 .stat b.bump{animation:bump .5s ease-out}
@@ -240,6 +240,15 @@ animation:aurora 9s ease-in-out infinite alternate}
 .k-flag .tag,.k-gate .tag,.k-changes .tag,.k-ask .tag{background:color-mix(in srgb,var(--you) 14%,var(--card));color:var(--you)}
 .ans{color:var(--muted);margin-top:2px;white-space:pre-wrap}
 .dec{font-size:11px;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px;background:color-mix(in srgb,var(--you) 14%,var(--card));color:var(--you)}
+.k-route .tag,.k-decide .tag,.k-integrate .tag{background:color-mix(in srgb,var(--wrap) 16%,var(--card));color:color-mix(in srgb,var(--wrap) 55%,var(--text))}
+.chip.warn{--c:var(--you)}
+.chip.quiet{--c:var(--muted)}
+.acard .lw{font-size:12px;font-weight:500;color:color-mix(in srgb,var(--a) 60%,var(--text))}
+.acard .lr{list-style:none;margin:4px 0 0;padding:0;font-size:12px}
+.acard .lr li{display:flex;gap:6px;align-items:baseline;min-width:0;padding:2px 6px}
+.acard .lr .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acard .lr .ic{color:var(--muted)}
+.acard .chips{margin-top:4px}
 .k-ok .tag,.k-done .tag{background:color-mix(in srgb,var(--test) 14%,var(--card));color:var(--test)}
 .feed li.new{animation:rise .45s ease-out}
 .feed li.new .tx::before{content:"\2726  ";color:var(--c);animation:fade 2.5s forwards}
@@ -438,6 +447,9 @@ dialog.fv::backdrop{background:rgba(16,18,28,.38)}
 .dr-x:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
 .dr-sub{padding:0 16px;color:var(--muted);font-size:12px}
 .dr-cert{padding:0 16px 4px;color:var(--muted);font-size:12px;line-height:1.4}
+.dr-meta{margin:6px 16px 2px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px;line-height:1.4}
+.dr-meta dt{color:var(--muted);font-weight:500}.dr-meta dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.dr-gen{margin:4px 16px 0;font-size:12px;color:var(--muted)}
 .pl{list-style:none;margin:0;padding:6px 10px 16px;overflow:auto;flex:1}
 .pl>li{border-radius:11px;padding:6px 8px;margin:2px 0;border:1px solid transparent}
 .pi{display:flex;gap:9px;align-items:flex-start;width:100%;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit}
@@ -497,6 +509,7 @@ button.pi{cursor:pointer}
     <section class="stats" aria-label="Progress">
       <div class="stat"><span class="sub">Total time</span><b id="total">-</b></div>
       <div class="stat"><span class="sub">This stage</span><b id="stagetime">-</b></div>
+      <div class="stat" title="Share of the reads, edits and commands the Tech Lead did itself; the rest is the agents' own work"><span class="sub">Tech Lead share</span><b id="c-lead">-</b></div>
       <div class="stat"><span class="sub">Files read</span><b id="c-read">0</b></div>
       <div class="stat"><span class="sub">Edits</span><b id="c-edit">0</b></div>
       <div class="stat"><span class="sub">Commands</span><b id="c-run">0</b></div>
@@ -525,11 +538,11 @@ function whoWaits(g){const w=waiters(g).map(DN);return w.join(" and ")+(w.length
 function gname(g){return (g.gid?g.gid+" ":"")+(NAMES[g.stage]||g.stage)}
 const VERB={spec:"is writing the spec",design:"is designing the change",build:"is building it",review:"is reviewing the diff",test:"is running the tests",verify:"is checking it live",release:"is checking the release",wrap:"is wrapping up",
   intake:"is reading the requirement",base:"is building the base",requirements:"is writing the spec",product:"is reviewing the product",prototype:"is building the prototype",stories:"is sizing the stories",audit:"is auditing the product"};
-const TAG={block:"blocked",flag:"fixed",fail:"must fix",must:"must fix",gate:"your turn",ok:"approved",changes:"changes",ask:"question",start:"started",done:"done",note:"note",agent:"agent",read:"read",edit:"edit",run:"run",search:"search",skill:"skill",plan:"team"};
+const TAG={block:"blocked",flag:"fixed",fail:"must fix",must:"must fix",gate:"your turn",ok:"approved",changes:"changes",ask:"question",start:"started",done:"done",note:"note",agent:"agent",read:"read",edit:"edit",run:"run",search:"search",skill:"skill",plan:"team",route:"routed",decide:"decided",integrate:"merged"};
 /* the core teams, for the demo and for data written before teams were stored; real tasks carry D.teams */
 const CORE_TEAMS=[["lead","Lead",["main session"]],["product","Product",["spec-analyst","product-critic","story-sizer"]],["design","Design",["ux-designer"]],
   ["architecture","Architecture",["solution-architect","data-architect","security-architect"]],["engineering","Engineering",["base-builder","backend-developer","frontend-developer","integration-engineer"]],
-  ["domain","Domain experts",["sf-expert","ai-engineer","n8n-expert"]],["quality","Quality",["code-reviewer","qa-engineer","verifier","performance-engineer","bug-investigator"]],
+  ["domain","Domain experts",["sf-expert","sf-skills-expert","ai-engineer","n8n-expert"]],["quality","Quality",["code-reviewer","qa-lead","qa-engineer","ui-qa-expert","e2e-qa-expert","verifier","performance-engineer","bug-investigator"]],
   ["audit","Audit",["audit-expert"]],["operations","Operations",["devops-engineer","release-manager"]],["helpers","Helpers",["explorer"]]].map(([id,name,agents])=>({id,name,agents}));
 if(PROJ.name)document.title=PROJ.name+" - Live status";
 const REDUCE=matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -578,7 +591,7 @@ function feed(k,animate){
   want.forEach(e=>{if(have.has(e.n))return;const li=line(e);ul.appendChild(li);if(animate&&e.n>seen){li.classList.add("new");type(li.querySelector(".tx"),e.text);setTimeout(()=>li.classList.remove("new"),2600)}});
   const ok=new Set(want.map(e=>e.n));[...ul.children].forEach(li=>{if(!ok.has(+li.dataset.n))li.remove()});
   const chips=rows[k].querySelector(".chips"),byP=new Map();
-  D.events.forEach(e=>{if(e.stage!==k||e.kind!=="edit"||!e.file)return;const m=/^(?:Wrote|Edited) (.+)$/.exec(e.text||""),p=e.path||(m?m[1]:e.file);if(!byP.has(p))byP.set(p,e.file)});
+  D.events.forEach(e=>{if(e.stage!==k||(e.kind!=="edit"&&e.kind!=="integrate")||!e.file)return;const m=/^(?:Wrote|Edited) (.+)$/.exec(e.text||""),p=e.path||(m?m[1]:e.file);if(!byP.has(p))byP.set(p,e.file)});
   const files=[...byP].slice(-8),hc=new Set([...chips.children].map(c=>c.dataset.p));
   files.forEach(([p,f])=>{if(hc.has(p))return;const c=document.createElement("button");c.type="button";c.className="chip"+(animate?" pop":"");c.dataset.p=p;c.title="Open "+p;c.textContent=f;chips.appendChild(c)});
 }
@@ -614,14 +627,14 @@ function apply(d){
       gb.className="gid "+gs;gb.textContent=s.gate+({approved:" approved",waiting:" waiting",changes:" changes"}[gs]||"")}
     if(["live","wait","fail"].includes(s.state)||li.classList.contains("open")||li.querySelector(".chips").children.length||d.events.some(e=>e.stage===s.k&&e.kind==="edit"))feed(s.k,!first)});
   const last=d.events.length?d.events[d.events.length-1].n:0;if(last>seen){lastChange=Date.now();beat()}seen=last;
-  const n=d.counts||{};count("#c-read",n.read||0);count("#c-edit",n.edit||0);count("#c-run",n.run||0);
+  const n=d.counts||{},T=d.tally||{},tl=(T.lead||0)+(T.agents||0);$("#c-lead").textContent=tl?Math.round((T.lead||0)/tl*100)+"%":"-";count("#c-read",n.read||0);count("#c-edit",n.edit||0);count("#c-run",n.run||0);
   gate();bodies();crew();tick();
 }
 /* agent runs (1.5.0): one card per run inside its stage (the live-rolling prototype, variant B). A step comes as a
    plain imperative ("Read context.md", a Bash call's own description) and reads as "Reading ..." while it runs and
    "Read ..." once done; finished runs fold into their summary for people */
 const TCOL={lead:"wrap",product:"product",design:"design",architecture:"spec",engineering:"build",domain:"verify",quality:"review",audit:"stories",operations:"release",helpers:"base"};
-const TOOLK=["read","edit","run","search","skill"],NOTE=["block","flag","fail","must","gate","ok","changes","ask","note"];
+const TOOLK=["read","edit","run","search","skill"],NOTE=["block","flag","fail","must","gate","ok","changes","ask","note","route","decide","integrate"];
 const V2={Read:["Reading","Read"],List:["Listing","Listed"],Show:["Showing","Showed"],Write:["Writing","Wrote"],Count:["Counting","Counted"],Grep:["Searching","Searched"],
 Map:["Mapping","Mapped"],Inspect:["Inspecting","Inspected"],Check:["Checking","Checked"],Run:["Running","Ran"],Find:["Finding","Found"],Search:["Searching","Searched"],
 Change:["Changing","Changed"],Compare:["Comparing","Compared"],Extract:["Extracting","Extracted"],Verify:["Verifying","Verified"],Print:["Printing","Printed"],Open:["Opening","Opened"],
@@ -639,7 +652,7 @@ function verb(t,i){t=String(t==null?"":t);const m=t.match(/^([A-Z][a-z]+)\b([\s\
 const ing=t=>verb(t,0),past=t=>verb(t,1),lc=s=>s?s.charAt(0).toLowerCase()+s.slice(1):"",uc=s=>s?s.charAt(0).toUpperCase()+s.slice(1):"";
 const JOB={spec:"Write the spec",design:"Design the change",build:"Build the change",review:"Review the diff",test:"Run the tests",verify:"Check it in the running app",release:"Check the release",
   wrap:"Wrap up the task",intake:"Read the requirement",base:"Build the base",requirements:"Write the spec",product:"Review the product",prototype:"Build the prototype",stories:"Size the stories",audit:"Audit the product"};
-const INI={"n8n-expert":"n8n","ai-engineer":"AI","ux-designer":"UX","sf-expert":"SF","qa-engineer":"QA","main session":"TL"};
+const INI={"n8n-expert":"n8n","ai-engineer":"AI","ux-designer":"UX","sf-expert":"SF","sf-skills-expert":"SK","qa-engineer":"QA","main session":"TL"};
 let LAST={},OPEN=new Set(),bodyKey={};
 function ini(a){const b=String(a).split(" (")[0];return INI[b]||b.split(/[-\s]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"}
 function acol(a,team){if(a==="main session")return "var(--wrap)";
@@ -690,18 +703,34 @@ function roll(p,n,start,next,go){let h="";
 function seen1(key,v){const go=LAST[key]!==v;LAST[key]=v;return go}
 const keyed=(key,sig,cls,c,inner)=>'<div class="'+cls+'" data-key="'+esc(key)+'" data-sig="'+esc(JSON.stringify(sig))+'" style="--a:'+c+'">'+inner+"</div>";
 function runCard(r){const c=col(r),L=r.steps||[],P=planOf(r),nx=nextItem(P),go=seen1(r.id,L.length+":"+r.n);
-  return keyed(r.id,[L.length,r.n,psig(P),nx],"acard"+(go?" go":""),c,'<div class="ah">'+pres(r.expert,true,"",c)+planBtn(r.id,P,c)+calls(r.n||0,r.b||(D.calls||{})[r.agent]||0)+"</div>"+
-    (r.job?'<div class="job">'+esc(r.job)+"</div>":"")+roll(L[L.length-2],L[L.length-1],r.start,nx,go))}
+  return keyed(r.id,[L.length,r.n,psig(P),nx,r.goal||"",(r.generic||[]).length],"acard"+(go?" go":""),c,'<div class="ah">'+pres(r.expert,true,"",c)+planBtn(r.id,P,c)+calls(r.n||0,r.b||(D.calls||{})[r.agent]||0)+"</div>"+
+    (r.goal||r.job?'<div class="job">'+esc(r.goal||r.job)+"</div>":"")+roll(L[L.length-2],L[L.length-1],r.start,nx,go)+genChip(r))}
+/* a plan with no Goal or Output line, or items that name nothing in the task (live_status.plan_issues) */
+function genChip(r){return r.generic&&r.generic.length?'<div class="chips"><span class="chip quiet" title="'+esc("Plan too generic: "+r.generic.join("; "))+'">plan too generic</span></div>':""}
 /* a working row the hook saw no run for (started by hand, or a task from before 1.5.0): its latest action */
 function rowCard(w){const N=(D.now||{})[w.expert]||{},c=acol(w.expert),P=phases({}).map(t=>({text:t,done:false})),id="row:"+w.stage+":"+w.expert,go=seen1(id,(N.n||0)+":"+(N.last||""));
   return keyed(id,[N.n,N.last],"acard"+(go?" go":""),c,'<div class="ah">'+pres(w.expert,true,"",c)+planBtn(id,P,c)+calls(N.n||0,(D.calls||{})[w.agent]||0)+"</div>"+
     (w.why?'<div class="job">'+esc(w.why)+"</div>":"")+roll(null,N.last?[w.start,N.last]:null,w.start,"",go))}
 /* the Tech Lead works the stage alone: its own card, its steps from the stage's events, the task's stages as its plan */
 function leadEvents(k,t0){return D.events.filter(e=>e.actor==="main session"&&TOOLK.includes(e.kind)&&(!k||e.stage===k)&&Date.parse(e.t)>=(t0||0))}
-function mainCard(s){const k=s.k,t0=Date.parse(s.run||s.start)||0,N=(D.now||{})["main session"]||{},w=prow(k).find(r=>r.agent==="main session");
-  const ev=leadEvents(k,t0),a=ev[ev.length-1],b=ev[ev.length-2],go=seen1("main:"+k,a?a.n:0),u=upNext(k),n=N.k===k&&N.n||ev.length,P=leadPlan();
-  return keyed("main:"+k,[a?a.n:0,n,u,psig(P)],"acard"+(go?" go":""),"var(--wrap)",'<div class="ah">'+pres("main session",true,"","var(--wrap)")+planBtn("lead",P,"var(--wrap)")+calls(n,0)+"</div>"+
-    '<div class="job">'+esc((w&&w.why)||JOB[k]||"Run this stage")+"</div>"+roll(b&&[b.t,b.text],a&&[a.t,a.text],s.run||s.start,u,go))}
+/* the Tech Lead decides and routes: its state, where it sent the work and what was decided (its reads and edits are in
+   its plan panel); a chip when it edited product code itself instead of routing it to the area agent */
+const YOURK=["gate","ok","changes"];
+function leadState(){const g=D.gate,w=working(),ev=D.events.filter(e=>e.actor==="main session"&&(["route","decide","integrate","plan"].includes(e.kind)||TOOLK.includes(e.kind))),e=ev[ev.length-1],k=e?e.kind:"";
+  if(g)return ["Waiting for you","Asked: "+(g.question||"approve?")];
+  const on=w.length?w.map(r=>DN(r.expert)).join(", ")+(w.length>1?" are":" is")+" working":"";
+  if(on&&(!e||ms(e.t)>15000))return ["Waiting",on];
+  return [k==="route"?"Routing":k==="integrate"?"Integrating":k==="run"?"Checking":k==="edit"&&e.pc?"Writing code":"Deciding",
+    on||(!e?"Triage":k==="run"||k==="edit"&&e.pc?ing(e.text):k==="edit"?"Updating the task's files":TOOLK.includes(k)?"Reading what the decision needs":"")]}
+function leadLog(){const r=(D.routes||[]).map(x=>({t:x.t,k:"route",x:"Routed "+(NAMES[x.stage]||x.stage)+" to "+x.agent+(x.job?": "+x.job:"")+(x.files&&x.files.length?" ("+x.files.join(", ")+")":"")}));
+  const d=D.events.filter(e=>(e.actor==="main session"&&["decide","integrate","plan"].includes(e.kind)&&!e.file)||YOURK.includes(e.kind)).map(e=>({t:e.t,k:e.kind,x:DN(e.text)}));
+  return r.concat(d).sort((a,b)=>Date.parse(a.t)-Date.parse(b.t)).slice(-4).reverse()}
+function leadCard(s){const k=s.k,t0=Date.parse(s.run||s.start)||0,n=leadEvents(k,t0).length,P=leadPlan(),W=leadState(),L=leadLog(),pc=D.leadCode||[],
+    sig=[W,L.map(x=>x.t),pc.length,n,psig(P)],go=seen1("lead:"+k,JSON.stringify(sig));
+  return keyed("lead:"+k,sig,"acard lead"+(go?" go":""),"var(--wrap)",'<div class="ah">'+pres("main session",true,"","var(--wrap)")+'<span class="lw">'+esc(W[0])+"</span>"+planBtn("lead",P,"var(--wrap)")+calls(n,0)+"</div>"+
+    (W[1]?'<div class="job">'+esc(W[1])+"</div>":"")+(L.length?'<ul class="lr">'+L.map(x=>'<li class="k-'+x.k+'"><span class="ic" aria-hidden="true">'+(x.k==="route"?"→":"✓")+'</span><span class="tx" title="'+esc(x.x)+'">'+esc(x.x)+
+    '</span><span class="num ago" data-ago="'+esc(x.t)+'">'+ago(x.t)+"</span></li>").join("")+"</ul>":"")+
+    (pc.length?'<div class="chips"><span class="chip warn" title="Product code goes to its area agent; the Tech Lead edited it itself">Tech Lead edited product code: '+esc(pc.map(x=>x.file+" (route to "+x.agent+")").join(", "))+"</span></div>":""))}
 function planCard(w){const c=acol(w.expert),id="row:"+w.stage+":"+w.expert,P=phases({}).map(t=>({text:t,done:false}));
   return keyed(id,[w.why],"acard plan",c,'<div class="ah">'+tag(w.expert,c)+'<span class="sub">planned</span>'+planBtn(id,P,c)+"</div>"+(w.why?'<div class="job">'+esc(w.why)+"</div>":""))}
 /* a finished run: avatar with a check, the first summary line, the time and its plan; opened, the other lines, the
@@ -714,13 +743,14 @@ function sumHtml(r){const key="s:"+r.id,o=OPEN.has(key),ox=OPEN.has(key+"x"),c=c
     (ox?'<ol class="steps">'+L.map(x=>"<li><span>"+hm(x[0])+"</span><span>"+(x[2]?"<details><summary>"+esc(past(x[1]))+"</summary><code>"+esc(x[2])+"</code></details>":esc(past(x[1])))+"</span></li>").join("")+"</ol>":""))}
 function rowSum(w){const c=acol(w.expert);return keyed("rs:"+w.stage+":"+w.expert,[w.out,w.why,w.end],"sum",c,'<div class="sum-h">'+pres(w.expert,false,"",c)+'<span class="first">'+esc(DN(w.out||w.why||"Finished"))+
   '</span><span class="num">'+(w.start&&w.end?fmt(ms(w.start,w.end)):"")+"</span></div>")}
+function curStage(){const c=D.stages.find(x=>["live","fail","wait"].includes(x.state));return c?c.k:""}
 function stageParts(s){const k=s.k,R=runsOf(k),live=R.filter(r=>r.state==="live"),rows=prow(k).filter(r=>r.agent!=="main session"),ran=new Set(R.map(r=>r.expert.toLowerCase()));
   const lr=rows.filter(r=>r.state==="live"&&!ran.has(r.expert.toLowerCase())),open=["live","wait","fail"].includes(s.state);
-  return {R,live,lr,alone:s.state==="live"&&!live.length&&!lr.length,plan:open?rows.filter(r=>r.state==="todo"):[],fin:R.filter(r=>r.state!=="live"),
+  return {R,live,lr,alone:s.state==="live"&&!live.length&&!lr.length,lead:curStage()===k,plan:open?rows.filter(r=>r.state==="todo"):[],fin:R.filter(r=>r.state!=="live"),
     doneRows:rows.filter(r=>r.state==="done"&&!ran.has(r.expert.toLowerCase()))}}
 function stageBody(s){if(s.state==="todo"||s.state==="skip")return null;const P=stageParts(s);
-  return {cards:P.live.map(runCard).concat(P.lr.map(rowCard),P.alone?[mainCard(s)]:[],P.plan.map(planCard)),fin:P.fin.map(sumHtml).concat(P.doneRows.map(rowSum)),
-    upn:s.state==="live"&&!P.alone?upNext(s.k):""}}
+  return {cards:(P.lead?[leadCard(s)]:[]).concat(P.live.map(runCard),P.lr.map(rowCard),P.plan.map(planCard)),fin:P.fin.map(sumHtml).concat(P.doneRows.map(rowSum)),
+    upn:s.state==="live"?upNext(s.k):""}}
 /* a card is redrawn only when it changed, so the others keep floating and only the one that stepped rolls */
 function patch(box,list){const tpl=document.createElement("div");tpl.innerHTML=list.join("");const want=[...tpl.children],keep=new Map();
   [...box.children].forEach(o=>{const n=want.find(w=>w.dataset.key===o.dataset.key);if(n&&n.dataset.sig===o.dataset.sig)keep.set(o.dataset.key,o);else o.remove()});
@@ -728,7 +758,7 @@ function patch(box,list){const tpl=document.createElement("div");tpl.innerHTML=l
 function bodies(){const f=document.activeElement,fsel=f&&f.dataset?(f.dataset.plan!==undefined?'[data-plan="'+f.dataset.plan+'"]':f.dataset.o?'[data-o="'+f.dataset.o+'"]':null):null;
   D.stages.forEach(s=>{const P=stageParts(s),last=D.events.length?D.events[D.events.length-1].n:0;
     const key=JSON.stringify([s.state,P.R.map(r=>[r.id,r.n,r.state,r.ph,(r.steps||[]).length,(r.summary||[]).length,r.file||"",psig(r.plan||[])]),prow(s.k).map(r=>[r.expert,r.state]),
-      P.alone?[last,psig(leadPlan())]:0,P.lr.map(r=>((D.now||{})[r.expert]||{}).n),[...OPEN].join()]);
+      P.lead?[last,psig(leadPlan()),(D.routes||[]).length,(D.leadCode||[]).length,!!D.gate,working().length]:0,P.lr.map(r=>((D.now||{})[r.expert]||{}).n),[...OPEN].join()]);
     if(bodyKey[s.k]===key)return;bodyKey[s.k]=key;const el=rows[s.k].querySelector(".body"),B=stageBody(s);
     if(!B){el.innerHTML="";return}
     if(!el.querySelector(":scope>.agrid"))el.innerHTML='<div class="agrid"></div><div class="fin"></div><div class="upn" hidden></div>';
@@ -742,21 +772,24 @@ function working(){return (D.runs||[]).filter(r=>r.state==="live")}
 let OPENP=null,OPENER=null,DSIG="",LASTD={};
 function subject(id){if(id==="lead"){const ev=leadEvents("",0),cur=D.stages.find(s=>s.state==="live"||s.state==="fail"),st=D.stages.filter(s=>s.start);
     return {who:"main session",c:"var(--wrap)",on:!!cur,job:"Run the task's stages and the agents in them",L:leadPlan(),steps:ev.map(e=>[e.t,e.text]),start:st.length?st[0].start:"",end:"",n:ev.length,b:0,state:cur?"live":"done"}}
-  const r=(D.runs||[]).find(x=>x.id===id);if(r)return {who:r.expert,ag:r.agent,c:col(r),on:r.state==="live",job:r.job,L:planOf(r),steps:r.steps||[],start:r.start,end:r.end,n:r.n||0,b:r.b||0,state:r.state,why:r.why,file:r.file};
+  const r=(D.runs||[]).find(x=>x.id===id);if(r)return {who:r.expert,ag:r.agent,c:col(r),on:r.state==="live",job:r.job,goal:r.goal||r.job,output:r.output,doneWhen:r.doneWhen,generic:r.generic,L:planOf(r),steps:r.steps||[],start:r.start,end:r.end,n:r.n||0,b:r.b||0,state:r.state,why:r.why,file:r.file};
   const m=String(id).match(/^row:([^:]+):(.+)$/),w=m&&prow(m[1]).find(x=>x.expert===m[2]);if(!w)return null;
   return {who:w.expert,ag:w.agent,c:acol(w.expert),on:w.state==="live",job:w.why||"",L:phases({}).map(t=>({text:t,done:false})),steps:[],start:w.start||"",n:0,b:0,state:w.state==="live"?"live":"todo"}}
 function ring(p){return '<span class="ring" role="img" aria-label="'+p.d+" of "+p.N+' done"><svg viewBox="0 0 20 20" aria-hidden="true"><circle class="tr" cx="10" cy="10" r="8"/>'+
   (p.d?'<circle class="fg" cx="10" cy="10" r="8" pathLength="100" stroke-dasharray="'+(p.d/p.N*100)+' 100"/>':"")+"</svg>"+p.d+"/"+p.N+"</span>"}
 function drawer(){const el=$("#pdr");document.querySelectorAll("[data-plan]").forEach(b=>b.setAttribute("aria-expanded",b.dataset.plan===OPENP));
   const S=OPENP===null?null:subject(OPENP);if(!S){if(!el.hidden){el.hidden=true;el.innerHTML=""}OPENP=null;DSIG="";return}
-  const L=S.L,p=pinfo(L),sig=JSON.stringify([OPENP,psig(L),S.steps.length,S.state,[...OPEN].filter(k=>k.startsWith("p:")).join()]);if(sig===DSIG)return;DSIG=sig;
+  const L=S.L,p=pinfo(L),sig=JSON.stringify([OPENP,psig(L),S.steps.length,S.state,S.goal||"",S.output||"",S.doneWhen||"",(S.generic||[]).join(),[...OPEN].filter(k=>k.startsWith("p:")).join()]);if(sig===DSIG)return;DSIG=sig;
   const ae=document.activeElement,fk=ae&&el.contains(ae)?(ae.dataset.o||"x"):null,was=LASTD[OPENP],first=el.hidden;LASTD[OPENP]=p.d;
   el.style.setProperty("--a",S.c);el.setAttribute("aria-label","Plan of "+DN(S.who));
   const by=L.map(()=>[]);S.steps.forEach(x=>{const b=by[itemOf(L,x[0])];if(b)b.push(x)});
   const took=S.start?(S.on?'<span data-el="'+esc(S.start)+'">'+fmt(ms(S.start))+"</span>":S.end?fmt(ms(S.start,S.end)):""):"";
   const C=(D.certs||{})[S.ag]||[];
+  const M=[["Goal",S.goal],["Output",S.output],["Done when",S.doneWhen]].filter(x=>x[1]),meta=M.length>1||S.output||S.doneWhen;
   let h='<div class="dr-h">'+pres(S.who,S.on,"",S.c)+"<b>Plan</b>"+ring(p)+'<button type="button" class="dr-x" aria-label="Close the plan">×</button></div>'+
-    (C.length?'<div class="dr-cert">'+esc(C.join(" · "))+"</div>":"")+'<div class="dr-sub">'+esc(S.job)+(S.n?" · "+took+" · "+S.n+(S.b?"/"+S.b:"")+" calls":S.state==="todo"?" · planned":"")+'</div><ol class="pl">';
+    (C.length?'<div class="dr-cert">'+esc(C.join(" · "))+"</div>":"")+'<div class="dr-sub">'+(meta?"":esc(S.job)+(S.n?" · ":""))+(S.n?took+" · "+S.n+(S.b?"/"+S.b:"")+" calls":S.state==="todo"?(meta?"":" · ")+"planned":"")+"</div>"+
+    (meta?'<dl class="dr-meta">'+M.map(x=>"<dt>"+x[0]+"</dt><dd>"+esc(x[1])+"</dd>").join("")+"</dl>":"")+
+    (S.generic&&S.generic.length?'<div class="dr-gen">Plan too generic: '+esc(S.generic.join("; "))+"</div>":"")+'<ol class="pl">';
   L.forEach((it,i)=>{const key="p:"+OPENP+":"+i,o=OPEN.has(key),st=it.done?"d":i===p.cur&&S.state!=="todo"?"c":"u",steps=by[i];
     if(st==="d")h+='<li class="d'+(was!==undefined&&i>=was&&i<p.d?" just":"")+'"><button type="button" class="pi" data-o="'+key+'" aria-expanded="'+o+'"><span class="pn">✓</span><span class="pt">'+esc(DN(it.text))+
       '</span><span class="pw">'+(it.at?hm(it.at):"")+"</span></button>"+(o&&steps.length?'<ol class="ps">'+steps.map(s=>"<li>"+esc(past(s[1]))+"</li>").join("")+"</ol>":"")+"</li>";

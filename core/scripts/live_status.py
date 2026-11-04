@@ -105,8 +105,8 @@ CLOSING = {"task": ("spec", "design"), "product": tuple(GATE_IDS)}  # an approve
 CHECKED = {"task": ("spec", "design"), "product": ("requirements", "product", "design")}  # handoff_check first
 BRIEF = {"task": "brief.md", "product": "02-gaps.md"}
 BRIEF_AT = {"task": ("spec",), "product": ("requirements", "product")}
-EXPERT_DOCS = {"task": ("perf.md", "ui.md", "sf.md", "ai.md", "n8n.md") + tuple(CFG.get("expert_docs") or {}),
-               "product": ("05-performance.md", "05-ui.md", "05-sf-fields.md", "05-ai.md", "05-n8n.md")}
+EXPERT_DOCS = {"task": ("perf.md", "ui.md", "sf.md", "sf-skills.md", "ai.md", "n8n.md") + tuple(CFG.get("expert_docs") or {}),
+               "product": ("05-performance.md", "05-ui.md", "05-sf-fields.md", "05-sf-skills-fields.md", "05-ai.md", "05-n8n.md")}
 PLAN_FILES = {"task": ("spec.md", "triage.md"), "product": ("02-spec.md", "00-intake.md")}
 
 # ---- agents and teams -------------------------------------------------------------------------
@@ -116,15 +116,17 @@ TEAMS = [("lead", "Lead", ["main session"]),
          ("design", "Design", ["ux-designer"]),
          ("architecture", "Architecture", ["solution-architect", "data-architect", "security-architect"]),
          ("engineering", "Engineering", ["base-builder", "backend-developer", "frontend-developer", "integration-engineer"]),
-         ("domain", "Domain experts", ["sf-expert", "ai-engineer", "n8n-expert"]),
-         ("quality", "Quality", ["code-reviewer", "qa-engineer", "verifier", "performance-engineer", "bug-investigator"]),
+         ("domain", "Domain experts", ["sf-expert", "sf-skills-expert", "ai-engineer", "n8n-expert"]),
+         ("quality", "Quality", ["code-reviewer", "qa-lead", "qa-engineer", "ui-qa-expert", "e2e-qa-expert", "verifier",
+                                  "performance-engineer", "bug-investigator"]),
          ("audit", "Audit", ["audit-expert"]),
          ("operations", "Operations", ["devops-engineer", "release-manager"]),
          ("helpers", "Helpers", ["explorer"])]
-DOMAIN_CORE = ("sf-expert", "ai-engineer", "n8n-expert")
+DOMAIN_CORE = ("sf-expert", "sf-skills-expert", "ai-engineer", "n8n-expert")
 # the bench a task-mode page shows next to the team (product mode shows every core agent)
 TASK_BENCH = {"main session", "spec-analyst", "bug-investigator", "ux-designer", "solution-architect", "data-architect",
-              "security-architect", "code-reviewer", "qa-engineer", "verifier", "performance-engineer",
+              "security-architect", "code-reviewer", "qa-lead", "qa-engineer", "ui-qa-expert", "e2e-qa-expert",
+              "verifier", "performance-engineer",
               "release-manager", "explorer"}
 # earlier agent names -> core agents; "<repo>-verifier" and "<repo>-explorer" map by their ending
 RENAMES = {"test-runner": "qa-engineer", "ui-engineer": "ux-designer", "prd-reviewer": "spec-analyst",
@@ -134,7 +136,8 @@ RENAMES = {"test-runner": "qa-engineer", "ui-engineer": "ux-designer", "prd-revi
 # task mode without a team: the stage an agent's start opens
 AGENT_STAGE = {"spec-analyst": "spec", "bug-investigator": "spec", "solution-architect": "design",
                "data-architect": "design", "security-architect": "design", "ux-designer": "design",
-               "sf-expert": "design", "ai-engineer": "design", "n8n-expert": "design", "code-reviewer": "review", "qa-engineer": "test",
+               "sf-expert": "design", "sf-skills-expert": "design", "ai-engineer": "design", "n8n-expert": "design", "code-reviewer": "review", "qa-engineer": "test",
+               "ui-qa-expert": "test", "e2e-qa-expert": "test",
                "verifier": "verify", "release-manager": "release"}
 # product mode: the factory's default team (AGENTS.md flow table, core names); domain rows only when configured
 PRODUCT_TEAM = [
@@ -145,6 +148,7 @@ PRODUCT_TEAM = [
     ("base", "devops-engineer", "deploy check of the base"),
     ("requirements", "spec-analyst", "spec, non-functional sheet, gaps (02-spec.md, 02-nfr.md, 02-gaps.md)"),
     ("requirements", "sf-expert", "SuccessFactors fit (02-sf-fit.md)"),
+    ("requirements", "sf-skills-expert", "job profiles and skills fit (02-sf-skills-fit.md)"),
     ("product", "product-critic", "a good, clear product? (03-product-review.md)"),
     ("product", "ux-designer", "journeys and screens (03-journeys.md)"),
     ("prototype", "ux-designer", "options or variants to approve (P-*.html)"),
@@ -154,12 +158,14 @@ PRODUCT_TEAM = [
     ("design", "data-architect", "data model (05-data-model.md)"),
     ("design", "security-architect", "access and privacy (05-security.md)"),
     ("design", "sf-expert", "SuccessFactors fields (05-sf-fields.md)"),
+    ("design", "sf-skills-expert", "job profile and skills fields (05-sf-skills-fields.md)"),
     ("design", "ai-engineer", "AI behaviour and cost (05-ai.md)"),
     ("design", "n8n-expert", "n8n workflows (05-n8n.md)"),
     ("design", "integration-engineer", "outside systems (05-integrations.md)"),
     ("design", "devops-engineer", "environments and pipeline (05-ops.md)"),
     ("design", "ux-designer", "UI build spec (05-ui.md)"),
     ("design", "performance-engineer", "budgets for volume (05-performance.md)"),
+    ("design", "qa-lead", "test plan: risks, matrix, who tests what (05-test-plan.md)"),
     ("design", "verifier", "the design parts fit together"),
     ("build", "backend-developer", "backend per story"),
     ("build", "frontend-developer", "screens per story"),
@@ -167,10 +173,14 @@ PRODUCT_TEAM = [
     ("build", "devops-engineer", "environment changes"),
     ("build", "qa-engineer", "tests from the criteria"),
     ("review", "code-reviewer", "code review (07-code-review.md)"),
-    ("review", "qa-engineer", "run the tests (07-test-report.md)"),
+    ("review", "qa-engineer", "run the tests and API checks (07-test-report.md)"),
+    ("review", "ui-qa-expert", "every screen in the browser (07-qa-ui.md)"),
+    ("review", "e2e-qa-expert", "journeys across roles (07-qa-e2e.md)"),
+    ("review", "qa-lead", "QA sign-off (07-qa-signoff.md)"),
     ("review", "performance-engineer", "hot paths (07-performance.md)"),
     ("review", "verifier", "the built product matches the design"),
     ("review", "sf-expert", "SuccessFactors code"),
+    ("review", "sf-skills-expert", "job profile and skills code"),
     ("review", "n8n-expert", "n8n node changes"),
     ("audit", "audit-expert", "Definition of Done (08-audit.md)"),
     ("release", "devops-engineer", "deploy plan (09-deploy-plan.md)"),
@@ -569,7 +579,8 @@ def read_lines(tid, f):
 DECISION_FILE = re.compile(r"(?:^|/)(D[1-8])-", re.I)
 BRIEF_DOCS = ("brief.md", "02-gaps.md")
 # Who wrote a gate document, so the page can say which agent waits for the developer's approval.
-AUTHORS = [(r"(^|/)(review-sf\.md|07-sf-review\.md|sf\.md|02-sf-fit\.md|05-sf-fields\.md)$", "sf-expert"),
+AUTHORS = [(r"(^|/)(review-sf-skills|sf-skills|02-sf-skills-fit|05-sf-skills-fields)\.md$", "sf-skills-expert"),
+           (r"(^|/)(review-sf\.md|07-sf-review\.md|sf\.md|02-sf-fit\.md|05-sf-fields\.md)$", "sf-expert"),
            (r"(^|/)(review-ai\.md|ai\.md|05-ai\.md)$", "ai-engineer"),
            (r"(^|/)(review-n8n\.md|n8n\.md|05-n8n\.md)$", "n8n-expert"),
            (r"(^|/)(brief|spec|02-gaps|02-spec|02-nfr|01-prd-review)\.md$", "spec-analyst"),
@@ -587,6 +598,8 @@ AUTHORS = [(r"(^|/)(review-sf\.md|07-sf-review\.md|sf\.md|02-sf-fit\.md|05-sf-fi
            (r"(^|/)(perf|05-performance|07-performance)\.md$", "performance-engineer"),
            (r"(^|/)(review(-[\w-]+)?|07-code-review)\.md$", "code-reviewer"),
            (r"(^|/)(test|07-test-report)\.md$", "qa-engineer"),
+           (r"(^|/)(test-plan|05-test-plan|qa-signoff|07-qa-signoff)\.md$", "qa-lead"),
+           (r"(^|/)(qa-ui|07-qa-ui)\.md$", "ui-qa-expert"), (r"(^|/)(qa-e2e|07-qa-e2e)\.md$", "e2e-qa-expert"),
            (r"(^|/)07-system-review\.md$", "verifier"),
            (r"(^|/)08-audit\.md$", "audit-expert"),
            (r"(^|/)(release|09-release)\.md$", "release-manager"),
@@ -968,6 +981,8 @@ def agent_stage(st, name, cur, job=""):
         if (name in DOMAIN_CORE or name in experts_list()) and \
                 any(s["k"] == k and s["state"] not in ("done", "skip") for s in st["stages"]):
             return k
+        if name == "qa-lead":  # the test plan at Design, the sign-off at Test
+            return "test" if re.search(r"(?i)sign.?off", job or "") or cur in ("review", "test", "verify") else "design"
         if name in AGENT_STAGE:
             return AGENT_STAGE[name]
         if name not in experts_list():
@@ -1052,10 +1067,10 @@ def set_risk(st, risk, why, src, label=""):
     st["risk"], st["riskSet"] = risk, src
     st["riskWhy"] = [str(w)[:160] for w in (why if isinstance(why, list) else [why]) if str(w).strip()][:8]
     if src == "command":
-        add(st, current_stage(st), "note", ("Risk changed from %s to %s" % (old, risk) if old and old != risk
-                                            else "Risk confirmed: " + risk) + ": " + "; ".join(st["riskWhy"]), "main session")
+        add(st, current_stage(st), "decide", ("Risk changed from %s to %s" % (old, risk) if old and old != risk
+                                              else "Risk confirmed: " + risk) + ": " + "; ".join(st["riskWhy"]), "main session")
     elif old != risk:
-        add(st, current_stage(st), "note", "Risk %s (from %s)%s" % (risk, label, ": " + "; ".join(st["riskWhy"]) if st["riskWhy"] else ""),
+        add(st, current_stage(st), "decide", "Risk %s (from %s)%s" % (risk, label, ": " + "; ".join(st["riskWhy"]) if st["riskWhy"] else ""),
             "main session")
 
 
@@ -1111,6 +1126,31 @@ def cmd_expert(a):
         sys.exit(2)
 
 
+SIGNOFF = {"task": ("test", "qa-signoff.md"), "product": ("review", "07-qa-signoff.md")}
+
+
+def signoff_issue(st, tid, stage):
+    """No task closes without the QA sign-off: with qa-lead on the team, Test (product: Review) is done only when
+    its sign-off file says SIGNED OFF under `## Verdict`."""
+    k, f = SIGNOFF[mode_of(st)]
+    rows = (st.get("plan") or {}).get("rows", [])
+    lead = any(base_agent(r["expert"]).lower() == "qa-lead" for r in rows) or (mode_of(st) == "product" and not rows)
+    if stage != k or not lead:
+        return ""
+    try:
+        with open(path(tid, f), encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError:
+        return "stage: %s is not done before the QA sign-off: %s is missing (qa-lead, mode sign-off)" % (NAMES[k], f)
+    m = re.search(r"(?ims)^#+\s*verdict\s*$(.*?)(?=^#)|^#+\s*verdict\s*$(.*)", text)
+    v = (m.group(1) or m.group(2) or "") if m else ""
+    if re.search(r"(?i)\bnot\s+signed\s+off\b|\bblocked\b", v) or not re.search(r"(?i)\bsigned\s+off\b", v):
+        line = next((x.strip() for x in v.splitlines() if x.strip()), "no verdict")
+        return ("stage: %s is not done: %s says \"%s\"; fix what it lists (back to Build), re-run the failed checks "
+                "and the sign-off" % (NAMES[k], f, line[:120]))
+    return ""
+
+
 def cmd_stage(a):
     def run():
         st = load(a.id)
@@ -1137,6 +1177,9 @@ def cmd_stage(a):
                 st.pop("code_writes", None)  # the base is built now: code writes follow the stage again
             add(st, a.stage, "start", name + " started", s["actor"])
         elif a.action == "done":
+            err = signoff_issue(st, a.id, a.stage)
+            if err:
+                return err
             s["state"], s["end"] = "done", now()
             s.setdefault("start", s["end"])
             if a.out:
@@ -1469,6 +1512,28 @@ def cmd_log(a):
         sys.exit(2)
 
 
+def cmd_lead(a):
+    """The Tech Lead's own entries on the page: `decide` (a lane, a split, a gate or card outcome), `integrate`
+    (results merged, the final checks run), `route` (an agent briefed by hand; the Agent hook records launches)."""
+    def run():
+        st = load(a.id)
+        if a.stage:
+            err = need_stage(st, a.stage, a.kind)
+            if err:
+                return err
+        stage = a.stage or current_stage(st)
+        if a.kind == "route":
+            route(st, stage, canon(a.agent), job_of(a.text), [f.strip() for f in a.files.split(",") if f.strip()][:6],
+                  plain(a.output)[:200])
+        else:
+            add(st, stage, a.kind, a.text, "main session")
+        save(st)
+    err = with_lock(run)
+    if err:
+        print(err)
+        sys.exit(2)
+
+
 def record(kind, text, actor, data=None):
     """Best-effort entry from the guard hooks (blocked call, hard-rule flag) for the task of the
     session in `data` (the hook JSON). Never raises."""
@@ -1592,13 +1657,36 @@ PLAN_HEAD = re.compile(r"(?im)^[ \t]*(?:#{1,6}[ \t]*)?plan[ \t]*:?[ \t]*$")
 PLAN_ITEM = re.compile(r"^\s*[-*]\s*\[([ xX])\]\s+(\S.*?)\s*$")
 
 
+def brief_of(inp):
+    """The goal, the files and the expected output of an agent brief: its `Goal:` (an older brief: `Job:`), `Files:`
+    and `Output:` lines (sdlc section 4); the goal falls back to the Agent call's description."""
+    text = str(inp.get("prompt") or inp.get("task") or "")
+
+    def line(key):
+        m = re.search(r"(?im)^[ \t]*(?:\*\*)?%s(?:\*\*)?[ \t]*:[ \t]*(?:\*\*)?[ \t]*(\S.*)$" % key, text)
+        return m.group(1).strip() if m else ""
+    goal, out, fl = line("goal") or line("job"), line("output"), line("files")
+    files = [os.path.basename(f.strip(" `'\"").replace("\\", "/").split(":")[0]) for f in re.split(r"[,;]", fl)] if fl else []
+    return job_of(goal or inp.get("description")), [f for f in files if f][:6], plain(out)[:200] if out else ""
+
+
+def route(st, stage, expert, job, files, output=""):
+    """A `route` event of the Tech Lead (an agent launched with its brief: the goal, the files, the expected output)
+    and the task's routing list."""
+    name = stage_of(st, stage)["name"] if stage in {s["k"] for s in st["stages"]} else stage
+    text = "Routed %s to %s" % (name, expert) + (": " + job if job else "")
+    more = dict(**({"files": files} if files else {}), **({"output": output} if output else {}))
+    add(st, stage, "route", text, "main session", agent=expert, **more)
+    st["routes"] = (st.get("routes") or [])[-11:] + [dict(t=now(), stage=stage, agent=expert, job=job, **more)]
+
+
 def job_of(text):
     """The Agent call's description as one plain sentence; a trailing id in brackets ("(F-A8-008)") is dropped."""
     t = re.sub(r"\s*\([^()\s]*\d[^()\s]*\)\s*$", "", " ".join(str(text or "").split()))
     return (t[:1].upper() + t[1:])[:120]
 
 
-def new_run(st, agent, expert, stage, job="", use="", aid=""):
+def new_run(st, agent, expert, stage, job="", use="", aid="", output=""):
     """One run of an agent: its job, the steps it takes, its calls against its Speed line, its job phase
     (0 read the brief, 1 look into it, 2 write its file, 3 check and finish) and, when it stops, its summary."""
     st["runN"] = st.get("runN", 0) + 1
@@ -1608,6 +1696,8 @@ def new_run(st, agent, expert, stage, job="", use="", aid=""):
         r["use"] = use
     if aid:
         r["aid"] = aid
+    if output:
+        r["output"] = output
     st["runs"] = (st.get("runs") or [])[-(KEEP_RUNS - 1):] + [r]
     return r
 
@@ -1674,34 +1764,88 @@ def summary_of(p, reply=""):
     return out
 
 
-def plan_of(p):
-    """The "## Plan" checklist of a run's output file (an HTML file holds it in its top comment): its items in order,
-    each with whether it is ticked; None when the file has none."""
-    try:
-        with open(p, encoding="utf-8", errors="replace") as f:
-            text = f.read(40000)
-    except (OSError, TypeError):
-        return None
-    for m in PLAN_HEAD.finditer(text):
-        out = []
+PLAN_META = re.compile(r"(?i)^\s*(?:[-*]\s+)?(?:\*\*)?(goal|output|done when)(?:\*\*)?\s*:\s*(?:\*\*)?\s*(\S.*?)\s*$")
+META_KEY = {"goal": "goal", "output": "output", "done when": "doneWhen"}
+# process steps that say nothing about this task (common.md, Output file)
+GENERIC_ITEM = re.compile(
+    r"(?i)^(?:read|re-?read|check|review|study|understand|explore|scan|skim)\s+(?:the\s+|my\s+|your\s+)?"
+    r"(?:brief|context(?:\s*pack)?|pack|task|request|requirements?|spec|code(?:base)?|repo|files?|docs?|lessons?)\b"
+    r"|^check\s+(?:every|all|the)\s+callers?\b"
+    r"|^(?:write|update|add)\s+(?:the\s+)?(?:lessons?|summary|output(?:\s+file)?|report|file|notes?)\b"
+    r"|^note\s+(?:the\s+|any\s+)?(?:suggestions?|findings?|gaps?)\b"
+    r"|^(?:run|add|write)\s+(?:the\s+)?(?:unit\s+)?tests?\s*$"
+    r"|^(?:finish|wrap\s+up|reply|report\s+back|hand\s+(?:it\s+)?(?:back|over)|tick\s+the\s+plan)\b")
+# a task-specific noun: a name in backticks, a path or file name, an id or a number
+SPECIFIC = re.compile(r"`[^`]+`|[\w.-]+/[\w./-]+|\b[\w-]+\.[a-z]{1,10}\b|\b[A-Za-z]*\d[\w-]*\b")
+
+
+def item_specific(raw):
+    """True when a plan item names the concrete thing: a path, a name in backticks, an id, a capitalised term after
+    its first word, or a decision between named options."""
+    if SPECIFIC.search(raw):
+        return True
+    rest = re.sub(r"^\W*[A-Za-z][\w'-]*\s*:?", "", raw.strip(), count=1)
+    if re.search(r"\b[A-Z][A-Za-z]+|\b[a-z]+[A-Z]\w*", rest):
+        return True
+    return bool(re.match(r"(?i)\W*decide\b", raw) and re.search(r"(?i)\b(?:or|vs\.?|versus)\b", rest))
+
+
+def plan_issues(meta, raws):
+    """Why a plan is too generic (empty when it is fine): no Goal or Output line, or items that name nothing in the
+    task (a process step, or no task-specific noun)."""
+    out = [w for k, w in (("goal", "no Goal line in the plan"), ("output", "no Output line in the plan")) if not meta.get(k)]
+    gen = [plain(x)[:60] for x in raws if GENERIC_ITEM.search(plain(x)) or not item_specific(x)]
+    if gen:
+        out.append("generic items: " + "; ".join(gen[:3]) + (" and %d more" % (len(gen) - 3) if len(gen) > 3 else ""))
+    return out
+
+
+def plan_parts(text):
+    """The "## Plan" of an output file's text (an HTML file holds it in its top comment): its Goal, Output and Done
+    when lines, its items in order with whether each is ticked, and the items' raw text; None when it has none."""
+    for m in PLAN_HEAD.finditer(text or ""):
+        meta, items, raws = {}, [], []
         for ln in text[m.end():].splitlines():
             hit = PLAN_ITEM.match(ln)
+            mm = None if hit else PLAN_META.match(ln)
             if hit:
-                out.append((plain(hit.group(2))[:120], hit.group(1) != " "))
-                if len(out) == 12:
+                items.append((plain(hit.group(2))[:120], hit.group(1) != " "))
+                raws.append(hit.group(2))
+                if len(items) == 12:
                     break
+            elif mm and not items:
+                meta[META_KEY[mm.group(1).lower()]] = plain(mm.group(2))[:200]
             elif ln.strip():
                 break
-        if out:
-            return out
+        if items or meta:
+            return meta, items, raws
     return None
 
 
-def tick_plan(r, items):
+def plan_of(p):
+    """plan_parts of a run's output file; None when the file has no plan or cannot be read."""
+    try:
+        with open(p, encoding="utf-8", errors="replace") as f:
+            return plan_parts(f.read(40000))
+    except (OSError, TypeError):
+        return None
+
+
+def tick_plan(r, parts):
     """The run's live plan from its file: an item keeps the time it was first seen ticked; a step belongs to the
-    first item not yet ticked when it ran."""
+    first item not yet ticked when it ran. The Goal, Output and Done when lines go on the run, and a plan that is too
+    generic keeps its reasons (`generic`: the card's chip)."""
+    meta, items, raws = parts
+    r.update(meta)
+    if not items:
+        return
     old = {x["text"]: x.get("at") for x in r.get("plan") or [] if x.get("at")}
     r["plan"] = [dict(text=t, done=d, at=(old.get(t) or now()) if d else "") for t, d in items]
+    issues = plan_issues(meta, raws)
+    if issues:
+        r["generic"] = issues
+    else:
+        r.pop("generic", None)
 
 
 def stop_state(*objs):
@@ -1746,9 +1890,9 @@ def finish_run(st, r, state="done", why="", reply="", again=False):
     lines = summary_of(out, reply)
     if lines:
         r["summary"] = lines
-    items = plan_of(out)
-    if items:
-        tick_plan(r, items)
+    parts = plan_of(out)
+    if parts:
+        tick_plan(r, parts)
     for x in r.get("plan") or [] if r["state"] == "done" else []:  # a run that finished did its plan
         if not x["done"]:
             x["done"], x["at"] = True, r["end"]
@@ -1780,9 +1924,9 @@ def run_step(st, r, kind, text, extra, p):
         r["fw"] = r.get("fw", 0) + 1
         if r["ph"] < 2 and (r["fw"] > 1 or (r["b"] and r["n"] >= 0.4 * r["b"])):  # the first write is its skeleton
             r["ph"] = 2
-        items = plan_of(a)
-        if items:
-            tick_plan(r, items)
+        parts = plan_of(a)
+        if parts:
+            tick_plan(r, parts)
     elif r["ph"] == 2 and kind == "run":
         r["ph"] = 3
     pat = r.setdefault("pat", [])  # when each job phase ended: the page's plan when the file has none
@@ -1818,6 +1962,26 @@ def who(st, data, sid=""):
         return "main session", ""
     name = canon(data["agent_type"])
     return (bind(st, aid, name) if aid else name), aid
+
+
+def lead_edit(st, inp, extra):
+    """The Tech Lead's own edit. A flow document of the task is its `integrate` work (triage.md: `decide`). Product
+    code should have gone to its area agent: the edit is marked and listed for the chip on the Tech Lead's card."""
+    p = tool_path(inp)
+    a = os.path.abspath(os.path.join(ROOT, p)) if p else ""
+    if not a:
+        return None
+    if os.path.normcase(a).startswith(os.path.normcase(path(st["id"])) + os.sep):
+        return "decide" if os.path.basename(a).lower() == "triage.md" else "integrate"
+    area = project.product_area(a, ROOT)
+    root = os.path.abspath(st["root"]) if st.get("root") else ""
+    if not area and root and os.path.normcase(a).startswith(os.path.normcase(root) + os.sep):
+        area = project.product_area(a, root)
+    if area:
+        extra["pc"] = area
+        name = extra.get("file") or os.path.basename(a)
+        st["leadCode"] = ([x for x in st.get("leadCode") or [] if x["file"] != name] + [dict(file=name, agent=area, t=now())])[-8:]
+    return None
 
 
 def on_tool(tid, data, sid=""):
@@ -1878,12 +2042,14 @@ def on_tool(tid, data, sid=""):
         hint = " ".join(str(inp.get(k) or "") for k in ("description", "prompt"))[:4000]
         use = str(data.get("tool_use_id") or "")
         rid = isinstance(resp, dict) and str(resp.get("agentId") or resp.get("agent_id") or "")
+        job, files, output = brief_of(inp)
         if pre and stage:
             s = stage_of(st, stage)
             r = mark_expert(st, stage, name, "live", hint)
             if r and use:  # the launch's result names the run (agentId): its tool calls then show on this row
                 st["launch"] = dict(list((st.get("launch") or {}).items())[-9:] + [(use, r["expert"])])
-            new_run(st, name, r["expert"] if r else name, stage, job_of(inp.get("description")) or (r or {}).get("why", ""), use)
+            route(st, stage, r["expert"] if r else name, job, files, output)
+            new_run(st, name, r["expert"] if r else name, stage, job or (r or {}).get("why", ""), use, output=output)
             if s["state"] == "live":  # another expert of a stage that is already running
                 add(st, stage, "agent", (r["expert"] if r else name) + " started", r["expert"] if r else name)
             else:
@@ -1892,7 +2058,8 @@ def on_tool(tid, data, sid=""):
                 s.setdefault("start", s["run"])
                 add(st, stage, "start", s["name"] + " started", r["expert"] if r else name)
         elif pre:
-            new_run(st, name, name, cur, job_of(inp.get("description")), use)
+            route(st, cur, name, job, files, output)
+            new_run(st, name, name, cur, job, use, output=output)
             add(st, cur, "agent", name + " agent started" + (": " + str(inp["description"])[:80] if inp.get("description") else ""), name)
         elif inp.get("run_in_background") or (isinstance(resp, dict) and (resp.get("isAsync") or resp.get("status") == "async_launched")) \
                 or "async_launched" in str(resp)[:400]:
@@ -1929,6 +2096,10 @@ def on_tool(tid, data, sid=""):
         return
     kind, text, extra = hit
     actor, aid = who(st, data, sid)
+    tally = st.setdefault("tally", {"lead": 0, "agents": 0})  # the Tech Lead's share of the tool calls (the page shows it)
+    tally["lead" if actor == "main session" else "agents"] += 1
+    if actor == "main session" and kind == "edit":
+        kind = lead_edit(st, inp, extra) or kind
     if aid:
         extra["aid"] = aid[-8:]  # two runs of one agent stay apart on the page
     if actor != "main session":
@@ -1945,7 +2116,7 @@ def on_tool(tid, data, sid=""):
     save(st)
 
 
-LIVE_ANY = re.compile(r"\b(?:init|stage|gate|ok|changes|ask|log|plan|risk|expert|code|chat)\s+[\"']?([A-Za-z0-9._-]+)")
+LIVE_ANY = re.compile(r"\b(?:init|stage|gate|ok|changes|ask|log|plan|risk|expert|code|chat|decide|integrate|route)\s+[\"']?([A-Za-z0-9._-]+)")
 
 
 def cmd_hook(a):
@@ -2111,6 +2282,16 @@ def main():
     p = sub.add_parser("quick")
     p.add_argument("text")
     p.set_defaults(fn=cmd_quick)
+    for kind in ("decide", "integrate", "route"):
+        p = sub.add_parser(kind)
+        p.add_argument("id")
+        if kind == "route":
+            p.add_argument("agent")
+            p.add_argument("--files", default="", help="comma-separated files the agent works on")
+            p.add_argument("--output", default="", help="what the agent hands back (the brief's Output: line)")
+        p.add_argument("text")
+        p.add_argument("--stage", choices=stage_names)
+        p.set_defaults(fn=cmd_lead, kind=kind)
     a = ap.parse_args()
     if a.cmd not in ("init", "hook", "open", "serve", "quick") and not os.path.isfile(path(a.id, "status.json")):
         sys.exit("%s: no task %s in %s (start it with: %s init %s)" % (a.cmd, a.id, work_rel(), SCRIPT, a.id))

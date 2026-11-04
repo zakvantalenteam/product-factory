@@ -1,0 +1,245 @@
+{
+ "id": "core-1-9-0",
+ "title": "core 1.9.0: QA expert team and test-location rule",
+ "size": "L",
+ "tool": "claude",
+ "mode": "task",
+ "root": "",
+ "started": "2026-11-04T20:31:33+05:30",
+ "seq": 8,
+ "events": [
+  {
+   "n": 1,
+   "t": "2026-11-04T20:31:33+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Task started: core 1.9.0: QA expert team and test-location rule"
+  },
+  {
+   "n": 2,
+   "t": "2026-11-04T20:31:34+05:30",
+   "stage": "build",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Build started"
+  },
+  {
+   "n": 3,
+   "t": "2026-11-04T20:31:35+05:30",
+   "stage": "build",
+   "kind": "decide",
+   "actor": "main session",
+   "text": "QA team: qa-lead (Opus) plans and signs off, ui-qa-expert (Opus) and e2e-qa-expert (Sonnet) test in the browser, API checks folded into qa-engineer"
+  },
+  {
+   "n": 4,
+   "t": "2026-11-04T20:56:15+05:30",
+   "stage": "build",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Build done: 3 QA agents, 2 checklists, 3 packs, test-location rule and check, sign-off gate, installed in 4 repos"
+  },
+  {
+   "n": 5,
+   "t": "2026-11-04T20:56:16+05:30",
+   "stage": "test",
+   "kind": "start",
+   "actor": "qa-engineer",
+   "text": "Test started"
+  },
+  {
+   "n": 6,
+   "t": "2026-11-04T20:56:16+05:30",
+   "stage": "test",
+   "kind": "done",
+   "actor": "qa-engineer",
+   "text": "Test done: test_v190 all pass (impact.py backspace is pre-existing); install, cursor_sync, plugin, version checks clean in 4 repos; QA cards checked on the live page"
+  },
+  {
+   "n": 7,
+   "t": "2026-11-04T20:57:24+05:30",
+   "stage": "wrap",
+   "kind": "done",
+   "actor": "commit-msg",
+   "text": "Wrap-up done: report and commit messages in the shared notes folder (core-1-9-0-report.md)"
+  },
+  {
+   "n": 8,
+   "t": "2026-11-04T21:03:32+05:30",
+   "stage": "wrap",
+   "kind": "decide",
+   "actor": "main session",
+   "text": "Added sf-skills-expert (Opus; SHRM-SCP, C_THR85, C_THR95); SkillsOS out of the sync scope, plugin only"
+  }
+ ],
+ "counts": {
+  "note": 1,
+  "start": 2,
+  "decide": 2,
+  "done": 3
+ },
+ "gate": null,
+ "stages": [
+  {
+   "k": "spec",
+   "name": "Spec",
+   "state": "todo",
+   "actor": "spec-analyst"
+  },
+  {
+   "k": "design",
+   "name": "Design",
+   "state": "todo",
+   "actor": "solution-architect"
+  },
+  {
+   "k": "build",
+   "name": "Build",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-04T20:31:34+05:30",
+   "start": "2026-11-04T20:31:34+05:30",
+   "end": "2026-11-04T20:56:15+05:30",
+   "out": "3 QA agents, 2 checklists, 3 packs, test-location rule and check, sign-off gate, installed in 4 repos"
+  },
+  {
+   "k": "review",
+   "name": "Review",
+   "state": "todo",
+   "actor": "code-reviewer"
+  },
+  {
+   "k": "test",
+   "name": "Test",
+   "state": "done",
+   "actor": "qa-engineer",
+   "run": "2026-11-04T20:56:16+05:30",
+   "start": "2026-11-04T20:56:16+05:30",
+   "end": "2026-11-04T20:56:16+05:30",
+   "out": "test_v190 all pass (impact.py backspace is pre-existing); install, cursor_sync, plugin, version checks clean in 4 repos; QA cards checked on the live page"
+  },
+  {
+   "k": "verify",
+   "name": "Verify",
+   "state": "todo",
+   "actor": "verifier"
+  },
+  {
+   "k": "release",
+   "name": "Release",
+   "state": "todo",
+   "actor": "release-manager"
+  },
+  {
+   "k": "wrap",
+   "name": "Wrap-up",
+   "state": "done",
+   "actor": "commit-msg",
+   "end": "2026-11-04T20:57:24+05:30",
+   "start": "2026-11-04T20:57:24+05:30",
+   "out": "report and commit messages in the shared notes folder (core-1-9-0-report.md)"
+  }
+ ],
+ "updated": "2026-11-04T21:03:32+05:30",
+ "project": "product-factory",
+ "teams": [
+  {
+   "id": "lead",
+   "name": "Lead",
+   "agents": [
+    "main session"
+   ]
+  },
+  {
+   "id": "product",
+   "name": "Product",
+   "agents": [
+    "spec-analyst"
+   ]
+  },
+  {
+   "id": "design",
+   "name": "Design",
+   "agents": [
+    "ux-designer"
+   ]
+  },
+  {
+   "id": "architecture",
+   "name": "Architecture",
+   "agents": [
+    "solution-architect",
+    "data-architect",
+    "security-architect"
+   ]
+  },
+  {
+   "id": "engineering",
+   "name": "Engineering",
+   "agents": []
+  },
+  {
+   "id": "domain",
+   "name": "Domain experts",
+   "agents": [
+    "sf-expert",
+    "ai-engineer"
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality",
+   "agents": [
+    "code-reviewer",
+    "qa-lead",
+    "qa-engineer",
+    "ui-qa-expert",
+    "e2e-qa-expert",
+    "verifier",
+    "performance-engineer",
+    "bug-investigator"
+   ]
+  },
+  {
+   "id": "audit",
+   "name": "Audit",
+   "agents": []
+  },
+  {
+   "id": "operations",
+   "name": "Operations",
+   "agents": [
+    "release-manager"
+   ]
+  },
+  {
+   "id": "helpers",
+   "name": "Helpers",
+   "agents": [
+    "explorer"
+   ]
+  }
+ ],
+ "risk": "medium",
+ "budgets": {
+  "spec": 15,
+  "design": 20,
+  "build": 45,
+  "review": 20,
+  "test": 15,
+  "verify": 15,
+  "release": 15,
+  "wrap": 5
+ },
+ "calls": {},
+ "certs": {},
+ "now": {
+  "main session": {
+   "k": "wrap",
+   "n": 0,
+   "last": "Added sf-skills-expert (Opus; SHRM-SCP, C_THR85, C_THR95); SkillsOS out of the sync scope, plugin only",
+   "wrote": ""
+  }
+ }
+}

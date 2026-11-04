@@ -160,9 +160,11 @@ def merged_settings(current):
 
 def settings_missing(repo):
     s = json.loads(read(os.path.join(repo, ".claude", "settings.json")) or "{}")
-    have = {h.get("command") for es in (s.get("hooks") or {}).values() for e in es for h in e.get("hooks") or []}
-    need = [h["command"] for es in core_hooks()["hooks"].values() for e in es for h in e["hooks"]]
-    return sorted({c for c in need if c not in have})
+    key = lambda ev, h: (ev, h.get("command"), bool(h.get("async")))  # an async hook must stay async (no wait per call)
+    have = {key(ev, h) for ev, es in (s.get("hooks") or {}).items() for e in es for h in e.get("hooks") or []}
+    need = [key(ev, h) for ev, es in core_hooks()["hooks"].items() for e in es for h in e["hooks"]]
+    return sorted({"%s %s%s" % (ev, c[-60:], " (async)" if asy else "") for ev, c, asy in need
+                   if (ev, c, asy) not in have})
 
 
 def plugin_left_on(repo):

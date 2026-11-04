@@ -9,7 +9,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | Project config | `.claude/project.json` (commands, protected paths, decision triggers, rules) |
 | Project facts and hard rules | `AGENTS.md`, `.claude/rules/*.md` (path rules), `.claude/review/checklist.md` (project checklist), `.claude/review/lessons.md` (one line per past mistake), `.claude/smoke.md` (neighbours to check per area) |
 | Domain facts for a domain expert | `.claude/experts/<sf|ai|n8n|...>.md` (where this repo uses the domain) |
-| Core reference | `.claude/core/reference/` (`review/`, `standards/`, `base/`, `platform-btp.md`) |
+| Core reference | `.claude/core/reference/` (`review/`, `qa/` (the UI and API test checklists), `standards/`, `base/`, `platform-btp.md`) |
 | Core scripts | `python .claude/core/scripts/<script>.py` |
 | Product root (product mode) | the `root` of the task (`live_status.py init <id> --mode product --root <path>`) |
 
@@ -31,6 +31,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | Non-functional needs (`N1..` with numbers) | `spec.md` `## Non-functional` | `02-nfr.md` | spec-analyst |
 | Hosting and deployment facts | `.claude/project.json` `deploy` | `00-infra.md` | devops-engineer |
 | SuccessFactors fit / fields | `sf.md` | `02-sf-fit.md`, `05-sf-fields.md` | sf-expert |
+| SuccessFactors job profiles and skills fit / fields | `sf-skills.md` | `02-sf-skills-fit.md`, `05-sf-skills-fields.md` | sf-skills-expert |
 | n8n workflows (today's flow, node plan, handoff) | `n8n.md` | `05-n8n.md` | n8n-expert |
 | Bug root cause | `spec.md` + `brief.md` | - | bug-investigator |
 | Product review | `product-review.md` (large new feature only) | `03-product-review.md` | product-critic |
@@ -53,7 +54,11 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | Build log | `## Notes` in `status.md` | `06-build-log.md` | developers / main session |
 | Review and design packs | `review-pack.md` + `review-state.json`, `design-pack.md` (`review_pack.py`) | same | main session |
 | Code review | `review.md` (`review-<focus>.md` for extra passes) | `07-code-review.md` | code-reviewer |
-| Tests | `test.md` | `07-test-report.md` (with `## Test plan` from S6) | qa-engineer |
+| Test plan (risks, matrix criterion x type x role x data volume, who tests what, test data, exit criteria) | `test-plan.md` | `05-test-plan.md` | qa-lead (`plan`) |
+| Tests and API checks | `test.md` | `07-test-report.md` (with `## Test plan` from S6) | qa-engineer |
+| UI tests in the running app (the UI checklist per changed screen) | `qa-ui.md` | `07-qa-ui.md` | ui-qa-expert |
+| Journeys, charters and session notes | `qa-e2e.md` | `07-qa-e2e.md` | e2e-qa-expert |
+| QA sign-off (one verdict from every QA result) | `qa-signoff.md` | `07-qa-signoff.md` | qa-lead (`sign-off`) |
 | Verification | `verify.md` (the lead copies PASS/FAIL into `status.md`) | `05-design-review.md`, `07-system-review.md` | verifier |
 | Audit | - | `08-audit.md` | audit-expert |
 | Release | `release.md` | `09-release.md` | release-manager |

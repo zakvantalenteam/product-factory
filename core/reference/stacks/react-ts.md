@@ -38,5 +38,8 @@ rules, the UI standard (`.claude/core/reference/standards/ui.md`) and the approv
 - Vite: env values through `import.meta.env.VITE_*` (never a secret: everything in the bundle is public).
 
 ## Tests
+- Where tests live: the repo's test folder, mirroring the source path (`src/components/Card.tsx` ->
+  `src/__tests__/components/Card.test.tsx`, or `tests/components/Card.test.tsx` when the repo uses `tests/`; a new repo
+  uses `tests/`); never in the repo root or next to production code in a folder that ships.
 - Vitest and Testing Library as the repo uses them: query by role and label, assert what the user sees, mock the
   network at the fetch layer (MSW or the repo's helper), no snapshot-only tests.

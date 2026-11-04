@@ -1,6 +1,6 @@
 {
   "name": "product-factory",
-  "version": "1.7.0",
+  "version": "1.9.0",
   "description": "Shared agent team and delivery flow: triage, task mode for existing products, product mode for new products, decision cards, gates in chat, guard hooks and a live status page.",
   "author": {
     "name": "TalenTeam Product & Engineering"

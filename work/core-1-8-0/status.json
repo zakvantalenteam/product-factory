@@ -1,0 +1,734 @@
+{
+ "id": "core-1-8-0",
+ "title": "core 1.8.0: faster agents, Tech Lead routes, agent-level tracker",
+ "size": "L",
+ "tool": "claude",
+ "mode": "task",
+ "root": "",
+ "started": "2026-11-03T19:16:16+05:30",
+ "seq": 45,
+ "events": [
+  {
+   "n": 1,
+   "t": "2026-11-03T19:16:16+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Task started: core 1.8.0: faster agents, Tech Lead routes, agent-level tracker"
+  },
+  {
+   "n": 2,
+   "t": "2026-11-03T19:16:16+05:30",
+   "stage": "build",
+   "kind": "plan",
+   "actor": "main session",
+   "text": "Team planned: 9 experts over 4 stages (setup)"
+  },
+  {
+   "n": 3,
+   "t": "2026-11-03T19:16:16+05:30",
+   "stage": "build",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Build started"
+  },
+  {
+   "n": 4,
+   "t": "2026-11-03T19:47:28+05:30",
+   "stage": "build",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Build done"
+  },
+  {
+   "n": 5,
+   "t": "2026-11-03T19:47:28+05:30",
+   "stage": "test",
+   "kind": "start",
+   "actor": "backend-developer",
+   "text": "Test started"
+  },
+  {
+   "n": 6,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "kind": "route",
+   "actor": "main session",
+   "text": "Routed Test to backend-developer: Quick fix replay: null title in CardTitles",
+   "agent": "backend-developer",
+   "files": [
+    "sandbox/be/CardTitles.java"
+   ]
+  },
+  {
+   "n": 7,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "kind": "route",
+   "actor": "main session",
+   "text": "Routed Test to frontend-developer: Quick fix replay: Due today badge",
+   "agent": "frontend-developer",
+   "files": [
+    "sandbox/fe/badge.js"
+   ]
+  },
+  {
+   "n": 8,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "kind": "route",
+   "actor": "main session",
+   "text": "Routed Test to qa-engineer: Quick fix replay: score boundary tests",
+   "agent": "qa-engineer",
+   "files": [
+    "sandbox/qa/score.test.js"
+   ]
+  },
+  {
+   "n": 9,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "kind": "decide",
+   "actor": "main session",
+   "text": "Replay: routed 29.3 s vs lead 31.4 s per fix, same 11 turns, 81% less input, lead share 100% to 17%; all six tests pass"
+  },
+  {
+   "n": 10,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "kind": "done",
+   "actor": "backend-developer",
+   "text": "Test done"
+  },
+  {
+   "n": 11,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "verify",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Verify started"
+  },
+  {
+   "n": 12,
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "verify",
+   "kind": "integrate",
+   "actor": "main session",
+   "text": "Installed 1.8.0 in 4 repos; install, cursor_sync, build_plugin and version checks clean; scratch test 41/41"
+  },
+  {
+   "n": 13,
+   "t": "2026-11-03T19:47:30+05:30",
+   "stage": "verify",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Verify done"
+  },
+  {
+   "n": 14,
+   "t": "2026-11-03T19:47:30+05:30",
+   "stage": "wrap",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Wrap-up started"
+  },
+  {
+   "n": 15,
+   "t": "2026-11-03T19:48:00+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (A/B exam) started"
+  },
+  {
+   "n": 16,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (A/B exam) finished"
+  },
+  {
+   "n": 17,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (quick brief) started"
+  },
+  {
+   "n": 18,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (quick brief) finished"
+  },
+  {
+   "n": 19,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (A/B exam) started"
+  },
+  {
+   "n": 20,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (A/B exam) finished"
+  },
+  {
+   "n": 21,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (quick brief) started"
+  },
+  {
+   "n": 22,
+   "t": "2026-11-03T19:48:01+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (quick brief) finished"
+  },
+  {
+   "n": 23,
+   "t": "2026-11-03T19:48:02+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (A/B exam) started"
+  },
+  {
+   "n": 24,
+   "t": "2026-11-03T19:48:02+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (A/B exam) finished"
+  },
+  {
+   "n": 25,
+   "t": "2026-11-03T19:48:02+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (quick brief) started"
+  },
+  {
+   "n": 26,
+   "t": "2026-11-03T19:48:02+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (quick brief) finished"
+  },
+  {
+   "n": 27,
+   "t": "2026-11-03T19:49:11+05:30",
+   "stage": "wrap",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Wrap-up done"
+  },
+  {
+   "n": 28,
+   "t": "2026-11-03T19:58:57+05:30",
+   "stage": "build",
+   "kind": "decide",
+   "actor": "main session",
+   "text": "Addition: plan shape (Goal, Output, Done when, task-specific items), brief Goal/Output lines, generic-plan check and chip"
+  },
+  {
+   "n": 29,
+   "t": "2026-11-03T19:58:58+05:30",
+   "stage": "test",
+   "kind": "start",
+   "actor": "backend-developer",
+   "text": "Test started"
+  },
+  {
+   "n": 30,
+   "t": "2026-11-03T19:58:58+05:30",
+   "stage": "test",
+   "kind": "route",
+   "actor": "main session",
+   "text": "Routed Test to backend-developer: Exam re-run on the 1.8.0 plan shape: plan must pass the generic check, score must hold",
+   "agent": "backend-developer",
+   "output": "p2 answer file with Goal, Output, Done when"
+  },
+  {
+   "n": 31,
+   "t": "2026-11-03T19:58:59+05:30",
+   "stage": "test",
+   "kind": "route",
+   "actor": "main session",
+   "text": "Routed Test to frontend-developer: Exam re-run on the 1.8.0 plan shape: plan must pass the generic check, score must hold",
+   "agent": "frontend-developer",
+   "output": "p2 answer file with Goal, Output, Done when"
+  },
+  {
+   "n": 32,
+   "t": "2026-11-03T19:59:00+05:30",
+   "stage": "test",
+   "kind": "route",
+   "actor": "main session",
+   "text": "Routed Test to qa-engineer: Exam re-run on the 1.8.0 plan shape: plan must pass the generic check, score must hold",
+   "agent": "qa-engineer",
+   "output": "p2 answer file with Goal, Output, Done when"
+  },
+  {
+   "n": 33,
+   "t": "2026-11-03T20:04:53+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (A/B exam) started"
+  },
+  {
+   "n": 34,
+   "t": "2026-11-03T20:04:53+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "backend-developer",
+   "text": "backend-developer (A/B exam) finished"
+  },
+  {
+   "n": 35,
+   "t": "2026-11-03T20:04:53+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (A/B exam) started"
+  },
+  {
+   "n": 36,
+   "t": "2026-11-03T20:04:53+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "frontend-developer",
+   "text": "frontend-developer (A/B exam) finished"
+  },
+  {
+   "n": 37,
+   "t": "2026-11-03T20:04:53+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (A/B exam) started"
+  },
+  {
+   "n": 38,
+   "t": "2026-11-03T20:04:54+05:30",
+   "stage": "test",
+   "kind": "agent",
+   "actor": "qa-engineer",
+   "text": "qa-engineer (A/B exam) finished"
+  },
+  {
+   "n": 39,
+   "t": "2026-11-03T20:04:54+05:30",
+   "stage": "test",
+   "kind": "decide",
+   "actor": "main session",
+   "text": "Plan-shape re-run: all 3 plans pass the check (6 old-shape plans fail it); blind score 44/45 new vs 44/45 old; be 2.53 min, qa 2.31 min (no extra cost)"
+  },
+  {
+   "n": 40,
+   "t": "2026-11-03T20:04:54+05:30",
+   "stage": "test",
+   "kind": "done",
+   "actor": "backend-developer",
+   "text": "Test done"
+  },
+  {
+   "n": 41,
+   "t": "2026-11-03T20:04:54+05:30",
+   "stage": "verify",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Verify started"
+  },
+  {
+   "n": 42,
+   "t": "2026-11-03T20:04:54+05:30",
+   "stage": "verify",
+   "kind": "integrate",
+   "actor": "main session",
+   "text": "Reinstalled 1.8.0 with the plan shape in 4 repos; install, cursor_sync, build_plugin, version checks clean; scratch tests 41/41 and 4/4"
+  },
+  {
+   "n": 43,
+   "t": "2026-11-03T20:04:55+05:30",
+   "stage": "verify",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Verify done"
+  },
+  {
+   "n": 44,
+   "t": "2026-11-03T20:04:55+05:30",
+   "stage": "wrap",
+   "kind": "start",
+   "actor": "main session",
+   "text": "Wrap-up started"
+  },
+  {
+   "n": 45,
+   "t": "2026-11-03T20:05:24+05:30",
+   "stage": "wrap",
+   "kind": "done",
+   "actor": "main session",
+   "text": "Wrap-up done"
+  }
+ ],
+ "counts": {
+  "note": 1,
+  "plan": 1,
+  "start": 7,
+  "done": 7,
+  "route": 6,
+  "decide": 3,
+  "integrate": 2,
+  "agent": 18
+ },
+ "gate": null,
+ "stages": [
+  {
+   "k": "spec",
+   "name": "Spec",
+   "state": "skip",
+   "actor": "spec-analyst"
+  },
+  {
+   "k": "design",
+   "name": "Design",
+   "state": "skip",
+   "actor": "solution-architect"
+  },
+  {
+   "k": "build",
+   "name": "Build",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T19:16:16+05:30",
+   "start": "2026-11-03T19:16:16+05:30",
+   "end": "2026-11-03T19:47:28+05:30"
+  },
+  {
+   "k": "review",
+   "name": "Review",
+   "state": "skip",
+   "actor": "code-reviewer"
+  },
+  {
+   "k": "test",
+   "name": "Test",
+   "state": "done",
+   "actor": "backend-developer",
+   "run": "2026-11-03T19:58:58+05:30",
+   "start": "2026-11-03T19:47:28+05:30",
+   "end": "2026-11-03T20:04:54+05:30",
+   "idle_s": 689
+  },
+  {
+   "k": "verify",
+   "name": "Verify",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T20:04:54+05:30",
+   "start": "2026-11-03T19:47:29+05:30",
+   "end": "2026-11-03T20:04:55+05:30",
+   "idle_s": 1044
+  },
+  {
+   "k": "release",
+   "name": "Release",
+   "state": "skip",
+   "actor": "release-manager"
+  },
+  {
+   "k": "wrap",
+   "name": "Wrap-up",
+   "state": "done",
+   "actor": "main session",
+   "run": "2026-11-03T20:04:55+05:30",
+   "start": "2026-11-03T19:47:30+05:30",
+   "end": "2026-11-03T20:05:24+05:30",
+   "idle_s": 944
+  }
+ ],
+ "updated": "2026-11-03T20:05:24+05:30",
+ "project": "product-factory",
+ "teams": [
+  {
+   "id": "lead",
+   "name": "Lead",
+   "agents": [
+    "main session"
+   ]
+  },
+  {
+   "id": "product",
+   "name": "Product",
+   "agents": [
+    "spec-analyst"
+   ]
+  },
+  {
+   "id": "design",
+   "name": "Design",
+   "agents": [
+    "ux-designer"
+   ]
+  },
+  {
+   "id": "architecture",
+   "name": "Architecture",
+   "agents": [
+    "solution-architect",
+    "data-architect",
+    "security-architect"
+   ]
+  },
+  {
+   "id": "engineering",
+   "name": "Engineering",
+   "agents": []
+  },
+  {
+   "id": "domain",
+   "name": "Domain experts",
+   "agents": [
+    "sf-expert",
+    "ai-engineer"
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality",
+   "agents": [
+    "code-reviewer",
+    "qa-engineer",
+    "verifier",
+    "performance-engineer",
+    "bug-investigator"
+   ]
+  },
+  {
+   "id": "audit",
+   "name": "Audit",
+   "agents": []
+  },
+  {
+   "id": "operations",
+   "name": "Operations",
+   "agents": [
+    "release-manager"
+   ]
+  },
+  {
+   "id": "helpers",
+   "name": "Helpers",
+   "agents": [
+    "explorer"
+   ]
+  }
+ ],
+ "risk": "medium",
+ "budgets": {
+  "spec": 15,
+  "design": 20,
+  "build": 45,
+  "review": 20,
+  "test": 15,
+  "verify": 15,
+  "release": 15,
+  "wrap": 5
+ },
+ "calls": {
+  "backend-developer": 20,
+  "frontend-developer": 20,
+  "qa-engineer": 20
+ },
+ "certs": {
+  "backend-developer": [
+   "Oracle Certified Professional: Java SE 17 Developer (1Z0-829)",
+   "Spring Certified Professional (2V0-72.22)"
+  ],
+  "frontend-developer": [
+   "IAAP Web Accessibility Specialist (WAS)",
+   "SAP Certified - SAP Fiori Application Developer (C_FIORD)"
+  ],
+  "qa-engineer": [
+   "ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)",
+   "ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)",
+   "ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0)"
+  ]
+ },
+ "now": {
+  "main session": {
+   "k": "wrap",
+   "n": 0,
+   "last": "Wrap-up done",
+   "wrote": ""
+  }
+ },
+ "riskSet": "plan",
+ "riskWhy": [
+  "Changes the sdlc and factory skills, the AGENTS block, every agent's frontmatter, guard.py and live_status.py; installs into 4 repos and the plugin."
+ ],
+ "plan": {
+  "kinds": [
+   "setup"
+  ],
+  "rows": [
+   {
+    "stage": "build",
+    "expert": "main session",
+    "agent": "main session",
+    "why": "skills, AGENTS block, guard routing rule, tracker events, models and maxTurns, hook speed",
+    "state": "done",
+    "team": "lead",
+    "start": "2026-11-03T19:16:16+05:30",
+    "end": "2026-11-03T19:47:28+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "backend-developer (A/B exam)",
+    "agent": "backend-developer",
+    "why": "same exam on Opus and on Sonnet 5.5: minutes, turns, calls and blind score",
+    "state": "done",
+    "team": "engineering",
+    "start": "2026-11-03T20:04:53+05:30",
+    "end": "2026-11-03T20:04:53+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "frontend-developer (A/B exam)",
+    "agent": "frontend-developer",
+    "why": "same exam on Opus and on Sonnet 5.5: minutes, turns, calls and blind score",
+    "state": "done",
+    "team": "engineering",
+    "start": "2026-11-03T20:04:53+05:30",
+    "end": "2026-11-03T20:04:53+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "qa-engineer (A/B exam)",
+    "agent": "qa-engineer",
+    "why": "same exam on Opus and on Sonnet 5.5: minutes, turns, calls and blind score",
+    "state": "done",
+    "team": "quality",
+    "start": "2026-11-03T20:04:53+05:30",
+    "end": "2026-11-03T20:04:54+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "backend-developer (quick brief)",
+    "agent": "backend-developer",
+    "why": "3-task replay of routed quick fixes: handoff cost and Tech Lead share",
+    "state": "skip",
+    "team": "engineering",
+    "end": "2026-11-03T20:04:54+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "frontend-developer (quick brief)",
+    "agent": "frontend-developer",
+    "why": "3-task replay of routed quick fixes: handoff cost and Tech Lead share",
+    "state": "skip",
+    "team": "engineering",
+    "end": "2026-11-03T20:04:54+05:30"
+   },
+   {
+    "stage": "test",
+    "expert": "qa-engineer (quick brief)",
+    "agent": "qa-engineer",
+    "why": "3-task replay of routed quick fixes: handoff cost and Tech Lead share",
+    "state": "skip",
+    "team": "quality",
+    "end": "2026-11-03T20:04:54+05:30"
+   },
+   {
+    "stage": "verify",
+    "expert": "main session (install checks)",
+    "agent": "main session",
+    "why": "install, cursor_sync, build_plugin and sync checks clean in 4 repos and the plugin",
+    "state": "done",
+    "team": "lead",
+    "start": "2026-11-03T20:04:54+05:30",
+    "end": "2026-11-03T20:04:55+05:30"
+   },
+   {
+    "stage": "wrap",
+    "expert": "main session",
+    "agent": "main session",
+    "why": "report and commit commands per repo",
+    "state": "done",
+    "team": "lead",
+    "start": "2026-11-03T20:04:55+05:30",
+    "end": "2026-11-03T20:05:24+05:30"
+   }
+  ],
+  "at": "2026-11-03T19:16:16+05:30",
+  "file": "triage.md",
+  "confirmed": false,
+  "changes": []
+ },
+ "routes": [
+  {
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "agent": "backend-developer",
+   "job": "Quick fix replay: null title in CardTitles",
+   "files": [
+    "sandbox/be/CardTitles.java"
+   ]
+  },
+  {
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "agent": "frontend-developer",
+   "job": "Quick fix replay: Due today badge",
+   "files": [
+    "sandbox/fe/badge.js"
+   ]
+  },
+  {
+   "t": "2026-11-03T19:47:29+05:30",
+   "stage": "test",
+   "agent": "qa-engineer",
+   "job": "Quick fix replay: score boundary tests",
+   "files": [
+    "sandbox/qa/score.test.js"
+   ]
+  },
+  {
+   "t": "2026-11-03T19:58:58+05:30",
+   "stage": "test",
+   "agent": "backend-developer",
+   "job": "Exam re-run on the 1.8.0 plan shape: plan must pass the generic check, score must hold",
+   "output": "p2 answer file with Goal, Output, Done when"
+  },
+  {
+   "t": "2026-11-03T19:58:59+05:30",
+   "stage": "test",
+   "agent": "frontend-developer",
+   "job": "Exam re-run on the 1.8.0 plan shape: plan must pass the generic check, score must hold",
+   "output": "p2 answer file with Goal, Output, Done when"
+  },
+  {
+   "t": "2026-11-03T19:59:00+05:30",
+   "stage": "test",
+   "agent": "qa-engineer",
+   "job": "Exam re-run on the 1.8.0 plan shape: plan must pass the generic check, score must hold",
+   "output": "p2 answer file with Goal, Output, Done when"
+  }
+ ]
+}

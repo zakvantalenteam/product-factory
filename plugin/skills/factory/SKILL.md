@@ -22,14 +22,21 @@ Even on "just build it": say once what is skipped and the risk, then follow thei
 ## Every turn
 - Know the product: `<work>/<slug>/status.md`. Resume with `live_status.py init <slug>` (binds this session).
 - Stage boundaries: `stage <slug> <stage> start|done|fail --out "<evidence>"`. Agents' rows move by the hooks.
-- Brief each agent with: slug, mode, product root, the stage, the files to read, the exact output file, its
-  open questions. End with: "Write your output file first, then improve it. Stay within the tool-call budget in your
+- Brief each agent with: first `Goal: <what this run must achieve, one plain line>`, `Output: <what it hands back>`
+  and `Files: <the files it works on>` (the live page shows the goal and files on its card; the agent's `## Plan`
+  starts from them), then slug, mode, product root, the stage, the files to read, the exact output file,
+  its open questions. Product code is written only by the agents (the guard blocks the main session's edits in the
+  product root); you decide, route, integrate and verify. End with: "Write your output file first, then improve it. Stay within the tool-call budget in your
   agent file, at most 3 web lookups. Reply in 10 lines or fewer." Run independent agents of a stage together, in the background.
 - After an agent returns, read its output (not just its summary), move its questions into `questions.md`, then
   route to another agent, answer from `decisions.md`, or hold for the gate.
-- Models: every agent runs on Opus (its own `model:` line), so a brief needs no model override. The agents that
-  decide (spec, design, audit, domain experts) have about 35 tool calls; `code-reviewer` works from a review pack
-  in about 20; the others about 20.
+- Models: each agent's own `model:` line, so a brief needs no model override: Opus for the agents that decide
+  (spec, product review, design, review, audit, domain experts), Sonnet 5.5 for the ones that build and check. The
+  agents that decide have about 35 tool calls; `code-reviewer` works from a review pack in about 20; the others
+  about 20 (`base-builder` 40); `maxTurns` is about 1.5 times that.
+- Your own decisions show on your card on the live page: `decide <slug> "<what>"` for a decision with no gate (a
+  split, a re-run, a scope cut), `integrate <slug> "<what>"` when you merge results or run the final checks. Agent
+  launches show as routed by themselves.
 - Product-owner documents also get an offline copy: `md_to_html.py <file.md>`. Replies: 6 lines or fewer.
 
 ## Gates (in chat)
@@ -59,7 +66,7 @@ the product root). `devops-engineer` checks it deploys. `stage <slug> base done`
 
 ## S2 Requirements, S3 Product review
 `spec-analyst` (mode `spec`) -> `02-spec.md`, `02-nfr.md` (the non-functional sheet), `02-gaps.md`. When the product reads or writes SuccessFactors
-data, `sf-expert` (fit) -> `02-sf-fit.md`, its owner questions join G1. Then in parallel `product-critic` ->
+data, `sf-expert` (fit) -> `02-sf-fit.md` (job profiles, roles, competencies or skills: `sf-skills-expert` (fit) -> `02-sf-skills-fit.md`), its owner questions join G1. Then in parallel `product-critic` ->
 `03-product-review.md` and `ux-designer` (journeys) -> `03-journeys.md`. A "Rethink" verdict is shown first.
 Gate G1 on product with the gaps, the non-functional sheet, the review and the journeys; `spec-analyst` (revise) until no blocker is open.
 
@@ -80,10 +87,11 @@ document (`05-performance.md`, `05-security.md`, `05-ops.md`, `05-ui.md`).
 1. `solution-architect` (design) -> `05-architecture.md`, ADRs, the FE/BE task split.
 2. Then in parallel: `solution-architect` (contract) -> `05-openapi.yaml`; `data-architect` -> `05-data-model.md`
    + D2 card; `security-architect` -> `05-security.md` + D4 card; `integration-engineer` (design) ->
-   `05-integrations.md` (for SuccessFactors run `sf-expert` field mode first -> `05-sf-fields.md`);
+   `05-integrations.md` (for SuccessFactors run `sf-expert` field mode first -> `05-sf-fields.md`, and `sf-skills-expert` field mode -> `05-sf-skills-fields.md` for job profiles and skills);
    `devops-engineer` -> `05-ops.md`; `ux-designer` (ui-spec, from the approved option) -> `05-ui.md`;
    `ai-engineer` -> `05-ai.md` when the product calls an AI model; `n8n-expert` -> `05-n8n.md` when it runs n8n
-   workflows.
+   workflows; `qa-lead` (plan) -> `05-test-plan.md` (risks, the test matrix of criterion x type x role x data
+   volume, who tests what, test data, exit criteria).
 3. `performance-engineer` -> `05-performance.md`, then `verifier` (system, design mode) ->
    `05-design-review.md`: every criterion has a story, every task an operation, every operation a table and a
    role, every screen a journey. Loop the owners on its findings.
@@ -97,16 +105,21 @@ document (`05-performance.md`, `05-security.md`, `05-ops.md`, `05-ui.md`).
   `06-build-log.md`. Builders work in slices; run them again where they stopped.
 - After each story or batch: `review_pack.py <slug> --root <product root> --files <the story's files>`, then one
   `code-reviewer` pass from that pack -> `07-code-review.md` (MUSTs go back to the developer
-  agent with the exact findings; re-run only what failed). `qa-engineer` runs the tests -> `07-test-report.md`.
+  agent with the exact findings; re-run only what failed). `qa-engineer` runs the tests and the API checks
+  (`${CLAUDE_PLUGIN_ROOT}/reference/qa/api-checklist.md`) -> `07-test-report.md`; `ui-qa-expert` tests every screen of the
+  story in the running app against `${CLAUDE_PLUGIN_ROOT}/reference/qa/ui-checklist.md` -> `07-qa-ui.md`; at the end of the
+  build `e2e-qa-expert` runs the journeys across roles -> `07-qa-e2e.md`, and `qa-lead` (sign-off) merges every QA
+  result -> `07-qa-signoff.md`. A checklist MUST or NOT SIGNED OFF goes back to the developer agent; Review is not
+  done until the sign-off says SIGNED OFF. The app is started by the developer; with it down the QA rows are BLOCKED.
   At the end `performance-engineer` -> `07-performance.md`, `verifier` (system, build mode) ->
-  `07-system-review.md`, `sf-expert` (review) when SF code changed.
+  `07-system-review.md`, `sf-expert` (review) when SF code changed, `sf-skills-expert` (review) when job profile or skills code changed.
 - `audit-expert` -> `08-audit.md` against `${CLAUDE_PLUGIN_ROOT}/reference/standards/definition-of-done.md`; every MUST
   must pass; the rest goes to a LATER backlog. Then `live_status.py code <slug> closed`.
 - S9: `devops-engineer` -> `09-deploy-plan.md`, `release-manager` (release) -> `09-release.md`; docs only when the
   user asks (`release-manager` docs). Gate G4 go-live is the user's call.
 
 ## Pick the expert for the work
-Screens and options -> `ux-designer`; outside systems -> `integration-engineer`; SuccessFactors -> `sf-expert`;
+Screens and options -> `ux-designer`; outside systems -> `integration-engineer`; SuccessFactors -> `sf-expert` (job profiles, roles, competencies and skills -> `sf-skills-expert`);
 AI models, prompts, cost -> `ai-engineer`; n8n workflows and nodes -> `n8n-expert`; speed and volume -> `performance-engineer`; deploy, roles, pipelines ->
 `devops-engineer`; database -> `data-architect`; API and system design -> `solution-architect`; access and privacy
 -> `security-architect`. When a job fits no expert, say so and propose a new agent instead of stretching one.

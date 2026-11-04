@@ -1,6 +1,6 @@
 # SuccessFactors reference (generic)
 
-Read by `sf-expert`. It holds what is true for SAP SuccessFactors in any repo. Where this repo calls
+Read by `sf-expert` and `sf-skills-expert`. It holds what is true for SAP SuccessFactors in any repo. Where this repo calls
 SuccessFactors lives in `.claude/experts/sf.md` and is read separately. Anything marked *verify* must be
 confirmed on api.sap.com, help.sap.com or in the customer's tenant (`/odata/v2/$metadata`, Admin Center, OData
 API Data Dictionary) before a design depends on it. This file is core-owned: the expert proposes new verified

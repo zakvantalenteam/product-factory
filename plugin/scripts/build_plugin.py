@@ -8,7 +8,7 @@ agents, skills, hooks, scripts, reference, templates, VERSION and .claude-plugin
 plugin works in a repo that does not carry the core). install.py runs it when it installs into the home repo.
 Repos that carry the core switch the plugin off in their settings (install.py), so its hooks never run twice.
 It also writes the "Certified agents" table of <home>/README.md (between its certified-agents markers) from each
-agent's `role:` and `certifications:` frontmatter, with the exam scores in core/exam-scores.json.
+agent's `role:`, `model:` and `certifications:` frontmatter, with the exam scores in core/exam-scores.json.
 --check exits 1 when plugin/ or that table is not what a build would write (the sync workflow runs it before
 anything ships).
 """
@@ -40,22 +40,24 @@ def certified_table():
     with open(SCORES, encoding="utf-8") as fh:
         ex = json.load(fh)
     vers, top, got = ex["versions"], ex["max"], ex["agents"]
-    rows = ["| Agent | Role | Certifications (general) | SAP |" + "".join(" Exam %s |" % v for v in vers),
-            "|---|---|---|---|" + "---|" * len(vers)]
+    rows = ["| Agent | Role | Model | Certifications (general) | SAP |" + "".join(" Exam %s |" % v for v in vers),
+            "|---|---|---|---|---|" + "---|" * len(vers)]
     folder = os.path.join(CORE, "agents")
     for f in sorted(os.listdir(folder)):
         with open(os.path.join(folder, f), encoding="utf-8") as fh:
             text = fh.read()
         certs = project.certifications(text)
         role = re.search(r"^role:[ \t]*(.*)$", text, re.M)
+        model = re.search(r"^model:[ \t]*(\S+)", text, re.M)
+        model = {"opus": "Opus", "sonnet": "Sonnet 5.5"}.get(model.group(1).lower(), model.group(1)) if model else "-"
         gen = [c for c in certs if not c.startswith(project.SAP_CERT)]
         sap = [c for c in certs if c.startswith(project.SAP_CERT)]
         s = got.get(f[:-3], {})
-        rows.append("| `%s` | %s | %s | %s |" % (f[:-3], role.group(1).strip() if role else "", "<br>".join(gen) or "-",
-                                                 "<br>".join(sap) or "-")
+        rows.append("| `%s` | %s | %s | %s | %s |" % (f[:-3], role.group(1).strip() if role else "", model,
+                                                      "<br>".join(gen) or "-", "<br>".join(sap) or "-")
                     + "".join(" %s |" % ("%d/%d" % (s[v], top) if v in s else "-") for v in vers))
     done = [a for a in got if all(v in got[a] for v in vers)]
-    rows.append("| **Total (%d examined)** | | | |" % len(done)
+    rows.append("| **Total (%d examined)** | | | | |" % len(done)
                 + "".join(" **%d/%d** |" % (sum(got[a][v] for a in done), top * len(done)) for v in vers))
     return "\n".join(rows)
 

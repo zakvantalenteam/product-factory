@@ -463,3 +463,101 @@ and never ships a change that breaks something else.
   see the exams; the exam author also wrote the agent rules.
 - Cost: one more Read in the same first message (+1 tool call per run, no extra round trip) and about 60 lines of
   context; exam time 1326 s -> 1471 s over 9 runs (+16 s a run, inside the run-to-run spread: da 218 s and 253 s).
+
+## 30. 1.8.0 - the Tech Lead routes, the area agents build, Sonnet for the doers
+- Zakvan (3 Nov): "our agents in general take a lot of time for any task", "tech lead works the most, instead of
+  taking decisions and routing work to respective expert it works itself", "I want the tracker looking at which the
+  user knows exactly whats going on in agent level detail"; then "small fix should also be handed over to respective
+  agent".
+- The main session is the Tech Lead: triage, decide, brief, route, integrate, verify. Every product-code change goes
+  to its area agent (`routing.areas` in project.json, first match wins: tests qa-engineer, build and deploy files
+  devops-engineer, n8n n8n-expert, UI frontend-developer, docs release-manager, the rest backend-developer), quick
+  fixes too, with a quick brief (`Job:`, `Files:`, `Quick fix:` - the files and lines, the fix, the test; about 8
+  calls, no context pack); independent parts run in parallel. The lead keeps triage, gates and cards, browser live
+  checks, the final checks and setup work (`setup_paths`, `.claude/`, `.cursor/`, AGENTS.md, CLAUDE.md, the work
+  folder). common.md "Briefs from the Tech Lead"; agents read the area SKILL.md files the brief names.
+- Guard (Claude Code): a main-session Edit, Write, `sed -i` or `crlf_edit.py` on product code is blocked with the
+  area agent to brief (`routing.enforce`). A tool event without `agent_id`/`agent_type` is the main session. Cursor
+  has no equivalent: its tool hooks do not say which agent calls them (only subagentStart carries `subagent_id`), so
+  Cursor gets the rule from AGENTS.md and the live page's chip.
+- Live page: event kinds route ("Routed Build to backend-developer: <job>", from the Agent call's `Job:` and
+  `Files:` lines), decide (triage.md, risk) and integrate (other task files); `live_status.py decide|integrate|route`.
+  The Tech Lead card shows Deciding, Routing, Integrating, Checking or Waiting with the working agents and its last
+  routes and decisions, never reads and edits; each agent's work stays on its own card; a warn chip names any
+  product file the lead edited. New stat: Tech Lead share (lead vs agent tool events).
+- Models in frontmatter: Opus for the deciders (solution-, security-, data-architect, ai-engineer, code-reviewer,
+  ux-designer, spec-analyst, product-critic, bug-investigator, audit-expert, performance-engineer, sf-, n8n-expert),
+  Sonnet 5.5 for the doers (backend-, frontend-developer, integration-, devops-engineer, base-builder, qa-engineer,
+  verifier, explorer, release-manager, story-sizer). maxTurns about 1.5 times the call budget (30 for 20, 52 for 35,
+  base-builder 60 for 40). The README table gets a Model column. Cursor runs on the session model.
+- Hooks: the live hook runs `async` (off the critical path) in the plugin and the repo settings; the plugin's hooks
+  use the exec form (`command: python` plus `args`, no Git Bash: about 260 ms less per hook on Windows); repo settings
+  keep the shell form because Cursor reads them. install.py now reports a missing `async`. Per call: guard Read
+  81 -> 69 ms, guard Edit 130 -> 105 ms; live 94 -> 105 ms but async. No merge needed: one sync hook per call left.
+- Proof (3 Nov): baseline 86 core runs 27 Oct - 3 Nov (median 6.9 min, 0.83 turns per call, so the 1.3 target was
+  already met; time 50% model, 24% tools, 29% client gap); Tech Lead share of live events 34% over 8794 events. A/B
+  exam be, fe, qa: 15/15 on both models, Opus 9.9 min, Sonnet 7.2 min (-27%). Quick-fix replay (3 fixes, Java, JS,
+  a test): lead does it on Opus 31.4 s, 11 turns, 14 calls, 698k input tokens; routed to the area agent on Sonnet
+  29.3 s, 11 turns, 15 calls (+1 Grep for the brief section), 129k input tokens (-81%), tests pass in all six; lead
+  share for those fixes 100% -> 17% (3 Agent calls of 18), and three independent fixes run in parallel (about 30 s
+  wall instead of about 94 s one after another).
+- Plan shape (Zakvan, 3 Nov: "each agent should have plan about what they need to achieve in the iteration, expected
+  output etc.. the clear information that a human can understand about the task the agent is doing"): every output
+  file's `## Plan` opens with `Goal:`, `Output:` and `Done when:` for this task, then 4-8 items that each name the
+  concrete thing (a file, endpoint, node, screen, criterion id, or a decision with its options); process steps ("Read
+  the brief", "Check every caller", "Write lessons") are not items. Briefs open with `Goal:`, `Output:` and `Files:`
+  (`Job:` still read), and the route event carries the goal. `live_status.plan_issues` flags a plan with no Goal or
+  Output line or with items that match a short banned list or carry no task-specific noun (a path, a name in
+  backticks, an id or number, a capitalised term after the verb, or "Decide: X or Y"); the card shows a quiet "plan
+  too generic" chip and rules_check (sync) adds a one-time note per file as additional context (no error). The
+  card shows the Goal under the agent name; the plan panel shows Goal, Output and Done when above the checklist.
+- All projects in sync (Zakvan, 3 Nov: "make sure all projects are in sync, add this in rule unless asked to change
+  specifically in single project"): AGENTS-core, the sdlc Setup work row, README release step 5 and the home
+  AGENTS.md rule 7 say a shared setup change is installed in product-factory, Blend, TalentBox and SkillsOS in the
+  same change; a one-project change goes in that project's own files and the reply names the projects that differ.
+- Watch: the exec hook form needs a Claude Code version that supports `args` (checked on 2.1.309); in a new session
+  check the live page updates and the guard still blocks. Cursor attribution assumes a subagent's tool calls carry
+  `conversation_id == subagent_id`.
+
+## 31. 1.9.0 - a QA team that tests like manual testers, tests in the test folder
+- Why: the Blend Violations admin screen shipped without real UI testing: the detail panel opened top-right (the
+  admin had to scroll back up), cut-off table text had no tooltip, the pager was easy to miss. Zakvan (4 Nov): "QA
+  should not miss anything from testing as it can become a production issue"; agents "should be able to perform end
+  to end testing also like manual QAs do if I open the system".
+- QA team (Quality): `qa-lead` (Opus; CTAL-TM v3.0, CTAL-AT v2.0, SAP C_STC) writes the risk-based test plan at
+  Design (`test-plan.md`: risks, a matrix of criterion x test type x role x data volume, who tests what, test data,
+  exit criteria) and the sign-off at Test (`qa-signoff.md`: SIGNED OFF, NOT SIGNED OFF or BLOCKED). `ui-qa-expert`
+  (Opus; CTAL-TA v4.0, CT-UT, IAAP WAS, NN/g UX) tests every UI change in the running app against
+  `reference/qa/ui-checklist.md` (UQ0-UQ18). `e2e-qa-expert` (Sonnet; CTAL-TA v4.0, CT-AcT) runs journeys across
+  roles with charters and session notes. `qa-engineer` keeps automation and gains the API checks
+  (`reference/qa/api-checklist.md`, AQ1-AQ7: contract, paging bounds, filters, access, input, big data, speed).
+  Product mode: `05-test-plan.md`, `07-qa-ui.md`, `07-qa-e2e.md`, `07-qa-signoff.md`.
+- Every list that can pass one screen needs server paging with a total, a visible pager and a reset to page 1 on a
+  filter change, tested with three or more pages; a list seen with a handful of rows is BLOCKED, not PASS.
+- Enforced: `handoff_check` fails a team without `qa-lead` when Review or Test runs, and a `ui` task without
+  `ui-qa-expert`; `live_status.py stage <id> test done` (product: review) refuses until the sign-off says SIGNED OFF.
+  A quick fix that changes a screen gets `ui-qa-expert` mode `quick` (about 10 calls).
+- Browser: proven on 4 Nov that a subagent can drive the built-in browser (`mcp__Claude_Browser__*`: navigate,
+  get_page_text, read_console_messages on the live page). An agent with a fixed `tools:` list sees only what it
+  lists, so the UI and E2E experts name the browser tools in frontmatter; each works in its own tab (`tabs_create`,
+  `tabId`, `tabs_close`). Cursor subagents have no built-in browser: there the experts write a numbered
+  `## Runbook` that the Tech Lead runs. QA agents cannot start agents: `Consult: <expert>: <question>` lines are
+  routed by the Tech Lead.
+- Test location (hard rule, common.md, every code agent and qa-engineer, the stack packs): automated tests always go
+  in the project's test folder, mirroring the package of the code under test (Java `src/test/java/<same package>/`,
+  JS the stack pack's folder); never `src/main/**` or the repo root; the scratchpad holds only throwaway scripts and
+  characterization runs. `rules_check` flags a new test file under `src/main/` or in the root (built in, no config).
+- Watch: the named browser tools in `tools:` are checked in the first new session (agent files load at session
+  start); without them the experts fall back to the runbook.
+- SuccessFactors job profiles and skills: `sf-skills-expert` (Opus, Domain experts; SHRM-SCP, SAP C_THR85
+  Succession Management, SAP C_THR95 Career Development Planning and Mentoring, names checked on learning.sap.com on
+  4 Nov; no SAP certification for Job Profile Builder, Talent Intelligence Hub or Opportunity Marketplace was found,
+  so none is claimed). Scope: Job Profile Builder, the skills model and Talent Intelligence Hub, competency and skill
+  mapping to roles, Career Development and Opportunity Marketplace where they use skills, with the OData entities,
+  effective dating, ids, permissions, paging, delta and imports. Modes fit, field and review like `sf-expert`:
+  `sf-skills.md`, product `02-sf-skills-fit.md` and `05-sf-skills-fields.md`, review `review-sf-skills.md`. Joins
+  when a change touches job profiles, roles, competencies or skills (sdlc team table, spec-analyst, factory S2, S5
+  and S7); the QA agents' `Consult:` lines can name it.
+- Sync scope (4 Nov, from the developer): SkillsOS gets no repo install from 1.9.0 on; its developers use the
+  product-factory plugin and the repo's agents are being removed. "All projects in sync" now means product-factory,
+  Blend, TalentBox and the plugin (AGENTS-core, sdlc Setup work, README step 5, AGENTS.md rule 7).

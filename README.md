@@ -70,17 +70,18 @@ The repo `zakvantalenteam/product-factory` is public, so no GitHub access or sig
 
 ## The agents
 
-Every agent runs on Opus. The agents that decide get about 35 tool calls, the others about 20.
+The agents that decide run on Opus and get about 35 tool calls; the ones that build and check run on Sonnet 5.5 and
+get about 20 (each agent's `maxTurns` is about 1.5 times its budget). The Model column of the table below names each one.
 
 | Team | Agents |
 |---|---|
-| Lead | the main session (triage, briefs, gates, builds in task mode) |
+| Lead | the main session, the Tech Lead: triage, decisions, briefs and routing, gates, live checks, final checks. It never writes product code (the guard blocks it in Claude Code) |
 | Product | `spec-analyst`, `product-critic`, `story-sizer` |
 | Design | `ux-designer` |
 | Architecture | `solution-architect`, `data-architect`, `security-architect` |
 | Engineering | `base-builder`, `backend-developer`, `frontend-developer`, `integration-engineer` |
-| Domain experts | `sf-expert` (SuccessFactors), `ai-engineer` (AI behaviour, orchestration, cost), `n8n-expert` (n8n workflows) |
-| Quality | `code-reviewer`, `qa-engineer`, `verifier`, `performance-engineer`, `bug-investigator` |
+| Domain experts | `sf-expert` (SuccessFactors), `sf-skills-expert` (SuccessFactors job profiles, roles, competencies and skills), `ai-engineer` (AI behaviour, orchestration, cost), `n8n-expert` (n8n workflows) |
+| Quality | `code-reviewer`, `qa-lead` (test plan and sign-off), `qa-engineer` (automated and API tests), `ui-qa-expert` (every UI change in the browser), `e2e-qa-expert` (journeys across roles), `verifier`, `performance-engineer`, `bug-investigator` |
 | Audit | `audit-expert` |
 | Operations | `devops-engineer`, `release-manager` |
 | Helpers | `explorer` |
@@ -100,43 +101,51 @@ How to read the exam scores: each examined agent answered the same 3 tasks taken
 15 in all), once on the previous core (1.6.0) and once on this one (1.7.0). A separate grader marked both answers
 against a fixed answer key without knowing which version wrote which. A higher score means the agent caught more of
 what an expert would catch. "-" means the agent has not taken the exam yet. Scores live in `core/exam-scores.json`.
+The 1.6.0 and 1.7.0 exams ran on Sonnet 5.5. For core 1.8.0 the three build agents that moved to Sonnet 5.5
+(backend, frontend, QA) took the same exam twice with their real agent files, once on Opus and once on Sonnet 5.5:
+both scored 15/15 on all three, and Sonnet 5.5 took 7.2 minutes against 9.9 (27% less). The Model column is each
+agent's own `model:` line: Opus for the agents that decide, Sonnet 5.5 for the ones that build and check.
 
 <!-- certified-agents:start (build_plugin.py writes this table from the agent files) -->
-| Agent | Role | Certifications (general) | SAP | Exam 1.6.0 | Exam 1.7.0 |
-|---|---|---|---|---|---|
-| `ai-engineer` | AI engineer (LLM features, retrieval, agents, evals, cost) | AWS Certified Generative AI Developer - Professional (AIP-C01)<br>Google Cloud Professional Machine Learning Engineer | SAP Certified - SAP Generative AI Developer (C_AIG) | 15/15 | 15/15 |
-| `audit-expert` | Go-live auditor | ISACA Certified Information Systems Auditor (CISA)<br>PECB Certified ISO/IEC 27001 Lead Auditor | - | - | - |
-| `backend-developer` | Backend engineer (Java 17, Spring Boot) | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | - | 15/15 | 14/15 |
-| `base-builder` | Base project builder | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
-| `bug-investigator` | Root-cause investigator | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
-| `code-reviewer` | Code reviewer | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISC2 Certified Secure Software Lifecycle Professional (CSSLP) | - | 14/15 | 15/15 |
-| `data-architect` | Data architect | DAMA Certified Data Management Professional (CDMP Practitioner)<br>Google Cloud Professional Data Engineer<br>EDB Advanced for PostgreSQL | SAP Certified - Data Engineer - SAP HANA (C_HAMOD) | 15/15 | 15/15 |
-| `devops-engineer` | Build, deploy and operations engineer | CNCF Certified Kubernetes Administrator (CKA)<br>AWS Certified DevOps Engineer - Professional (DOP-C02)<br>Google Cloud Professional Cloud DevOps Engineer | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
-| `explorer` | Code search and impact analysis | Oracle Certified Professional: Java SE 17 Developer (1Z0-829) | - | - | - |
-| `frontend-developer` | Frontend engineer (UI5, plain JS, React) | IAAP Web Accessibility Specialist (WAS) | SAP Certified - SAP Fiori Application Developer (C_FIORD) | 15/15 | 15/15 |
-| `integration-engineer` | Integration engineer | Salesforce Certified MuleSoft Platform Integration Architect | SAP Certified - Integration Developer (C_CPI) | - | - |
-| `n8n-expert` | n8n workflow engineer | AWS Certified Generative AI Developer - Professional (AIP-C01) | - | - | - |
-| `performance-engineer` | Performance engineer | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Performance Testing (CT-PT) | - | - | - |
-| `product-critic` | Product reviewer | Pragmatic Institute Certified Product Manager<br>Scrum.org Professional Scrum Product Owner II (PSPO II)<br>ATD Certified Professional in Talent Development (CPTD) | - | - | - |
-| `qa-engineer` | Test engineer | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)<br>ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0) | - | 14/15 | 15/15 |
-| `release-manager` | Release manager | ITIL Managing Professional (ITIL Version 5) | SAP Certified - Solution Transformation Consultant with SAP Cloud ALM (C_STC) | - | - |
-| `security-architect` | Security and privacy architect | ISC2 Certified Information Systems Security Professional (CISSP)<br>ISC2 Certified Cloud Security Professional (CCSP)<br>IAPP Certified Information Privacy Professional/Europe (CIPP/E) | - | 14/15 | 15/15 |
-| `sf-expert` | SAP SuccessFactors consultant | SHRM Senior Certified Professional (SHRM-SCP) | SAP Certified - SAP SuccessFactors Employee Central Core and Position Management (C_THR81)<br>SAP Certified - SAP SuccessFactors Learning (C_THR88) | - | - |
-| `solution-architect` | Lead solution architect | AWS Certified Solutions Architect - Professional (SAP-C03)<br>Google Cloud Professional Cloud Architect<br>TOGAF Enterprise Architecture Practitioner | SAP Certified Professional - Solution Architect - SAP BTP (P_BTPA) | 15/15 | 15/15 |
-| `spec-analyst` | Business analyst (requirements and specs) | IIBA Certified Business Analysis Professional (CBAP)<br>IREB CPRE Practitioner (Requirements Elicitation, Requirements Modeling)<br>ATD Certified Professional in Talent Development (CPTD) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
-| `story-sizer` | Backlog and sizing (Scrum) | Scrum.org Professional Scrum Master II (PSM II)<br>Scrum.org Professional Scrum Product Owner II (PSPO II) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
-| `ux-designer` | UX and screen designer | Nielsen Norman Group UX Certification (Interaction Design specialty)<br>IAAP Certified Professional in Accessibility Core Competencies (CPACC) | - | 14/15 | 15/15 |
-| `verifier` | Independent verifier | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
-| **Total (9 examined)** | | | | **131/135** | **134/135** |
+| Agent | Role | Model | Certifications (general) | SAP | Exam 1.6.0 | Exam 1.7.0 |
+|---|---|---|---|---|---|---|
+| `ai-engineer` | AI engineer (LLM features, retrieval, agents, evals, cost) | Opus | AWS Certified Generative AI Developer - Professional (AIP-C01)<br>Google Cloud Professional Machine Learning Engineer | SAP Certified - SAP Generative AI Developer (C_AIG) | 15/15 | 15/15 |
+| `audit-expert` | Go-live auditor | Opus | ISACA Certified Information Systems Auditor (CISA)<br>PECB Certified ISO/IEC 27001 Lead Auditor | - | - | - |
+| `backend-developer` | Backend engineer (Java 17, Spring Boot) | Sonnet 5.5 | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | - | 15/15 | 14/15 |
+| `base-builder` | Base project builder | Sonnet 5.5 | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
+| `bug-investigator` | Root-cause investigator | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
+| `code-reviewer` | Code reviewer | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISC2 Certified Secure Software Lifecycle Professional (CSSLP) | - | 14/15 | 15/15 |
+| `data-architect` | Data architect | Opus | DAMA Certified Data Management Professional (CDMP Practitioner)<br>Google Cloud Professional Data Engineer<br>EDB Advanced for PostgreSQL | SAP Certified - Data Engineer - SAP HANA (C_HAMOD) | 15/15 | 15/15 |
+| `devops-engineer` | Build, deploy and operations engineer | Sonnet 5.5 | CNCF Certified Kubernetes Administrator (CKA)<br>AWS Certified DevOps Engineer - Professional (DOP-C02)<br>Google Cloud Professional Cloud DevOps Engineer | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
+| `e2e-qa-expert` | End-to-end test expert | Sonnet 5.5 | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Acceptance Testing (CT-AcT) | - | - | - |
+| `explorer` | Code search and impact analysis | Sonnet 5.5 | Oracle Certified Professional: Java SE 17 Developer (1Z0-829) | - | - | - |
+| `frontend-developer` | Frontend engineer (UI5, plain JS, React) | Sonnet 5.5 | IAAP Web Accessibility Specialist (WAS) | SAP Certified - SAP Fiori Application Developer (C_FIORD) | 15/15 | 15/15 |
+| `integration-engineer` | Integration engineer | Sonnet 5.5 | Salesforce Certified MuleSoft Platform Integration Architect | SAP Certified - Integration Developer (C_CPI) | - | - |
+| `n8n-expert` | n8n workflow engineer | Opus | AWS Certified Generative AI Developer - Professional (AIP-C01) | - | - | - |
+| `performance-engineer` | Performance engineer | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Performance Testing (CT-PT) | - | - | - |
+| `product-critic` | Product reviewer | Opus | Pragmatic Institute Certified Product Manager<br>Scrum.org Professional Scrum Product Owner II (PSPO II)<br>ATD Certified Professional in Talent Development (CPTD) | - | - | - |
+| `qa-engineer` | Test engineer | Sonnet 5.5 | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)<br>ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0) | - | 14/15 | 15/15 |
+| `qa-lead` | QA lead | Opus | ISTQB Certified Tester Advanced Level Test Management (CTAL-TM v3.0)<br>ISTQB Certified Tester Advanced Level Agile Tester (CTAL-AT v2.0) | SAP Certified - Solution Transformation Consultant with SAP Cloud ALM (C_STC) | - | - |
+| `release-manager` | Release manager | Sonnet 5.5 | ITIL Managing Professional (ITIL Version 5) | SAP Certified - Solution Transformation Consultant with SAP Cloud ALM (C_STC) | - | - |
+| `security-architect` | Security and privacy architect | Opus | ISC2 Certified Information Systems Security Professional (CISSP)<br>ISC2 Certified Cloud Security Professional (CCSP)<br>IAPP Certified Information Privacy Professional/Europe (CIPP/E) | - | 14/15 | 15/15 |
+| `sf-expert` | SAP SuccessFactors consultant | Opus | SHRM Senior Certified Professional (SHRM-SCP) | SAP Certified - SAP SuccessFactors Employee Central Core and Position Management (C_THR81)<br>SAP Certified - SAP SuccessFactors Learning (C_THR88) | - | - |
+| `sf-skills-expert` | SAP SuccessFactors Job Profiles and Skills consultant | Opus | SHRM Senior Certified Professional (SHRM-SCP) | SAP Certified - SAP SuccessFactors Succession Management (C_THR85)<br>SAP Certified - SAP SuccessFactors Career Development Planning and Mentoring (C_THR95) | - | - |
+| `solution-architect` | Lead solution architect | Opus | AWS Certified Solutions Architect - Professional (SAP-C03)<br>Google Cloud Professional Cloud Architect<br>TOGAF Enterprise Architecture Practitioner | SAP Certified Professional - Solution Architect - SAP BTP (P_BTPA) | 15/15 | 15/15 |
+| `spec-analyst` | Business analyst (requirements and specs) | Opus | IIBA Certified Business Analysis Professional (CBAP)<br>IREB CPRE Practitioner (Requirements Elicitation, Requirements Modeling)<br>ATD Certified Professional in Talent Development (CPTD) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
+| `story-sizer` | Backlog and sizing (Scrum) | Sonnet 5.5 | Scrum.org Professional Scrum Master II (PSM II)<br>Scrum.org Professional Scrum Product Owner II (PSPO II) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
+| `ui-qa-expert` | UI test expert | Opus | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Usability Testing (CT-UT)<br>IAAP Web Accessibility Specialist (WAS)<br>Nielsen Norman Group UX Certification | - | - | - |
+| `ux-designer` | UX and screen designer | Opus | Nielsen Norman Group UX Certification (Interaction Design specialty)<br>IAAP Certified Professional in Accessibility Core Competencies (CPACC) | - | 14/15 | 15/15 |
+| `verifier` | Independent verifier | Sonnet 5.5 | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
+| **Total (9 examined)** | | | | | **131/135** | **134/135** |
 <!-- certified-agents:end -->
 
 ## How work flows
 
 Every request is triaged first:
 - **Answer**: a question is answered directly.
-- **Quick fix**: a small, obvious change is made and recorded.
+- **Quick fix**: a small, obvious change goes to its area agent with a quick brief (files and lines, the fix, the test) and is recorded.
 - **Setup work**: changes to the AI setup only.
-- **Task**: a change to an existing product. A context pack comes first, the risk is set from evidence, only the agents the work needs join, and a safety net is scaled by risk.
+- **Task**: a change to an existing product. A context pack comes first, the risk is set from evidence, only the agents the work needs join, Build goes to the area agents (parts with no shared files in parallel), and a safety net is scaled by risk. QA signs off every task: `qa-lead` plans the tests at Design and signs off at Test, `ui-qa-expert` and `e2e-qa-expert` test in the running app like manual testers (their own browser tab), `qa-engineer` writes the tests and runs the API checks; a MUST from the UI or API checklist sends the task back to Build. Automated tests always go in the project's test folder, mirroring the package of the code under test.
 - **Product**: a new product runs through intake, base, requirements, product review, prototype, stories, design, build, review, audit and release.
 
 The developer decides at fixed gates: gaps, decision cards D1-D8, prototype picks.
@@ -161,8 +170,9 @@ See the flow without real work: `python .claude/core/scripts/simulate.py --list`
    `python .claude/core/scripts/install.py . --check` must print `ok`.
 4. Commit and push to `main`. The workflow stops a push whose versions differ or whose `plugin/` is stale. Plugin
    users get the new version by themselves.
-5. Port it to each product repo the bot does not cover (SkillsOS today, and Blend and TalentBox until AWS is set
-   up), from this repo:
+5. All projects stay on the same version: every release goes to every project in the same change, unless a change
+   is meant for one project only (then it goes in that project's own files). Port it to each product repo the bot does not cover (Blend and TalentBox until AWS is set up), from this repo;
+   SkillsOS uses the plugin only and gets no repo install:
 
    ```bash
    python core/scripts/install.py <product repo> --write-settings

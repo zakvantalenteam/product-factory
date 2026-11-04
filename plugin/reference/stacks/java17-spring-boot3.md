@@ -86,6 +86,8 @@ Read once, at the start, by the agents that design, write, test or review Java. 
   guideline, not a database limit.
 
 ## Tests
+- Where tests live: `src/test/java/<the same package as the class under test>/<Class>Test.java` (API and
+  repository slices too), resources in `src/test/resources/`; never in `src/main/**` or the repo root.
 - JUnit 5, Mockito and AssertJ as the repo uses them; `@WebMvcTest` or `@DataJpaTest` slices before a full
   `@SpringBootTest`; no real network; a fixed `Clock`.
 - Cases from the boundaries: null, empty, one, many, duplicates, the page limit, another tenant with the same user

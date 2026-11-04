@@ -53,6 +53,22 @@ def front(text):
     return dict(re.findall(r"(?m)^(\w+):\s*(.*?)\s*$", m.group(1))) if m else {}
 
 
+def core_models(root, d):
+    """Each core agent's model and turn limit from its own frontmatter (the installed copy, else the core source)."""
+    for n, a in d["agents"].items():
+        for folder in (os.path.join(root, ".claude", "agents"), os.path.join(os.path.dirname(PAGE), "..", "agents")):
+            f = os.path.join(folder, n + ".md")
+            if os.path.isfile(f):
+                with open(f, encoding="utf-8", errors="replace") as fh:
+                    fm = front(fh.read())
+                if fm.get("model"):
+                    a["model"] = fm["model"].strip().capitalize()
+                    d["models"][n] = a["model"]
+                if fm.get("maxTurns", "").isdigit():
+                    a["turns"] = int(fm["maxTurns"])
+                break
+
+
 def own_agents(root, d):
     """The repo's own agents (.claude/agents/*.md that are not core agents), described from their frontmatter."""
     out = {}
@@ -98,10 +114,14 @@ def own_scenario(own):
     short = {n: re.split(r" - |; |\. ", a["does"], 1)[0][:90] for n, a in own.items()}
     team = [dict(stage="design", agent=n, why=short[n]) for n in design]
     team += [dict(stage="design", agent="qa-engineer", focus="characterize", why="risk medium: lock today's outputs"),
-             dict(stage="build", agent="main session", why="you build"),
+             dict(stage="design", agent="qa-lead", focus="plan", why="every task that changes code: the test plan"),
+             dict(stage="build", agent="backend-developer", why="the service change, routed by the Tech Lead"),
+             dict(stage="build", agent="frontend-developer", why="the screen change, in parallel"),
              dict(stage="review", agent="code-reviewer", why="one review pass")]
     team += [dict(stage="review", agent=n, focus="review", why="a review pass in its own area") for n in review]
     team += [dict(stage="test", agent=n, why=short[n]) for n in test] or [dict(stage="test", agent="main session", why="existing tests")]
+    team += [dict(stage="test", agent="ui-qa-expert", why="a screen changes: tested in the running app"),
+             dict(stage="test", agent="qa-lead", focus="sign-off", why="no task closes without the QA sign-off")]
     team += [dict(stage="verify", agent="main session", why="live-check and the smoke list"),
              dict(stage="wrap", agent="main session", why="commit message")]
     dfiles = [w for n in design for w in own[n]["writes"].split(", ") if w.endswith(".md") and not w.startswith("review-")] \
@@ -117,12 +137,16 @@ def own_scenario(own):
                           why="Own agents follow the core's rules: read context.md first, write their file first, stay within their tool-call budget."))
     steps += [dict(t="stage", stage="design", title="Characterization tests", agents=["qa-engineer"], files=["safety.md"], min=5,
                    say="qa-engineer locks today's outputs of the shared part.", why="sdlc 5: risk medium."),
+              dict(t="stage", stage="design", title="Test plan", agents=["qa-lead"], files=["test-plan.md"], min=4,
+                   say="qa-lead writes the test plan: the risks, the matrix and who tests what.",
+                   why="sdlc 3: every task that changes code gets a QA plan and a sign-off."),
               dict(t="gate", stage="design", q="Approve the plan?", files=["triage.md"] + dfiles, by=design[0] if design else "main session",
                    why="sdlc 7: medium risk, one gate at the end of the last planning stage."),
               dict(t="check", stage="build", name="Before Build", say="Files baseline, compile, full unit suite.",
                    cmds=["python .claude/core/scripts/scope_check.py baseline <id>", "<commands.compile>", "<commands.test_all>"],
                    result="412 pass, 0 fail", why="sdlc 5."),
-              dict(t="build", stage="build", agents=["main session"], say="The main session builds what the approved plan says.",
+              dict(t="build", stage="build", agents=["backend-developer", "frontend-developer"],
+                   say="Routed to backend-developer and frontend-developer in parallel (no shared files): they build what the approved plan says.",
                    files=["src/main/java/com/acme/area/AreaService.java", "src/main/resources/static/js/area/area.js"], min=20,
                    why="Build follows the approved plan; another owner's part gets a handoff instead of an edit."),
               dict(t="check", stage="build", name="After Build", say="Compile, the full suite, the characterization diff and the scope check.",
@@ -131,9 +155,12 @@ def own_scenario(own):
               dict(t="review", stage="review", agents=["code-reviewer"] + review, files=rfiles, min=10,
                    say="code-reviewer" + "".join(" and a %s pass" % n for n in review) + ". PASS.",
                    why="An expert review pass joins when most of the change is in its area."),
-              dict(t="stage", stage="test", agents=test or ["main session"], min=6,
-                   say=("%s runs and adds the tests." % ", ".join(test)) if test else "The existing tests for the area pass.",
-                   why="Tests run without stopping your app."),
+              dict(t="stage", stage="test", agents=(test or ["main session"]) + ["ui-qa-expert"], min=14,
+                   say=(("%s runs and adds the tests." % ", ".join(test)) if test else "The existing tests for the area pass.")
+                   + " ui-qa-expert tests the changed screen in the running app against the UI checklist.",
+                   why="Tests run without stopping your app; every UI change is tested in the browser."),
+              dict(t="stage", stage="test", title="QA sign-off", agents=["qa-lead"], files=["qa-signoff.md"], min=2,
+                   say="qa-lead merges every QA result into one verdict: SIGNED OFF.", why="No task closes without the sign-off."),
               dict(t="stage", stage="verify", agents=["main session"], min=6, say="Live-check, then the smoke items for the area.",
                    why="sdlc 5: + smoke at medium."),
               dict(t="stage", stage="wrap", agents=["main session"], min=2, say="commit-msg.", why="You commit."),
@@ -151,6 +178,7 @@ def build(root=None):
     """The simulator data for a repo: the core scenarios and roster, plus its own agents and its stage budgets."""
     d = data()
     root = os.path.abspath(root or ls.ROOT)
+    core_models(root, d)
     own = own_agents(root, d)
     for n, a in own.items():
         d["agents"][n] = a
@@ -364,6 +392,8 @@ class Replay:
         if m:
             body += ["## Decision", "Recommended: as described in design.md.", "", "## What happens to existing data",
                      "Nothing changes for existing rows (demo).", ""]
+        if title.endswith("qa-signoff"):
+            body += ["## Verdict", "SIGNED OFF: every matrix row PASS (demo).", ""]
         if s.get("table"):
             for t in (s["table"], s.get("table2")):
                 if t:
@@ -426,7 +456,8 @@ class Replay:
                 return self.wait(1.0)
             if t in ("build", "rebuild"):
                 for f in (s.get("files") or []) or [self.last_build[0]]:
-                    self.wrote(f, in_task=False)
+                    owner = project.product_area(os.path.join(ls.ROOT, *f.split("/")), ls.ROOT)
+                    self.wrote(f, owner if owner in others else lead, in_task=False)
                     self.wait(0.25)
                 if t == "build":
                     self.last_build = s.get("files") or []

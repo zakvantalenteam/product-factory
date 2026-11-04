@@ -9,6 +9,8 @@ Blocks the tool calls that have cost hours before:
   - reading or printing secret files; whole-file reads of big files; `sed -i` on CRLF files;
   - edits to generated or core-owned files, to committed files that must stay frozen, to read-only roots;
   - data-model, access and config edits (decision triggers in `decisions`) until the task's card is approved;
+  - product code written by the main session (the Tech Lead routes it to its area agent, `routing` in
+    project.json; Claude Code only: Cursor's tool hooks do not say which agent made the call);
   - product mode: code in a product root before the base stage or the G3 design approval.
 
 Contract (Claude Code): hook JSON on stdin; exit 2 + a message on stderr blocks the call; exit 0 lets it through.
@@ -165,6 +167,13 @@ def check_bash(cmd, data=None):
             if rel(os.path.join(ROOT, tok)) is not None and is_crlf(os.path.join(ROOT, tok)):
                 block("Blocked: `sed -i` rewrites CRLF files as LF (" + tok + "). Use the Edit tool or "
                       "`python .claude/core/scripts/crlf_edit.py`.")
+    if is_lead(data):  # an in-place edit by command is still an edit: routed like Edit and Write
+        for m in re.finditer(CMD + r"(?:sed\s+(?:-[a-zA-Z]*i[a-zA-Z]*|--in-place)\b|\S*crlf_edit\.py[\"']?)([^;&|]*)", c):
+            for tok in m.group(2).split():
+                tok = tok.strip("'\"")
+                p = tok if os.path.isabs(tok) else os.path.join(ROOT, tok)
+                if not tok.startswith("-") and os.path.isfile(p):
+                    check_route(p, data)
 
 
 # ---- reads ----------------------------------------------------------------------------------------------------
@@ -216,6 +225,38 @@ def check_write(path):
     if project.match(r, G.get("frozen_if_tracked") or []) and os.path.isfile(path) and is_tracked(path):
         block("Blocked: " + r + " is committed and must not change (environments that already ran it would "
               "silently differ). Add a new file instead.")
+
+
+def is_lead(data):
+    """The main session (the Tech Lead). Claude Code sends agent_type and agent_id only from inside a subagent (or
+    a session started with --agent). Cursor's tool hooks name no agent, so Cursor is never treated as the lead."""
+    return bool(data) and not CURSOR and not data.get("agent_type") and not data.get("agent_id")
+
+
+def task_roots():
+    """Product roots outside this repo that tasks and products work in (`init --root`)."""
+    try:
+        import live_status
+        return [st["root"] for st in map(live_status.load, live_status.tasks()) if st.get("root")]
+    except Exception:
+        return []
+
+
+def check_route(path, data):
+    """Product code is written by its area agent: the Tech Lead triages, decides, briefs, routes, integrates and
+    verifies. Its own edits stay in the AI setup, the work folder and the scratchpad."""
+    if not path or not is_lead(data) or not (CFG.get("routing") or {}).get("enforce", True):
+        return
+    area = project.product_area(path, ROOT)
+    if not area and not project.rel(path, ROOT):
+        root = next((r for r in task_roots() if project.norm_dir(path).startswith(project.norm_dir(r))), None)
+        area = project.product_area(path, os.path.abspath(root)) if root else None
+    if area:
+        block("Blocked: %s is product code, and the Tech Lead routes product code instead of writing it. Brief %s "
+              "(the exact files and lines, the fix, the test to run; a quick fix in about 8 calls, no context pack) "
+              "and launch it with the Agent tool; independent parts with no shared files go in one message. The "
+              "Tech Lead keeps triage, gates and cards, live checks in the browser, the final checks and setup work "
+              "(.claude/, .cursor/, AGENTS.md, setup_paths)." % (shown(path), area))
 
 
 def legacy_roots():
@@ -425,6 +466,7 @@ def run_claude(data):
     elif tool in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
         path = inp.get("file_path") or inp.get("notebook_path") or ""
         check_write(path)
+        check_route(path, data)
         check_decision(inp, data, path)
 
 

@@ -191,11 +191,12 @@ PERF_DOCS = {"perf.md": "design.md", "05-performance.md": "05-architecture.md"} 
 UI_PARTS = ["What the screen must do", "Today's screen", "Variants", "Improvements"]
 UI_DOCS = {"ui.md": ("design.md", UI_PARTS),
            "05-ui.md": ("05-architecture.md", [x for x in UI_PARTS if x != "Today's screen"])}  # a new product has none
-# the domain experts' notes (sf-expert, ai-engineer, n8n-expert) in both modes, and their review files
+# the domain experts' notes (sf-expert, sf-skills-expert, ai-engineer, n8n-expert) in both modes, and their review files
 SF_PARTS = ["SF areas touched", "Where this repo uses SF", "API plan", "Data and privacy", "Risks and tests", "Sources"]
 AI_PARTS = ["AI behaviour", "Turn budget", "Model and prompt plan", "Evals", "Guardrails and fallbacks", "Observability"]
 N8N_PARTS = ["Workflows touched", "Today's flow", "Plan", "Eval and rollout", "Handoff"]
-EXPERT_PARTS = {"sf.md": SF_PARTS, "05-sf-fields.md": SF_PARTS, "ai.md": AI_PARTS, "05-ai.md": AI_PARTS,
+EXPERT_PARTS = {"sf.md": SF_PARTS, "05-sf-fields.md": SF_PARTS, "sf-skills.md": SF_PARTS,
+                "05-sf-skills-fields.md": SF_PARTS, "ai.md": AI_PARTS, "05-ai.md": AI_PARTS,
                 "n8n.md": N8N_PARTS, "05-n8n.md": N8N_PARTS,
                 "02-nfr.md": ["Needs", "Open questions"], "00-infra.md": ["Hosting and deployment", "Questions for the owner"]}
 # a project's own expert documents and their required headings (`expert_docs` in project.json)
@@ -212,8 +213,8 @@ ALL_DOCS = tuple(BRIEF_DOCS) + tuple(SPEC_DOCS) + tuple(DESIGN_DOCS) + tuple(PER
 
 
 def review_docs():
-    """review-sf.md, review-ai.md, review-n8n.md, 07-sf-review.md and review-<x>.md for each domain expert in project.json."""
-    shorts = {"sf", "ai", "n8n"} | {str(e).split(":")[-1].split("-")[0].lower() for e in CFG.get("experts") or [] if e}
+    """review-sf.md, review-sf-skills.md, review-ai.md, review-n8n.md, 07-sf-review.md and review-<x>.md for each domain expert in project.json."""
+    shorts = {"sf", "sf-skills", "ai", "n8n"} | {str(e).split(":")[-1].split("-")[0].lower() for e in CFG.get("experts") or [] if e}
     return {"review-%s.md" % s for s in shorts if s} | {"07-sf-review.md"}
 
 
@@ -335,6 +336,13 @@ def check_team(text, folder, name="spec.md", product=False):
                          "does not need them)" % (name, ", ".join(miss)))
         if any(not r["why"] for r in rows):
             hints.append("%s: give every expert a reason in the Why column" % name)
+        who = {(r.get("agent") or r["expert"]).lower() for r in rows}
+        if have & {"review", "test"}:  # code gets checked: the QA lead plans it and signs it off
+            if "qa-lead" not in who:
+                need.append("%s: no qa-lead in 'Who will work on this': every task that changes code gets qa-lead at Design "
+                            "(test plan) and Test (sign-off); no task closes without the sign-off" % name)
+            if "ui" in kinds and "ui-qa-expert" not in who:
+                need.append("%s: kind of work ui but no ui-qa-expert at Test: every UI change is tested in the browser" % name)
     return kinds, p, hints
 
 

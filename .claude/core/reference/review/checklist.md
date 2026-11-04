@@ -31,6 +31,7 @@ The extra passes also read:
 - `ux-designer (ui)`: PG5, PG7, PG10, PG11, PG13, PG19, LB1-LB3.
 - `performance-engineer (speed)`: AL6, BE3, BE4, BE10, RE7, DA3, DA4, DA12, DA13, DA15, IN9, LL13, LL17, JB4, JB5, PG16.
 - `sf-expert (sf)`: AL4, AL6, BE3, BE12, RE10, IN1-IN10, JB1-JB7 where SuccessFactors is called.
+- `sf-skills-expert (sf-skills)`: the same ids where job profiles, roles, competencies or skills are read or written.
 - `ai-engineer (ai)`: AL4, AL6, RE9, LL1-LL17, JB6.
 - `n8n-expert (n8n)`: LL1-LL17 where a node calls a model, IN1-IN10 where a workflow calls out, plus the repo's own
   n8n ids named in `.claude/experts/n8n.md`.

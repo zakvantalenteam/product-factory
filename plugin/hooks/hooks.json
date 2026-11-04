@@ -6,8 +6,11 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.py\"",
-      "timeout": 10
+      "command": "python",
+      "timeout": 10,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/hooks/guard.py"
+      ]
      }
     ]
    },
@@ -16,8 +19,12 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py\" hook",
-      "timeout": 5
+      "command": "python",
+      "timeout": 5,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py",
+       "hook"
+      ]
      }
     ]
    }
@@ -28,8 +35,11 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/rules_check.py\"",
-      "timeout": 10
+      "command": "python",
+      "timeout": 10,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/hooks/rules_check.py"
+      ]
      }
     ]
    },
@@ -38,8 +48,13 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py\" hook",
-      "timeout": 5
+      "command": "python",
+      "timeout": 5,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py",
+       "hook"
+      ],
+      "async": true
      }
     ]
    }
@@ -49,8 +64,13 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py\" hook",
-      "timeout": 5
+      "command": "python",
+      "timeout": 5,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py",
+       "hook"
+      ],
+      "async": true
      }
     ]
    }
@@ -60,8 +80,12 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/flow_check.py\" prompt",
-      "timeout": 5
+      "command": "python",
+      "timeout": 5,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/hooks/flow_check.py",
+       "prompt"
+      ]
      }
     ]
    }
@@ -71,8 +95,12 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/flow_check.py\" stop",
-      "timeout": 5
+      "command": "python",
+      "timeout": 5,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/hooks/flow_check.py",
+       "stop"
+      ]
      }
     ]
    }
@@ -82,8 +110,11 @@
     "hooks": [
      {
       "type": "command",
-      "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py\"",
-      "timeout": 10
+      "command": "python",
+      "timeout": 10,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py"
+      ]
      }
     ]
    }
