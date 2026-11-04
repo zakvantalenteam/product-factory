@@ -130,6 +130,9 @@
   "setup_paths": [],
   "experts": [],
   "expert_docs": {},
+  "qa": {
+    "facts": ""
+  },
   "glossary": {
     "code_words": "",
     "words": []

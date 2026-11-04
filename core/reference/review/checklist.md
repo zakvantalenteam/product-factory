@@ -16,14 +16,14 @@ section: the backticked globs after " - " in its heading); a backticked `@Marker
 | Section | rules | bugs | security |
 |---|---|---|---|
 | Always | AL8, AL9, AL10 | AL3, AL5, AL6, AL7 | AL1, AL2, AL4 |
-| Backend | BE8, BE9, BE11, BE12 | BE1, BE2, BE3, BE7, BE10, BE13 | BE4, BE5, BE6 |
+| Backend | BE8, BE9, BE11, BE12 | BE1, BE2, BE3, BE7, BE10, BE13, BE14 | BE4, BE5, BE6 |
 | REST and API | RE12 | RE6, RE7, RE13 | RE1-RE5, RE8-RE11 |
-| Data access | DA14, DA16, DA18 | DA3-DA9, DA11-DA13, DA15, DA17 | DA1, DA2, DA10 |
-| Jobs and schedulers | JB8 | JB1-JB7 | - |
-| Integrations | - | IN2, IN3, IN4, IN7, IN9, IN10 | IN1, IN5, IN6, IN8 |
+| Data access | DA14, DA16, DA18 | DA3-DA9, DA11-DA13, DA15, DA17, DA19 | DA1, DA2, DA10, DA20 |
+| Jobs and schedulers | JB8 | JB1-JB7, JB9 | - |
+| Integrations | - | IN2, IN3, IN4, IN7, IN9, IN10, IN11 | IN1, IN5, IN6, IN8 |
 | LLM calls | LL14, LL15, LL16 | LL3, LL4, LL5, LL7, LL10, LL11, LL13, LL17 | LL1, LL2, LL6, LL8, LL9, LL12 |
-| Frontend pages | PG7, PG11, PG13, PG14, PG17, PG19, PG20 | PG4, PG5, PG6, PG12, PG15, PG16, PG18 | PG1, PG2, PG3, PG8, PG9, PG10 |
-| Labels and i18n | LB1-LB6 | - | - |
+| Frontend pages | PG7, PG11, PG13, PG14, PG17, PG19, PG20 | PG4, PG5, PG6, PG12, PG15, PG16, PG18, PG21, PG22 | PG1, PG2, PG3, PG8, PG9, PG10 |
+| Labels and i18n | LB1-LB7 | - | - |
 | Config and dependencies | CF4, CF5, CF7, CF8 | CF2, CF6, CF9, CF10 | CF1, CF3 |
 | Live checks for Verify | the lines for your items | the lines for your items | the lines for your items |
 
@@ -95,6 +95,7 @@ Also apply the `.claude/rules/*.md` file for backend paths when it exists.
 - **BE11 SHOULD** An exception message carries the operation and id; the error is logged once at the boundary, with the request id, not at every layer.
 - **BE12 SHOULD** Vendor payload shapes (a SaaS API, a message queue, JSON from a workflow) are mapped to own types at the edge and do not leak into controller responses.
 - **BE13 SHOULD** Counts, percentages, money and quota math do not use floating point where exactness matters; integer division and rounding are checked.
+- **BE14 MUST** A date or time is compared and filtered as an instant (UTC, the event's end for 'upcoming'), never as a local date or a formatted string. Scenario: an event that ends tonight in the user's zone is dropped from "upcoming" because the server date has already moved on.
 
 ## REST and API - controllers, resources, route handlers
 
@@ -138,6 +139,8 @@ Also apply the hard rules in `AGENTS.md` about the database.
 - **DA16 SHOULD** A new mutable admin setting or policy records who changed it and when.
 - **DA17 MUST** A committed migration script is never edited: the change is a new forward script with the next free number, re-runnable (guarded create and alter), backward compatible while the old build still runs, and with a rollback note. No locking rewrite of a large table: no in-place type change, no volatile default on a big table; data migrations are batched.
 - **DA18 SHOULD** Every new foreign key has an index and an explicit delete policy; per-tenant uniqueness includes the tenant column; types fit (timestamps with zone, exact numerics, no dates or JSON in text columns); the entity mapping matches the script.
+- **DA19 MUST** Search and filter input is trimmed, separators in multi-id fields are handled, and LIKE wildcards (`%`, `_`) and quotes are escaped or bound as parameters. Scenario: a search for `50%` or ` abc ` returns every row or none.
+- **DA20 MUST** Every query that reads or changes a user-owned record is scoped to the caller (user, team or tenant) in the query itself, not filtered after the read. Scenario: a second user of the same role opens the first user's record by id.
 
 ## Jobs and schedulers - scheduled jobs, upgrade hooks, executors
 
@@ -151,6 +154,7 @@ Paths: `*Job.*`, `*Scheduler*`, `*Executor*`, `*Worker*`, `**/jobs/**`, `@Schedu
 - **JB6 MUST** When an outside system or the model provider is down, the job uses fallback text or skips with a logged reason: no tight retry loop, no empty or placeholder record. It respects the feature kill switch.
 - **JB7 MUST** An upgrade or startup hook is safe on every startup (a second run changes nothing), makes no remote call, and fails soft when an outside system is unreachable.
 - **JB8 SHOULD** The job logs start, end, counts and failures with its name, and no personal data in those lines.
+- **JB9 MUST** A job keeps its own state per run: no shared field, static or cache that two jobs running at the same time (or Run Now beside the schedule) can overwrite; every run writes an end state, and a mail or notification job sends once per user and period.
 
 ## Integrations and imports - outside APIs, file transfer, storage, spreadsheet or document import and export
 
@@ -166,6 +170,7 @@ Paths: `*Client.*`, `*Connector*`, `*Integration*`, `*Import*`, `*Export*`, `*Sy
 - **IN8 MUST** A filter, query string or path segment built from input is encoded or escaped for the target API (for example an OData `$filter` string value). Scenario: a name with a quote breaks the filter or widens it.
 - **IN9 SHOULD** A read selects only the fields it needs, a full sync uses a modified-since delta with a stored checkpoint, and there is no per-row remote call in a loop (or the fan-out has a cap).
 - **IN10 MUST** Throttling and transient errors (429, 503, timeouts) are retried with bounded backoff honouring Retry-After; an access token is reused until shortly before expiry, not fetched per call.
+- **IN11 MUST** A CSV or other export file quotes every field (commas, quotes, line breaks) and writes UTF-8 with a BOM when Excel opens it. Scenario: a title with a comma shifts every later column.
 
 ## LLM calls - model clients, prompt code, agent and tool plumbing, guardrails, quota ledger
 
@@ -217,6 +222,8 @@ Also apply the `.claude/rules/*.md` file for frontend paths when it exists.
 - **PG18 MUST** A changed view, template or declarative markup file is well formed: a duplicate attribute or an unclosed tag can silently drop the rest of the view.
 - **PG19 SHOULD** Colours, spacing and font sizes come from the theme tokens, no fixed hex; the focus ring shows for keyboard use only.
 - **PG20 MUST** No business rule or authorisation lives only in the frontend; the backend enforces it (`.claude/core/reference/standards/fe-be-split.md`).
+- **PG21 MUST** When one renderer of a shared element (card, row, chip, status, date) is changed, its siblings are changed too or listed with the reason they stay (the context pack's parity list). Scenario: the list card shows the new field and the widget card of the same item does not.
+- **PG22 SHOULD** A popup, dialog or panel resets its state on open (not only on close); an action removes its overlay in a finally path.
 
 ## Labels and i18n - label files, locale files, message bundles
 
@@ -230,6 +237,7 @@ Also apply the project's labels rule (`AGENTS.md` or `.claude/rules/*.md`).
 - **LB4 SHOULD** Admin-facing text in views and controllers also comes from a key.
 - **LB5 SHOULD** Locale-sensitive output (dates, numbers, plurals) is not built by joining label fragments.
 - **LB6 SHOULD** Where the project keeps several locale files, a new key follows the project's translation rule (all files at once, or the release pass) and placeholders match the English value. MUST when a locale test fails.
+- **LB7 SHOULD** Master data shown to the user (type, status, category, skill names) goes through the translation lookup and falls back to the stored value when a translation is missing.
 
 ## Config and dependencies - properties, constants, build files, deploy and security descriptors, pipeline
 

@@ -45,5 +45,6 @@ Log in `06-build-log.md`, one block per story: story id, screens, files changed,
 - Theme tokens and the UI defaults only (no fixed colours, no shadows, 13px text, weights 400-500); 360 px with no side scroll; reduced motion respected.
 - Tests for the logic (formatters, mappers, state) per criterion; live checks listed for what only a browser shows.
 - Native first (IAAP WAS): `button`, `a`, `label`, `fieldset` before ARIA; ARIA roles and states only for custom widgets, per the ARIA Authoring Practices, checked with a keyboard and one screen reader.
+- Siblings and states: change the shared component, or every copy (list them). Use shared helpers for clamp and Read more, tooltips, dates (Intl, the user's zone) and CSV. Popups reset on open. Load the edit form from the saved record. Disable the action while it runs. Hide what the role cannot do with the permission the API checks. No browser API without a fallback. Check 1366, 1920 and 2560 px.
 
 Reply in 10 lines or fewer: the story, the screens done, the files changed, the tests, lint and type-check results, the open questions, anything left for the next run.

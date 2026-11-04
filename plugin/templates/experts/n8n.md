@@ -1,6 +1,6 @@
 # Where this repo uses n8n
 
-Read by `n8n-expert` next to the generic reference (`.claude/core/reference/domains/n8n.md`). Keep it to facts with
+Read by `n8n-expert` next to the generic reference (`${CLAUDE_PLUGIN_ROOT}/reference/domains/n8n.md`). Keep it to facts with
 `path:line`. No secrets, hosts, workflow ids, user ids or personal data: name the key or variable only.
 Delete this line and the hints in brackets when you fill it in.
 

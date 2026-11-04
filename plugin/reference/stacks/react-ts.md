@@ -1,7 +1,7 @@
 # Stack pack: React 19, TypeScript 5, Vite
 
 Read once, at the start, by the agents that design, write or review a React and TypeScript front end. The repo's own
-rules, the UI standard (`.claude/core/reference/standards/ui.md`) and the approved prototype win over this pack.
+rules, the UI standard (`${CLAUDE_PLUGIN_ROOT}/reference/standards/ui.md`) and the approved prototype win over this pack.
 
 ## TypeScript
 - `strict` on; no `any` (use `unknown` and narrow), no non-null `!` without a reason; types for API calls come from

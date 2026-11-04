@@ -64,3 +64,11 @@ Read once at the start, in the same message as common.md. The practical knowledg
 - Contrast 4.5:1 text, 3:1 large text and borders; reflow 320 CSS px; text 200%; target 24 px.
 - Viewports: 360, 375, 640 x 400 for 200%; German about +35% text length.
 - Severity 0-4; 3-4 = MUST.
+
+## Data recipe (ask for these records before the run)
+- One long and odd record: a 200-character name with no spaces, a long description, a long URL, an apostrophe, `<b>`, Unicode and emoji, many items in a list field, special characters in a value used as a filter.
+- One record of each variant in the plan's variant table (each content type, status and setting in scope), active and inactive, with and without an image.
+- Items starting late tonight and early tomorrow for the date and time zone checks (UQ24).
+- One record with an untranslated value for the second-language check (UQ21).
+- Two users of the same role and one user without the permission, when the plan names roles.
+- Never insert into a shared database: use the dev data the developer points to or the app's own screens on a dev tenant, and ask when a record is missing.

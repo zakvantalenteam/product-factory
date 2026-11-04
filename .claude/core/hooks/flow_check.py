@@ -27,9 +27,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "scripts"))
 try:
     import project  # noqa: E402
+    if __name__ == "__main__":
+        project.hook_start()
     import live_status as ls  # noqa: E402
-except Exception:  # fail open
-    sys.exit(0)
+except SystemExit:
+    raise
+except Exception as _e:  # the turn goes on, with a warning
+    sys.stderr.write("agent core flow check could not start (%s: %s)\n" % (type(_e).__name__, _e))
+    sys.exit(0 if "--cursor" in sys.argv else 1)
 
 CFG = project.config()
 CORE_AGENTS = ("spec-analyst, bug-investigator, performance-engineer, product-critic, story-sizer, ux-designer, "
@@ -141,8 +146,11 @@ def not_quick(r):
 
 def cursor_stale():
     """True when the Cursor copies no longer match .claude/ (cursor_sync.py --check)."""
+    script = os.path.join(HERE, "..", "scripts", "cursor_sync.py")
+    if not os.path.isfile(script):  # the Cursor runtime carries no cursor_sync.py
+        return False
     try:
-        p = subprocess.run([sys.executable, os.path.join(HERE, "..", "scripts", "cursor_sync.py"), "--check"],
+        p = subprocess.run([sys.executable, script, "--check"],
                            capture_output=True, timeout=20, cwd=project.repo_root())
         return p.returncode != 0
     except Exception:
@@ -177,7 +185,7 @@ def stop_reason(sid):
     if not tid and all(is_setup(e.lower()) for e in edits):
         if cursor_stale():
             return ("You changed the AI setup (" + listed(edits) + ") and it is not in step for Cursor: run "
-                    "python .claude/core/scripts/cursor_sync.py --check and fix what it lists (Cursor users need the "
+                    "python " + project.core_path("scripts/cursor_sync.py") + " --check and fix what it lists (Cursor users need the "
                     "same change).")
         return None
     if not tid:
@@ -219,7 +227,7 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     cursor = "--cursor" in sys.argv
     try:
-        data = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace") or "{}")
+        data = json.loads(sys.stdin.buffer.read().decode("utf-8-sig", "replace") or "{}")
         sid = ls.session_of(data)
         if not sid:
             return
@@ -247,8 +255,9 @@ def main():
                 reason = stop_reason(sid)
                 if reason:
                     print(json.dumps({"decision": "block", "reason": reason}))
-    except Exception:
-        pass
+    except Exception as e:
+        sys.stderr.write(project.hook_error("flow check", e) + "\n")
+        sys.exit(0 if cursor else 1)
 
 
 if __name__ == "__main__":

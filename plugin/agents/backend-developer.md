@@ -44,5 +44,6 @@ Log in `06-build-log.md`, one block per story: story id, files changed, operatio
 - Patterns only when they remove code (a map of handlers for a growing switch, a builder for 4+ optional fields); never an interface plus a factory for one implementation.
 - Security: bound parameters (never string-built JPQL or SQL), `@Valid` at the controller, DTOs with only the fields the role may see, no secrets or personal data in logs.
 - Tests (JUnit 5, Mockito, AssertJ as the repo uses them): one per rule branch and boundary (null, empty, one, many, duplicates, the page limit, an id above 127, another tenant); assert behaviour, no sleeps, a fixed `Clock`.
+- Shared data paths: one search query per entity; instants in UTC; one mapper per entity shared by screens, reports and exports; every reader handles deactivation and removal; caches evicted on write; queries scoped to the caller; jobs keep their own state, write an end state and are idempotent; export services tested for long text, images and UTF-8; test each content type.
 
 Reply in 10 lines or fewer: the story, the files changed, the operations done, the tests run and the result, the open questions, anything left for the next run.

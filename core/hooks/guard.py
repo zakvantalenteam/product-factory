@@ -15,7 +15,9 @@ Blocks the tool calls that have cost hours before:
 
 Contract (Claude Code): hook JSON on stdin; exit 2 + a message on stderr blocks the call; exit 0 lets it through.
 Contract (Cursor, `--cursor`): always prints {"permission": "allow"|"deny", ...}, because Cursor blocks on empty
-output. Any internal error lets the call through (fail open), so a broken guard never stops work.
+output. A repo without .claude/project.json is never checked (exit 0 at once). An internal error blocks the call
+(fail closed: exit 2, or deny in Cursor) with a one-line reason and is logged (project.hook_error), so a broken guard
+is seen at once instead of letting secrets and git writes through unnoticed.
 """
 import glob
 import json
@@ -28,6 +30,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import project  # noqa: E402
 
 CURSOR = "--cursor" in sys.argv
+if __name__ == "__main__":
+    project.hook_start(cursor=CURSOR)
 ROOT = project.repo_root()
 CFG = project.config(ROOT)
 G = CFG["guard"]
@@ -166,7 +170,7 @@ def check_bash(cmd, data=None):
                 continue
             if rel(os.path.join(ROOT, tok)) is not None and is_crlf(os.path.join(ROOT, tok)):
                 block("Blocked: `sed -i` rewrites CRLF files as LF (" + tok + "). Use the Edit tool or "
-                      "`python .claude/core/scripts/crlf_edit.py`.")
+                      "`python " + project.core_path("scripts/crlf_edit.py") + "`.")
     if is_lead(data):  # an in-place edit by command is still an edit: routed like Edit and Write
         for m in re.finditer(CMD + r"(?:sed\s+(?:-[a-zA-Z]*i[a-zA-Z]*|--in-place)\b|\S*crlf_edit\.py[\"']?)([^;&|]*)", c):
             for tok in m.group(2).split():
@@ -193,8 +197,8 @@ def check_read(inp, size_check=True):
         size = os.path.getsize(path)
         if size > limit and not path.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".pdf", ".webp", ".svg")):
             how = next((h.get("how") for h in G.get("big_file_hints") or [] if project.match(r, h.get("paths"))),
-                       None) or ("Map it first with `python .claude/core/scripts/codemap.py %s` (or Grep), then Read "
-                                 "with offset/limit." % r)
+                       None) or ("Map it first with `python %s %s` (or Grep), then Read with offset/limit."
+                                 % (project.core_path("scripts/codemap.py"), r))
             block("Blocked: %s is %d KB. %s" % (r, size // 1024, how))
 
 
@@ -214,9 +218,10 @@ def check_write(path):
     if project.match(r, [".claude/core/**"]):
         block("Blocked: " + r + " belongs to the agent core. Change the core source, then run its install.py "
               "(product-factory: core/, then `python core/scripts/install.py <repo>`).")
-    if project.match(r, [".cursor/agents/**", ".cursor/rules/**", ".cursor/hooks.json"]):
-        block("Blocked: " + r + " is generated from .claude/. Change the source and run "
-              "`python .claude/core/scripts/cursor_sync.py`.")
+    if project.match(r, [".cursor/agents/**", ".cursor/rules/**", ".cursor/skills/**", ".cursor/hooks.json",
+                         ".cursor/runtime/**"]):
+        block("Blocked: " + r + " is generated from .claude/ and the agent core. Change the source and run "
+              "`python " + project.core_path("scripts/cursor_sync.py") + "`.")
     if project.match(r, G.get("generated") or []):
         block("Blocked: " + r + " is generated. Change its source instead.")
     for nw in G.get("no_write") or []:
@@ -447,7 +452,7 @@ def check_decision(inp, data, path):
               "(`live_status.py init`), write the %s card and gate it with `--decision %s`." % (
                   shown(path), what, d, title, d, d))
     block("Blocked: %s changes %s. Task %s has no approved %s %s decision%s. Write the card in "
-          "`<work>/%s/decisions/` (layout `.claude/core/reference/review/decision-card.md`), run "
+          "`<work>/%s/decisions/` (layout `" + project.core_path("reference/review/decision-card.md") + "`), run "
           "`live_status.py gate %s design \"<question>\" --file design.md --file decisions/%s-<name>.md` (the stage's "
           "documents in one gate; with no Design stage, gate the card on build) and wait for the developer's approval; "
           "never approve it yourself." % (shown(path), what, tid, d, title, " (now: %s)" % state if state else "",
@@ -495,7 +500,7 @@ def live(text, data):
 
 
 def main():
-    data = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace") or "{}")
+    data = json.loads(sys.stdin.buffer.read().decode("utf-8-sig", "replace") or "{}")
     try:
         (run_cursor if CURSOR else run_claude)(data)
     except Blocked as b:
@@ -509,12 +514,22 @@ def main():
         print(json.dumps({"permission": "allow"}))
 
 
+def fail_closed(exc):
+    """An internal error holds the call: a guard that lets everything through unnoticed is worse than a stop."""
+    msg = ("Blocked: " + project.hook_error("guard", exc) + ". The call is held until the guard works again; tell "
+           "the developer. To work without the core in this repo meanwhile, the developer renames "
+           ".claude/project.json.")
+    if CURSOR:
+        print(json.dumps({"permission": "deny", "user_message": msg, "agent_message": msg}))
+        sys.exit(0)
+    sys.stderr.write(msg + "\n")
+    sys.exit(2)
+
+
 if __name__ == "__main__":
     try:
         main()
     except SystemExit:
         raise
-    except Exception:
-        if CURSOR:
-            print(json.dumps({"permission": "allow"}))
-        sys.exit(0)
+    except BaseException as e:  # noqa: B036 - KeyboardInterrupt too: never fail open
+        fail_closed(e)

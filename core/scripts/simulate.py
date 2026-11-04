@@ -36,8 +36,8 @@ import project  # noqa: E402
 import timing  # noqa: E402
 
 PAGE = os.path.join(_HERE, "simulate.html")
-SCRIPT = "python .claude/core/scripts/simulate.py"
-LIVE = "python .claude/core/scripts/live_status.py"
+SCRIPT = "python " + project.core_path("scripts/simulate.py")
+LIVE = "python " + project.core_path("scripts/live_status.py")
 
 
 def data():

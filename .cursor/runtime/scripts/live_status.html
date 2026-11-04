@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live status</title>
+<script>window.__PROJECT__={"name":"","ticket":""};</script>
+<script>/* light by default; "System" follows the computer's light/dark setting */
+try{document.documentElement.dataset.theme=localStorage.getItem("ls:theme")||"light"}catch(e){document.documentElement.dataset.theme="light"}</script>
+<style>
+@property --ax{syntax:"<percentage>";inherits:false;initial-value:15%}
+@property --bx{syntax:"<percentage>";inherits:false;initial-value:85%}
+:root{--bg:#f8f8fc;--card:#fff;--line:#e6e8f0;--text:#1e2230;--muted:#5b6274;--faint:#8a90a0;
+--spec:#7c6cf0;--design:#139c87;--build:#3b7ddd;--review:#cf8417;--test:#3c974a;--verify:#1790b5;--release:#c9558b;--wrap:#6b7480;
+--intake:#6d72c9;--base:#5f7a8c;--requirements:var(--spec);--product:#a35fc4;--prototype:var(--design);--stories:#a9861c;--audit:var(--verify);
+--you:#c27812;--fail:#c43d48;--cur:var(--build)}
+:root{color-scheme:light}:root[data-theme="system"]{color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root[data-theme="system"]{--bg:#111318;--card:#181b22;--line:#2a2e39;--text:#e8eaf0;--muted:#a9afbd;--faint:#7e8596;
+--spec:#a99ff8;--design:#4ccab5;--build:#7eaaf0;--review:#eeb25c;--test:#7cc68a;--verify:#5fc3e0;--release:#e78db6;--wrap:#a5acb8;--you:#f1b752;--fail:#f28c95;
+--intake:#a3a8f0;--base:#9fb4c2;--product:#d09be8;--stories:#e2c165}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+:focus{outline:none}:focus-visible{outline:2px solid var(--cur);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1240px;margin:0 auto;padding:16px}
+.sub{color:var(--faint);font-size:12px}
+.pill{font-size:11px;padding:1px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+button.thm{font:inherit;font-size:11px;background:transparent;cursor:pointer}
+.st-live{color:var(--cur);border-color:color-mix(in srgb,var(--cur) 35%,var(--card));background:color-mix(in srgb,var(--cur) 9%,var(--card))}
+.st-wait{color:var(--you);border-color:color-mix(in srgb,var(--you) 35%,var(--card));background:color-mix(in srgb,var(--you) 10%,var(--card))}
+.st-done{color:var(--test);border-color:color-mix(in srgb,var(--test) 35%,var(--card));background:color-mix(in srgb,var(--test) 9%,var(--card))}
+.st-fail{color:var(--fail);border-color:color-mix(in srgb,var(--fail) 35%,var(--card));background:color-mix(in srgb,var(--fail) 8%,var(--card))}
+.st-idle{color:var(--faint)}
+.btn{display:inline-block;text-decoration:none;border:1px solid transparent;background:var(--cur);color:#fff;border-radius:6px;padding:4px 12px;cursor:pointer}
+.btn.ghost{background:transparent;border-color:color-mix(in srgb,currentColor 40%,transparent);color:inherit}
+.btn.sm{padding:2px 9px;font-size:12px}
+/* header */
+.top{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.orbw{position:relative;width:46px;height:46px;flex:none;--c:var(--cur)}
+.orb{position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--c),color-mix(in srgb,var(--c) 12%,var(--card)) 35%,var(--c) 65%,color-mix(in srgb,var(--c) 12%,var(--card)));animation:spin 3.6s linear infinite}
+.orb::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--card)}
+.spark{position:absolute;inset:0;display:grid;place-items:center;color:var(--c);font-size:19px;animation:breathe 2.4s ease-in-out infinite}
+.sat{position:absolute;inset:-5px;animation:spin 2.2s linear infinite}
+.sat::before{content:"";position:absolute;top:0;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--c)}
+.who{flex:1;min-width:0}
+.l1{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.l1 b{font-weight:500;font-size:14px}
+.l1 .tt{color:var(--muted)}
+.risk{--rc:var(--review);font-size:11px;padding:0 8px;border-radius:999px;white-space:nowrap;color:color-mix(in srgb,var(--rc) 78%,var(--text));background:color-mix(in srgb,var(--rc) 12%,var(--card));border:1px solid color-mix(in srgb,var(--rc) 28%,var(--line))}
+.risk.low{--rc:var(--test)}.risk.high{--rc:var(--fail)}
+.l2{display:flex;align-items:center;margin-top:3px;min-height:20px;min-width:0}
+#doing{font-size:14px;font-weight:500;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.caret{display:none;flex:none;width:2px;height:14px;background:var(--cur);margin-left:2px;animation:blink .8s step-end infinite}
+body[data-ov=live] .caret{display:block}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* mini keyboard: the key of each typed letter presses down */
+.kb{--kc:var(--cur);flex:none;display:grid;gap:1.5px;padding:3px;border-radius:5px;border:1px solid color-mix(in srgb,var(--kc) 25%,var(--card));background:color-mix(in srgb,var(--kc) 5%,var(--card))}
+.kb .r{display:flex;gap:1.5px;justify-content:center}
+.kb i{width:5px;height:5px;border-radius:1px;background:color-mix(in srgb,var(--kc) 18%,var(--card));transition:transform .08s,background .3s}
+.kb i.sp{width:24px}
+.kb i.dn{transform:translateY(.5px);background:var(--kc);transition:transform .04s,background 0s}
+body[data-ov=wait] .kb{--kc:var(--you)}body[data-ov=done] .kb{--kc:var(--test)}body[data-ov=fail] .kb{--kc:var(--fail)}body[data-ov=idle] .kb{opacity:.55}
+.meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.meta .row1{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}
+.beat::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--cur);margin-right:5px;vertical-align:1px}
+.beat.pulse::before{animation:ping .9s ease-out}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat b.bump{animation:bump .5s ease-out}
+/* gate */
+.gate{border:1px solid color-mix(in srgb,var(--you) 40%,var(--card));background:color-mix(in srgb,var(--you) 7%,var(--card));border-radius:12px;padding:12px 14px;margin-bottom:14px;animation:glow 3.2s ease-in-out infinite}
+.gh{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.bell{width:10px;height:10px;border-radius:50%;background:var(--you);margin-top:5px;flex:none;animation:ping 1.8s ease-out infinite}
+.gq{font-weight:500;font-size:14px}
+.file{border:1px solid var(--line);border-radius:8px;background:var(--card);margin:8px 0;max-height:min(70vh,640px);overflow:auto}
+.fh{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 8px;padding:6px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;left:0;z-index:1;background:var(--card);font-size:12px;color:var(--muted)}
+.fh a,.lnk{color:var(--cur)}
+.fa{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.lnk{border:0;background:none;cursor:pointer;font-size:12px;padding:0}
+.okc{display:inline-flex;gap:5px;align-items:center;cursor:pointer;color:var(--text)}
+.fh .by{font-size:11px;color:var(--faint);margin-left:8px}
+.gq .who{display:block;font-size:12px;font-weight:500;color:var(--you);margin-bottom:2px}
+.okd{font-size:11px;padding:1px 8px;border-radius:999px;margin-left:6px;background:color-mix(in srgb,var(--test) 14%,var(--card));color:var(--test)}
+/* formatted markdown, one row per source line so line comments keep working */
+.lines.md{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.55}
+.lines.md>li{padding:1px 10px 1px 0}
+.lines.md .ln{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;padding-top:3px;opacity:.6}
+.lines.md .lt{white-space:normal}
+.lines.md>li.md-h .lt{font-weight:500}
+.lines.md>li.md-h1 .lt{font-size:16px;padding-top:2px}
+.lines.md>li.md-h2 .lt{font-size:14.5px;padding-top:8px}
+.lines.md>li.md-h3 .lt,.lines.md>li.md-h4 .lt{font-size:13.5px;padding-top:4px}
+.lines.md>li.md-blank,.lines.md>li.md-sep,.lines.md>li.md-fence{height:6px;overflow:hidden;cursor:default}
+.lines.md>li.md-blank .ln,.lines.md>li.md-sep .ln,.lines.md>li.md-fence .ln,.lines.md>li.md-hr .ln{visibility:hidden}
+.lines.md>li.md-hr{cursor:default}
+.lines.md>li.md-hr .lt{border-top:1px solid var(--line);margin:8px 0}
+.lines.md>li.md-li .lt{display:flex;gap:6px}
+.md-b{color:var(--muted);flex:none;min-width:10px}
+.lines.md>li.md-cont .lt{padding-left:22px}
+.lines.md>li.md-q .lt{border-left:3px solid var(--line);padding-left:8px;color:var(--muted)}
+.lines.md>li.md-code .lt{font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.4;white-space:pre;width:max-content;min-width:100%;padding:0 10px;background:color-mix(in srgb,var(--text) 5%,var(--card))}
+.lines.md .tr{display:grid;gap:0 12px;padding:3px 0;border-bottom:1px solid var(--line)}
+.lines.md .tr>div{min-width:0;overflow-wrap:break-word}
+.lines.md>li.md-th .tr{font-weight:500;border-bottom-color:var(--faint)}
+.lines.md code{font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:0 4px;border-radius:4px;background:color-mix(in srgb,var(--text) 6%,var(--card))}
+.lines.md u{text-decoration-color:var(--faint)}
+.lines{list-style:none;margin:0;padding:4px 0;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.lines>li{display:grid;grid-template-columns:36px 1fr;cursor:pointer;padding:0 8px 0 0}
+.lines>li:hover{background:color-mix(in srgb,var(--you) 8%,var(--card))}
+.lines>li.has{background:color-mix(in srgb,var(--you) 12%,var(--card))}
+.ln{color:var(--faint);text-align:right;padding-right:10px;user-select:none}
+.lt{white-space:pre-wrap;word-break:break-word}
+.lines>li.ed,.lines>li.note{display:flex;gap:6px;align-items:center;cursor:default;padding:4px 10px 6px 46px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:transparent}
+.lines>li.ed input{flex:1;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:var(--card)}
+.lines>li.note .nt{flex:1;border-left:3px solid var(--you);padding:2px 8px;background:color-mix(in srgb,var(--you) 9%,var(--card));border-radius:0 6px 6px 0}
+.x{border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:12px}
+textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--card);resize:vertical;margin-top:4px}
+.gact{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+/* team: one row per expert */
+.crew{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+.crew-h{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.crew-h b{font-weight:500}
+.crew-k{font-size:11px;padding:0 8px;border-radius:999px;color:var(--verify);background:color-mix(in srgb,var(--verify) 10%,var(--card));border:1px solid color-mix(in srgb,var(--verify) 28%,var(--card))}
+.crew-t{border:0;background:transparent;color:var(--muted);cursor:pointer;margin-left:auto;font-size:12px;text-decoration:underline;padding:0}
+.crew-g{margin-top:6px}
+.crew-r{display:grid;grid-template-columns:84px minmax(0,1.1fr) 112px minmax(0,2fr);gap:0 14px;padding:4px 0;border-top:1px solid var(--line)}
+.crew-r>div{min-width:0}
+.crew-r.hd{color:var(--faint);font-size:12px;border-top:0}
+.crew-r.first{border-top-color:color-mix(in srgb,var(--text) 14%,var(--card))}
+.crew-s{display:flex;gap:6px;align-items:center;color:color-mix(in srgb,var(--c) 70%,var(--text))}
+.crew-s i{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.crew-s.more{visibility:hidden}
+.crew-x{font-size:12px;color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+.crew-x.live{color:color-mix(in srgb,var(--c) 75%,var(--text))}
+.crew-x.live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--c);margin-right:5px;vertical-align:1px;animation:breathe 1.4s ease-in-out infinite}
+.crew-x.done{color:color-mix(in srgb,var(--c) 60%,var(--text))}
+.crew-x.done::before{content:"\2713  "}
+.crew-e.live{font-weight:500}
+.crew-e.skip,.crew-x.skip{color:var(--faint);text-decoration:line-through}
+.crew-a{font-size:11px;color:var(--you);margin-left:6px}
+.crew-w{color:var(--muted);font-size:12px}
+.crew-c{margin-top:6px;font-size:12px;color:var(--you)}
+@media (max-width:620px){.crew-r{grid-template-columns:minmax(0,1fr) auto}.crew-r.hd,.crew-s.more{display:none}
+.crew-s,.crew-w{grid-column:1/-1}.crew-r:not(.first){border-top-style:dashed}}
+/* team map (ported from the product-factory tracker): every agent as a star, grouped by team, lit along the hand-offs */
+.crew-v{display:inline-flex;margin-left:auto;border:1px solid var(--line);border-radius:999px;overflow:hidden;align-self:center}
+.crew-v button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;padding:1px 10px;cursor:pointer}
+.crew-v button[aria-pressed="true"]{background:color-mix(in srgb,var(--spec) 12%,var(--card));color:color-mix(in srgb,var(--spec) 75%,var(--text))}
+.crew-v+.crew-t{margin-left:10px}
+.vis{position:relative;margin-top:6px}
+.vis svg{display:block;width:100%;height:auto;max-height:480px}
+.vis-n{position:absolute;right:0;top:0;font-size:12px;color:var(--faint)}
+.star{fill:var(--line);animation:tw 4s ease-in-out infinite}@keyframes tw{50%{opacity:.2}}
+.cluster{fill:color-mix(in srgb,var(--spec) 5%,var(--card));stroke:color-mix(in srgb,var(--spec) 22%,var(--line));stroke-dasharray:2 5}
+.cl-name{fill:var(--faint);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;transition:fill .6s}
+.cl-name.active{fill:var(--spec)}
+.edge{stroke:var(--line);stroke-width:1.3;fill:none;transition:stroke 1s}
+.edge.lit{stroke:color-mix(in srgb,var(--spec) 45%,var(--line))}
+.an .body{fill:var(--card);stroke:hsl(var(--h) 30% 86%);transition:fill .8s,stroke .8s}
+.an.planned .body{stroke:hsl(var(--h) 40% 74%)}
+.an.done .body{fill:hsl(var(--h) 55% 90%);stroke:hsl(var(--h) 45% 62%)}
+.an.working .body{fill:hsl(var(--h) 70% 82%);stroke:hsl(var(--h) 45% 62%)}
+.an.off{opacity:.35}
+.an text{fill:var(--faint);font-size:12.5px;transition:fill .8s}
+.an text .l2{font-size:10.5px;opacity:.85}
+.an.done text,.an.working text,.an.planned text{fill:var(--text)}
+.an .orbit{stroke:hsl(var(--h) 55% 70%);transform-box:fill-box;transform-origin:center;opacity:0}
+.an.working .orbit{opacity:1;animation:spin 3.4s linear infinite}
+.vtoast{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);background:var(--card);border:1px solid color-mix(in srgb,var(--test) 40%,var(--line));
+  border-radius:999px;padding:3px 12px;font-size:12px;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis;pointer-events:none;animation:vtoast 3.4s forwards}
+.vtoast b{color:var(--test);font-weight:500}
+@keyframes vtoast{0%{opacity:0;transform:translate(-50%,10px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@media (prefers-color-scheme:dark){:root[data-theme="system"] .an .body{stroke:hsl(var(--h) 22% 38%)}:root[data-theme="system"] .an.planned .body{stroke:hsl(var(--h) 35% 52%)}
+:root[data-theme="system"] .an.done .body{fill:hsl(var(--h) 28% 26%);stroke:hsl(var(--h) 40% 55%)}:root[data-theme="system"] .an.working .body{fill:hsl(var(--h) 45% 40%);stroke:hsl(var(--h) 55% 68%)}}
+.gate .btn{--cur:var(--you)}
+.gate .btn:not(.ghost){background:var(--you)}
+.gid{font-size:11px;padding:0 7px;border-radius:999px;border:1px solid var(--line);color:var(--faint);white-space:nowrap;font-weight:400}
+.gid.approved{color:var(--test);border-color:color-mix(in srgb,var(--test) 35%,var(--card))}
+.gid.waiting{color:var(--you);border-color:color-mix(in srgb,var(--you) 40%,var(--card))}
+.gid.changes{color:var(--fail);border-color:color-mix(in srgb,var(--fail) 35%,var(--card))}
+/* timeline */
+.tl{list-style:none;margin:0;padding:0}
+.row{--c:var(--wrap);display:grid;grid-template-columns:28px 1fr;gap:10px}
+.s-spec{--c:var(--spec)}.s-design{--c:var(--design)}.s-build{--c:var(--build)}.s-review{--c:var(--review)}.s-test{--c:var(--test)}.s-verify{--c:var(--verify)}.s-release{--c:var(--release)}.s-wrap{--c:var(--wrap)}
+.s-intake{--c:var(--intake)}.s-base{--c:var(--base)}.s-requirements{--c:var(--requirements)}.s-product{--c:var(--product)}.s-prototype{--c:var(--prototype)}.s-stories{--c:var(--stories)}.s-audit{--c:var(--audit)}
+.rail{position:relative;display:flex;justify-content:center}
+.rail::before{content:"";position:absolute;top:24px;bottom:-6px;width:2px;background:var(--line);border-radius:2px}
+.row:last-child .rail::before{display:none}
+.row.done .rail::before{background:color-mix(in srgb,var(--c) 35%,var(--card))}
+.row.live .rail::before{background:repeating-linear-gradient(180deg,var(--c) 0 5px,transparent 5px 11px);background-size:2px 22px;animation:flow .7s linear infinite}
+.mk{position:relative;z-index:1;width:20px;height:20px;margin-top:9px;border-radius:50%;border:2px solid var(--line);background:var(--card);display:grid;place-items:center}
+.mk svg{width:13px;height:13px}
+.mk path{fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:14;stroke-dashoffset:14;transition:stroke-dashoffset .6s .15s}
+.done .mk{background:var(--c);border-color:var(--c)}.done .mk path{stroke-dashoffset:0}
+.live .mk{border-color:var(--c)}
+.live .mk::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--c);animation:breathe 1.6s ease-in-out infinite}
+.live .mk::before{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--c);animation:ring 1.8s ease-out infinite}
+.wait .mk{border-color:var(--you);background:color-mix(in srgb,var(--you) 25%,var(--card));animation:breathe 2.4s ease-in-out infinite}
+.fail .mk{border-color:var(--fail);background:color-mix(in srgb,var(--fail) 18%,var(--card))}
+.fail .mk::after{content:"!";color:var(--fail);font-weight:500;font-size:12px}
+.skip .mk{border-style:dashed}
+.main{border-radius:10px;padding:7px 12px 8px;margin:2px 0 6px;min-width:0}
+.row.live .main,.row.fail .main{border:1px solid color-mix(in srgb,var(--c) 30%,var(--card));
+background:radial-gradient(180px 70px at var(--ax) 20%,color-mix(in srgb,var(--c) 16%,transparent),transparent 70%),
+radial-gradient(220px 90px at var(--bx) 90%,color-mix(in srgb,var(--c) 12%,transparent),transparent 70%),color-mix(in srgb,var(--c) 5%,var(--card));
+animation:aurora 9s ease-in-out infinite alternate}
+.row.fail .main{border-color:color-mix(in srgb,var(--fail) 35%,var(--card))}
+.row.wait .main{border:1px dashed color-mix(in srgb,var(--you) 45%,var(--card))}
+.row.just .main{animation:flash 1.6s ease-out}
+.h{display:flex;gap:8px;align-items:baseline;width:100%;border:0;background:transparent;padding:2px 0;text-align:left;cursor:pointer}
+.nm{font-weight:500;font-size:14px}
+.row.todo .nm,.row.skip .nm{color:var(--faint);font-weight:400}
+.row.live .nm,.row.done .nm{color:color-mix(in srgb,var(--c) 70%,var(--text))}
+.whoa{color:var(--muted);font-size:12px}
+.row.skip .whoa{font-style:italic}
+.whoa:empty{display:none}
+/* the agent of the running stage stands out: a tag in the stage colour with a breathing dot */
+.row.live .whoa,.row.fail .whoa{display:inline-flex;gap:6px;align-items:center;font-weight:500;padding:0 9px;border-radius:999px;color:color-mix(in srgb,var(--cur) 80%,var(--text));background:color-mix(in srgb,var(--cur) 10%,var(--card));border:1px solid color-mix(in srgb,var(--cur) 30%,var(--card))}
+.row.live .whoa::before,.row.fail .whoa::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cur);animation:breathe 1.4s ease-in-out infinite}
+.bud{font-size:13px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bud.over{padding:0 7px;border-radius:4px;color:color-mix(in srgb,var(--you) 80%,var(--text));background:color-mix(in srgb,var(--you) 14%,var(--card))}
+.bud.past{font-size:12px;color:var(--faint)}
+.tm{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.out{color:var(--muted);font-size:12px}
+.out:empty{display:none}
+.row.done .out{color:color-mix(in srgb,var(--c) 60%,var(--text))}
+.row.fail .out{color:var(--fail)}
+.feed{list-style:none;margin:6px 0 0;padding:0}
+.row:not(.live):not(.wait):not(.fail):not(.open) .feed{display:none}
+.feed li{display:grid;grid-template-columns:40px 1fr;gap:8px;padding:2px 0}
+.feed .when{color:var(--faint);font-variant-numeric:tabular-nums;font-size:12px}
+.feed .tx{word-break:break-word}
+.feed li:last-child .tx{color:var(--text)}
+.feed li:not(:last-child){opacity:.72}
+.feed .by{color:var(--faint);font-size:12px}
+.tag{font-size:11px;padding:0 6px;border-radius:4px;margin-right:6px;background:color-mix(in srgb,var(--c) 12%,var(--card));color:color-mix(in srgb,var(--c) 75%,var(--text))}
+.k-block .tag,.k-fail .tag,.k-must .tag{background:color-mix(in srgb,var(--fail) 13%,var(--card));color:var(--fail)}
+.k-flag .tag,.k-gate .tag,.k-changes .tag,.k-ask .tag{background:color-mix(in srgb,var(--you) 14%,var(--card));color:var(--you)}
+.ans{color:var(--muted);margin-top:2px;white-space:pre-wrap}
+.dec{font-size:11px;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px;background:color-mix(in srgb,var(--you) 14%,var(--card));color:var(--you)}
+.k-route .tag,.k-decide .tag,.k-integrate .tag{background:color-mix(in srgb,var(--wrap) 16%,var(--card));color:color-mix(in srgb,var(--wrap) 55%,var(--text))}
+.chip.warn{--c:var(--you)}
+.chip.quiet{--c:var(--muted)}
+.acard .lw{font-size:12px;font-weight:500;color:color-mix(in srgb,var(--a) 60%,var(--text))}
+.acard .lr{list-style:none;margin:4px 0 0;padding:0;font-size:12px}
+.acard .lr li{display:flex;gap:6px;align-items:baseline;min-width:0;padding:2px 6px}
+.acard .lr .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acard .lr .ic{color:var(--muted)}
+.acard .chips{margin-top:4px}
+.k-ok .tag,.k-done .tag{background:color-mix(in srgb,var(--test) 14%,var(--card));color:var(--test)}
+.feed li.new{animation:rise .45s ease-out}
+.feed li.new .tx::before{content:"\2726  ";color:var(--c);animation:fade 2.5s forwards}
+.typing::after{content:"";display:inline-block;width:2px;height:13px;background:var(--c);margin-left:2px;vertical-align:-2px;animation:blink .7s step-end infinite}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chips:empty{display:none}
+.chip{font-size:11px;padding:1px 8px;border-radius:999px;background:color-mix(in srgb,var(--c) 11%,var(--card));color:color-mix(in srgb,var(--c) 70%,var(--text));border:1px solid color-mix(in srgb,var(--c) 22%,var(--card))}
+.chip.pop{animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
+button.chip{font:inherit;font-size:11px;cursor:pointer}
+button.chip:hover{background:color-mix(in srgb,var(--c) 20%,var(--card))}
+dialog.fv{width:min(980px,94vw);height:min(82vh,900px);padding:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);flex-direction:column;overflow:hidden}
+dialog.fv[open]{display:flex}
+dialog.fv::backdrop{background:rgba(16,18,28,.38)}
+.fv-h{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.fv-p{flex:1;min-width:0;font-family:ui-monospace,Consolas,monospace;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fv-h button{font:inherit;font-size:12px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:6px;padding:2px 10px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.fv-b{flex:1;overflow:auto}
+.fv-b .lines>li{grid-template-columns:52px 1fr;cursor:text}
+.fv-b .lines>li:hover{background:transparent}
+.fv-b .lt{tab-size:4}
+.fv-b .lines:not(.md){width:max-content;min-width:100%}
+.fv-b .lines:not(.md) .lt{white-space:pre}
+.fv-b .lines:not(.md) .ln{position:sticky;left:0;background:var(--card)}
+.fv-m{margin:0;padding:14px 16px;color:var(--muted);font-size:13px}
+/* misc */
+.toast{position:sticky;bottom:12px;margin:12px auto 0;max-width:520px;background:var(--text);color:var(--bg);border-radius:10px;padding:9px 14px;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:none;pointer-events:auto}
+.toast textarea{color:var(--text);margin-top:6px}
+.idle{text-align:center;padding:60px 20px;color:var(--muted)}
+.idle .orbw{margin:0 auto 14px;--c:var(--spec)}
+.demo{font-size:11px;color:var(--spec);border:1px dashed var(--spec);border-radius:999px;padding:0 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{50%{transform:scale(.82);opacity:.7}}
+@keyframes ring{from{transform:scale(.6);opacity:.7}to{transform:scale(1.25);opacity:0}}
+@keyframes ping{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--cur) 45%,transparent)}to{box-shadow:0 0 0 8px transparent}}
+@keyframes eq{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes sweep{to{background-position:-160% 0}}
+@keyframes flow{to{background-position:0 22px}}
+@keyframes aurora{to{--ax:85%;--bx:15%}}
+@keyframes flash{from{background:color-mix(in srgb,var(--c) 30%,var(--card))}}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}}
+@keyframes fade{to{opacity:0}}
+@keyframes blink{50%{opacity:0}}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+@keyframes bump{40%{transform:translateY(-3px);color:var(--cur)}}
+@keyframes glow{50%{border-color:color-mix(in srgb,var(--you) 70%,var(--card))}}
+/* each stage shows one card per agent run (the live-rolling prototype, variant B): an avatar with its initials, its
+   job in one sentence, calls against its Speed line and a roll of three lines - just done, now (typing itself
+   out), up next in its own job; finished runs fold into a short summary for people */
+#doing .n{color:var(--cur)}
+.atag{display:inline-flex;gap:5px;align-items:center;font-size:11px;padding:0 8px;border-radius:999px;white-space:nowrap;flex:none;
+ color:color-mix(in srgb,var(--a) 78%,var(--text));background:color-mix(in srgb,var(--a) 10%,var(--card));border:1px solid color-mix(in srgb,var(--a) 28%,var(--card))}
+.adot{width:7px;height:7px;border-radius:50%;background:var(--a);flex:none;display:inline-block}
+.live-a .adot,.adot.live{animation:breathe 1.4s ease-in-out infinite}
+.feed .atag{margin-left:4px;vertical-align:1px}
+.num{font-variant-numeric:tabular-nums;color:var(--faint);font-size:12px;white-space:nowrap}
+.num.over{color:color-mix(in srgb,var(--you) 80%,var(--text))}
+/* the roll: just done, now, up next */
+.roll{position:relative;overflow:hidden;margin-top:6px;display:grid;grid-template-columns:minmax(0,1fr)}
+.rl{display:flex;gap:8px;align-items:center;min-width:0;padding:3px 8px;border-radius:7px}
+.rl .tx{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rl .ic:empty{display:none}
+.rl .ic{width:14px;flex:none;text-align:center;color:var(--faint);font-size:12px}
+.rl.past{opacity:.55;font-size:12px}
+.rl.past .ic{color:var(--test)}
+.rl.now{font-weight:500;font-size:13.5px;padding:5px 8px;background:color-mix(in srgb,var(--a,var(--c)) 11%,var(--card));border:1px solid color-mix(in srgb,var(--a,var(--c)) 26%,var(--card))}
+.rl.next{opacity:.6;font-size:12px;color:var(--muted)}
+.rl.next .tx{font-style:italic}
+.roll.go .rl.past,.roll.go .rl.now{animation:roll .38s cubic-bezier(.2,.8,.3,1)}
+.roll.go .rl.next{animation:fadein .6s .2s both}
+.roll.go .rl.now .tx{animation:fadein .5s}
+/* finished agents: summary for people */
+.fin{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;margin-top:8px}
+.fin:empty{display:none}
+.sum,.sum-h{min-width:0}
+.sum{border:1px solid var(--line);border-left:3px solid var(--a);border-radius:8px;padding:6px 10px;background:var(--card)}
+.sum-h{display:flex;gap:8px;align-items:center;width:100%;border:0;background:transparent;padding:0;text-align:left;cursor:pointer}
+.sum-h .first{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.sum.open .sum-h .first{white-space:normal}
+.sum ul{margin:4px 0 0 0;padding-left:18px;color:var(--text)}
+.sum ul li{padding:1px 0}
+.sum .ft{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:4px;font-size:12px;color:var(--muted)}
+.sum .lnk{border:0;background:none;padding:0;cursor:pointer;color:color-mix(in srgb,var(--a) 75%,var(--text));text-decoration:underline;font-size:12px}
+.sum .why{color:color-mix(in srgb,var(--you) 80%,var(--text))}
+.sum.failed .why{color:var(--fail)}
+.steps{list-style:none;margin:6px 0 0;padding:0;max-height:180px;overflow:auto;border-top:1px solid var(--line)}
+.steps li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;font-size:12px;color:var(--muted);padding:1px 0}
+.steps summary{cursor:pointer;list-style:none}.steps summary::-webkit-details-marker{display:none}
+.steps summary::after{content:" \25B8";color:var(--faint)}.steps details[open] summary::after{content:" \25BE"}
+.steps code{display:block;margin:2px 0 4px;padding:3px 6px;border-radius:5px;font-family:ui-monospace,Consolas,monospace;font-size:11.5px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);background:color-mix(in srgb,var(--text) 6%,transparent)}
+.sum:not(.open) ul,.sum:not(.open) .ft,.sum:not(.open) .steps{display:none}
+/* working, not loading: the step types itself out behind a caret, the avatar nods on each new step, the calls bar grows */
+.typing::after{content:"";display:inline-block;width:2px;height:13px;background:var(--a,var(--c));margin-left:2px;vertical-align:-2px;animation:blink .9s step-end infinite}
+@keyframes nod{35%{transform:translateY(-3px) scale(1.08)}}
+.acard.go .av{animation:nod .45s ease-out}
+.meter{height:4px;border-radius:2px;background:color-mix(in srgb,var(--a) 14%,var(--card));overflow:hidden;width:56px;flex:none}
+.meter i{display:block;height:100%;background:var(--a);border-radius:2px;transition:width .5s ease-out}
+.meter.over i{background:var(--you)}
+.acard .calls{display:flex;gap:6px;align-items:center;margin-left:auto}
+.acard .rl{padding:3px 6px}.acard .rl.now{font-size:13px}
+/* one card per agent, side by side when several work */
+.agrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;margin-top:8px}
+.agrid:empty{display:none}
+.acard{border:1px solid color-mix(in srgb,var(--a) 30%,var(--card));border-radius:10px;background:var(--card);padding:8px 10px;min-width:0}
+.acard.plan{border-style:dashed;opacity:.7}
+.acard .ah{display:flex;gap:8px;align-items:center;min-width:0}
+.acard .job{font-size:12px;color:var(--muted);margin:1px 0 0}
+.acard .roll{margin-top:4px}
+.upn{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted);font-style:italic}
+.upn::before{content:"\2192";font-style:normal;color:var(--faint)}
+/* the working agent, clearly at work: avatar with its initials and its name */
+.pres{display:inline-flex;gap:7px;align-items:center;flex:none;min-width:0;font-size:12px;font-weight:500;color:color-mix(in srgb,var(--a) 80%,var(--text))}
+.av{position:relative;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:500;letter-spacing:.2px;flex:none;
+ color:color-mix(in srgb,var(--a) 85%,var(--text));background:color-mix(in srgb,var(--a) 16%,var(--card))}
+.pres.off .av::after{content:"\2713";position:absolute;right:-4px;bottom:-3px;width:12px;height:12px;border-radius:50%;font-size:8px;display:grid;place-items:center;color:#fff;background:var(--test)}
+.pres.off.stopped .av::after{content:"!";background:var(--you)}.pres.off.failed .av::after{content:"!";background:var(--fail)}
+@keyframes roll{from{transform:translateY(100%)}}
+@keyframes fadein{from{opacity:0}}
+@media (max-width:620px){.sum-h{flex-wrap:wrap}.sum-h .first{order:3;flex-basis:100%;white-space:normal}.rl .ago,.rl .el{display:none}.agrid{grid-template-columns:1fr}.rl.now .tx{white-space:normal}}
+
+/* glass: see-through panels over a slow colour field; a lit top edge and blur instead of shadows */
+:root{--glass:color-mix(in srgb,var(--card) 52%,transparent);--glass-hi:color-mix(in srgb,#fff 70%,transparent);--glass-line:color-mix(in srgb,var(--text) 10%,transparent);--sheen:color-mix(in srgb,#fff 55%,transparent);--field:.30}
+@media (prefers-color-scheme:dark){:root[data-theme="system"]{--glass:color-mix(in srgb,var(--card) 42%,transparent);--glass-hi:color-mix(in srgb,#fff 9%,transparent);--glass-line:color-mix(in srgb,#fff 10%,transparent);--sheen:color-mix(in srgb,#fff 14%,transparent);--field:.20}}
+.field{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.field i{position:absolute;width:44vmax;height:44vmax;border-radius:50%;filter:blur(80px);opacity:var(--field);animation:drift 40s ease-in-out infinite alternate}
+.field i:nth-child(1){background:var(--design);left:-14vmax;top:-12vmax}
+.field i:nth-child(2){background:var(--build);right:-16vmax;top:16vh;animation-duration:48s;animation-delay:-14s}
+.field i:nth-child(3){background:var(--spec);left:22vw;bottom:-24vmax;animation-duration:56s;animation-delay:-24s}
+@keyframes drift{to{transform:translate(9vmax,7vmax) scale(1.15)}}
+.top,.stat,.crew,.acard,.sum{background:linear-gradient(180deg,var(--glass-hi),transparent 42%),var(--glass);
+ -webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--glass-line)}
+.top{border-radius:16px}.stat{border-radius:12px}.crew{border-radius:14px}
+.gate{background:linear-gradient(180deg,var(--glass-hi),transparent 42%),color-mix(in srgb,var(--you) 9%,var(--glass));
+ -webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border-radius:16px}
+.row.live .main,.row.fail .main{border:1px solid color-mix(in srgb,var(--c) 26%,var(--glass-line));border-radius:16px;
+ background:radial-gradient(200px 80px at var(--ax) 15%,color-mix(in srgb,var(--c) 20%,transparent),transparent 70%),
+ radial-gradient(240px 100px at var(--bx) 95%,color-mix(in srgb,var(--c) 14%,transparent),transparent 70%),
+ linear-gradient(180deg,var(--glass-hi),transparent 40%),var(--glass);
+ -webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%)}
+.row.fail .main{border-color:color-mix(in srgb,var(--fail) 35%,var(--glass-line))}
+.row.wait .main{border-radius:16px;background:color-mix(in srgb,var(--you) 5%,var(--glass))}
+/* agent cards: tinted glass in the agent's colour; a light sheen crosses the card each time it takes a step */
+.acard{position:relative;overflow:hidden;border-radius:14px;border-color:color-mix(in srgb,var(--a) 30%,var(--glass-line));
+ background:linear-gradient(135deg,color-mix(in srgb,var(--a) 13%,transparent),transparent 55%),linear-gradient(180deg,var(--glass-hi),transparent 42%),var(--glass)}
+.acard.plan{border-style:dashed;opacity:.75;background:var(--glass)}
+.acard.go::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 30%,var(--sheen) 50%,transparent 70%);transform:translateX(-110%);animation:sheen 1s ease-out}
+@keyframes sheen{to{transform:translateX(110%)}}
+.acard .rl.now{background:color-mix(in srgb,var(--a) 12%,transparent);border:1px solid color-mix(in srgb,var(--a) 22%,transparent);border-radius:9px}
+.sum{border-radius:12px;border-left-width:1px;background:linear-gradient(90deg,color-mix(in srgb,var(--a) 11%,transparent),transparent 50%),linear-gradient(180deg,var(--glass-hi),transparent 42%),var(--glass)}
+.av{background:color-mix(in srgb,var(--a) 20%,transparent);border:1px solid color-mix(in srgb,var(--a) 35%,transparent)}
+.pill,.chip{background-color:color-mix(in srgb,var(--card) 40%,transparent)}
+/* the agent is alive: an orb that floats, blinks and glances at its work when it takes a step */
+.aorb{position:relative;width:28px;height:28px;border-radius:50%;flex:none;
+ background:radial-gradient(circle at 34% 28%,color-mix(in srgb,#fff 60%,var(--a)),var(--a) 72%);border:1px solid color-mix(in srgb,var(--a) 55%,transparent);animation:alive 3.4s ease-in-out infinite}
+.aorb .eyes{position:absolute;inset:0;animation:look 7s ease-in-out infinite}
+.aorb .eye{position:absolute;top:10px;width:4px;height:7px;border-radius:2px;background:#fff;animation:blinkeye 4.6s infinite}
+.aorb .eye.l{left:8.5px}.aorb .eye.r{right:8.5px}
+.acard.go .aorb .eyes{animation:glance 1s ease-out}
+.acard.go .aorb{animation:nod .45s ease-out,alive 3.4s .45s ease-in-out infinite}
+@keyframes alive{50%{transform:translateY(-1.5px)}}
+@keyframes blinkeye{0%,45%,49%,100%{transform:scaleY(1)}47%{transform:scaleY(.12)}}
+@keyframes look{0%,28%{transform:translate(0,0)}38%,58%{transform:translate(1.5px,.5px)}68%,100%{transform:translate(-1px,0)}}
+@keyframes glance{30%,70%{transform:translate(2.5px,2.5px)}}
+/* what it is doing, drawn: reading scans lines, searching moves a magnifier, writing draws ink, running prints output */
+.rl .ic:has(svg){width:30px;height:20px}
+.scene{width:30px;height:20px;display:block;color:var(--a);fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.scene .pg{fill:color-mix(in srgb,var(--a) 10%,transparent)}
+.scene .ln{opacity:.55}
+.scene .hl{fill:var(--a);stroke:none;opacity:.28;animation:scanl 2.4s ease-in-out infinite}
+.scene .mg{animation:hunt 2.6s ease-in-out infinite}
+.scene .ink{stroke-dasharray:15;stroke-dashoffset:15;animation:ink 1.8s linear infinite}
+.scene .pen{fill:var(--a);stroke:none;animation:pen 1.8s linear infinite}
+.scene .o1{animation:out1 2s steps(1) infinite}.scene .o2{animation:out2 2s steps(1) infinite}.scene .cur{fill:var(--a);stroke:none;animation:blink 1s step-end infinite}
+@keyframes scanl{0%,100%{transform:translateY(0)}33%{transform:translateY(3.5px)}66%{transform:translateY(7px)}}
+@keyframes hunt{0%,100%{transform:translate(-7px,0)}50%{transform:translate(2px,3px)}}
+@keyframes ink{to{stroke-dashoffset:0}}
+@keyframes pen{from{transform:translateX(-14px)}to{transform:translateX(0)}}
+@keyframes out1{0%{opacity:0}25%,100%{opacity:1}}
+@keyframes out2{0%,50%{opacity:0}75%,100%{opacity:1}}
+.rl .typing::after,.pnow .typing::after{display:none}
+/* the agent's plan: a pill on its card opens a glass panel that updates live */
+.planb{display:inline-flex;gap:5px;align-items:center;font-size:11.5px;padding:1px 10px;border-radius:999px;cursor:pointer;white-space:nowrap;flex:none;
+ color:color-mix(in srgb,var(--a) 80%,var(--text));background:color-mix(in srgb,var(--a) 10%,transparent);border:1px solid color-mix(in srgb,var(--a) 30%,transparent)}
+.planb b{font-weight:500}.planb:hover{background:color-mix(in srgb,var(--a) 18%,transparent)}
+.planb[aria-expanded=true]{background:color-mix(in srgb,var(--a) 22%,transparent)}
+.drawer{position:fixed;top:12px;right:12px;bottom:12px;width:min(410px,calc(100vw - 24px));z-index:20;display:flex;flex-direction:column;border-radius:18px;
+ border:1px solid color-mix(in srgb,var(--a) 32%,var(--glass-line));
+ background:linear-gradient(160deg,color-mix(in srgb,var(--a) 15%,transparent),transparent 45%),linear-gradient(180deg,var(--glass-hi),transparent 30%),color-mix(in srgb,var(--card) 88%,transparent);
+ -webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);animation:slidein .35s cubic-bezier(.2,.8,.3,1)}
+.drawer[hidden]{display:none}
+@keyframes slidein{from{transform:translateX(28px);opacity:0}}
+@keyframes slideup{from{transform:translateY(28px);opacity:0}}
+.dr-h{display:flex;gap:10px;align-items:center;padding:14px 14px 4px 16px}
+.dr-h b{font-weight:500;font-size:14px}
+.dr-x{margin-left:auto;border:0;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:var(--muted);width:30px;height:30px;border-radius:50%}
+.dr-x:hover{background:color-mix(in srgb,var(--text) 7%,transparent)}
+.dr-sub{padding:0 16px;color:var(--muted);font-size:12px}
+.dr-cert{padding:0 16px 4px;color:var(--muted);font-size:12px;line-height:1.4}
+.dr-meta{margin:6px 16px 2px;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px;line-height:1.4}
+.dr-meta dt{color:var(--muted);font-weight:500}.dr-meta dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.dr-gen{margin:4px 16px 0;font-size:12px;color:var(--muted)}
+.pl{list-style:none;margin:0;padding:6px 10px 16px;overflow:auto;flex:1}
+.pl>li{border-radius:11px;padding:6px 8px;margin:2px 0;border:1px solid transparent}
+.pi{display:flex;gap:9px;align-items:flex-start;width:100%;border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit}
+button.pi{cursor:pointer}
+.pn{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;border:1px solid var(--glass-line);color:var(--faint);margin-top:1px}
+.pt{flex:1;min-width:0}
+.pw{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;margin-top:2px}
+.pl>li.d .pn{background:var(--a);border-color:var(--a);color:#fff}
+.pl>li.d .pt{color:var(--muted)}
+.pl>li.c{background:color-mix(in srgb,var(--a) 12%,transparent);border-color:color-mix(in srgb,var(--a) 28%,transparent)}
+.pl>li.c .pt{font-weight:500}
+.pl>li.c .pn{border-color:var(--a);color:var(--a)}
+.pl>li.u{opacity:.62}
+.pl>li.just{animation:justdone 1.4s ease-out}
+@keyframes justdone{from{background:color-mix(in srgb,var(--test) 24%,transparent)}}
+.ps{list-style:none;margin:4px 0 2px 29px;padding:0;font-size:12px;color:var(--muted)}
+.ps li{padding:1px 0}
+.ps li::before{content:"\2713  ";color:var(--test)}
+.pnow{display:flex;gap:8px;align-items:center;margin:4px 0 0 29px;font-size:12.5px;color:var(--text)}
+.dr-ft{padding:8px 16px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--glass-line)}
+@media (max-width:620px){.drawer{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:82vh;animation:slideup .35s cubic-bezier(.2,.8,.3,1)}}
+.sum-top{display:flex;gap:8px;align-items:center;min-width:0}.sum-top .sum-h{flex:1}
+.upn[hidden],.agrid:empty,.fin:empty{display:none}
+@media (max-width:620px){.sum-top{align-items:flex-start}}
+/* plan progress: a small ring next to the title */
+.ring{display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ring svg{width:15px;height:15px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:2.6}
+.ring .tr{stroke:color-mix(in srgb,var(--a) 20%,transparent)}
+.ring .fg{stroke:var(--a);stroke-linecap:round}
+@media (max-width:620px){.tm{white-space:normal;text-align:right}.stats{grid-template-columns:repeat(3,1fr)}.stat:nth-child(n+4){display:none}.top{flex-wrap:wrap}.meta{flex-direction:row;align-items:center;flex-basis:100%;flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-ov="idle">
+<div class="field" aria-hidden="true"><i></i><i></i><i></i></div>
+<aside id="pdr" class="drawer" role="dialog" aria-label="Plan" hidden></aside>
+<div class="wrap">
+  <div id="idle" class="idle">
+    <div class="orbw"><div class="orb"></div><div class="spark">&#10022;</div></div>
+    <div style="font-size:14px;font-weight:500;color:var(--text)">No task is running</div>
+    <p>Start a change with <code>/sdlc</code> or a new product with <code>/factory</code>, in Claude Code or Cursor; this page wakes up by itself.</p>
+    <button class="btn" type="button" id="demoBtn" style="--cur:var(--spec)">Watch a demo run</button>
+  </div>
+  <div id="app" hidden>
+    <header class="top">
+      <div class="kb" id="kb" aria-hidden="true"></div>
+      <div class="who">
+        <div class="l1"><b id="tid"></b><span class="tt" id="ttl"></span><span class="risk" id="risk" hidden></span><span class="demo" id="demoTag" hidden>demo</span></div>
+        <div class="l2"><span id="doing" aria-hidden="true"></span><span class="caret" aria-hidden="true"></span><span class="sr" id="doingSr" aria-live="polite"></span></div>
+      </div>
+      <div class="meta">
+        <div class="row1"><span class="pill" id="mode" hidden></span><span class="pill" id="code" hidden></span><span class="pill" id="size"></span><span class="pill" id="tool"></span><span class="pill" id="state"></span><button type="button" class="pill thm" id="thm" title="Light, or follow the computer's light/dark setting"></button></div>
+        <span class="sub beat" id="upd"></span>
+      </div>
+    </header>
+    <section class="stats" aria-label="Progress">
+      <div class="stat"><span class="sub">Total time</span><b id="total">-</b></div>
+      <div class="stat"><span class="sub">This stage</span><b id="stagetime">-</b></div>
+      <div class="stat" title="Share of the reads, edits and commands the Tech Lead did itself; the rest is the agents' own work"><span class="sub">Tech Lead share</span><b id="c-lead">-</b></div>
+      <div class="stat"><span class="sub">Files read</span><b id="c-read">0</b></div>
+      <div class="stat"><span class="sub">Edits</span><b id="c-edit">0</b></div>
+      <div class="stat"><span class="sub">Commands</span><b id="c-run">0</b></div>
+    </section>
+    <section id="gate" hidden></section>
+    <section class="crew" id="crew" hidden aria-label="Team"></section>
+    <ol class="tl" id="tl" aria-label="Stages"></ol>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+  <dialog class="fv" id="fv" aria-labelledby="fvp"><div class="fv-h"><span class="fv-p" id="fvp"></span><button type="button" id="fvcp">Copy path</button><button type="button" id="fvx" autofocus>Close</button></div><div class="fv-b" id="fvb"></div></dialog>
+</div>
+<script>
+"use strict";
+const PROJ=window.__PROJECT__||{name:"",ticket:""};
+/* stages come from the data (task or product mode); these names and defaults cover both modes */
+const TASK=[["spec","Spec"],["design","Design"],["build","Build"],["review","Review"],["test","Test"],["verify","Verify"],["release","Release"],["wrap","Wrap-up"]];
+const NAMES=Object.assign(Object.fromEntries(TASK),{intake:"Intake",base:"Base",requirements:"Requirements",product:"Product review",prototype:"Prototype",stories:"Stories",audit:"Audit"});
+const ACTOR={spec:"spec-analyst",design:"solution-architect",build:"main session",review:"code-reviewer",test:"qa-engineer",verify:"verifier",release:"release-manager",wrap:"commit-msg",
+  intake:"main session",base:"base-builder",requirements:"spec-analyst",product:"product-critic",prototype:"ux-designer",stories:"story-sizer",audit:"audit-expert"};
+const ASKS={spec:"to confirm what it understood",design:"to review and approve the design",build:"for an answer before building",review:"for a decision on the review",test:"for a decision on the tests",verify:"for an answer to finish the check",release:"for a go-live decision",wrap:"for a last answer",
+  intake:"to agree the plan",base:"for an answer on the base",requirements:"to confirm the spec",product:"to answer the gaps and issues",prototype:"to pick an option",stories:"to agree the scope and the MVP",audit:"for a decision on the audit"};
+/* the main session shows as the Tech Lead; status.json, events and hooks keep "main session" */
+const DN=a=>String(a==null?"":a).replace(/\bmain session\b/g,"Tech Lead");
+function waiters(g){const st=D.stages.find(s=>s.k===g.stage)||{};return (g.by||st.actor||ACTOR[g.stage]||"main session").split(", ")}
+function whoWaits(g){const w=waiters(g).map(DN);return w.join(" and ")+(w.length>1?" are":" is")+" waiting for you "+(ASKS[g.stage]||"")}
+function gname(g){return (g.gid?g.gid+" ":"")+(NAMES[g.stage]||g.stage)}
+const VERB={spec:"is writing the spec",design:"is designing the change",build:"is building it",review:"is reviewing the diff",test:"is running the tests",verify:"is checking it live",release:"is checking the release",wrap:"is wrapping up",
+  intake:"is reading the requirement",base:"is building the base",requirements:"is writing the spec",product:"is reviewing the product",prototype:"is building the prototype",stories:"is sizing the stories",audit:"is auditing the product"};
+const TAG={block:"blocked",flag:"fixed",fail:"must fix",must:"must fix",gate:"your turn",ok:"approved",changes:"changes",ask:"question",start:"started",done:"done",note:"note",agent:"agent",read:"read",edit:"edit",run:"run",search:"search",skill:"skill",plan:"team",route:"routed",decide:"decided",integrate:"merged"};
+/* the core teams, for the demo and for data written before teams were stored; real tasks carry D.teams */
+const CORE_TEAMS=[["lead","Lead",["main session"]],["product","Product",["spec-analyst","product-critic","story-sizer"]],["design","Design",["ux-designer"]],
+  ["architecture","Architecture",["solution-architect","data-architect","security-architect"]],["engineering","Engineering",["base-builder","backend-developer","frontend-developer","integration-engineer"]],
+  ["domain","Domain experts",["sf-expert","sf-skills-expert","ai-engineer","n8n-expert"]],["quality","Quality",["code-reviewer","qa-lead","qa-engineer","ui-qa-expert","e2e-qa-expert","verifier","performance-engineer","bug-investigator"]],
+  ["audit","Audit",["audit-expert"]],["operations","Operations",["devops-engineer","release-manager"]],["helpers","Helpers",["explorer"]]].map(([id,name,agents])=>({id,name,agents}));
+if(PROJ.name)document.title=PROJ.name+" - Live status";
+const REDUCE=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let D=null,seen=0,rows={},gateKey=null,demo=null,lastChange=Date.now();
+
+function ms(a,b){return (b?Date.parse(b):Date.now())-Date.parse(a)}
+function fmt(m){const s=Math.max(0,Math.floor(m/1000));if(s<60)return s+"s";const mi=Math.floor(s/60);if(mi<60)return mi+"m "+String(s%60).padStart(2,"0")+"s";return Math.floor(mi/60)+"h "+String(mi%60).padStart(2,"0")+"m"}
+function hm(t){const d=new Date(t);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function cur(d){for(const st of ["wait","live","fail"]){const h=d.stages.filter(s=>s.state===st);if(h.length)return h[h.length-1]}
+  const started=d.stages.filter(s=>s.start);return started.length?started[started.length-1]:d.stages.find(s=>s.state!=="skip")}
+function overall(d){if(d.gate||d.stages.some(s=>s.state==="wait"))return "wait";
+  if(d.stages.every(s=>s.state==="done"||s.state==="skip"))return "done";
+  if(d.stages.some(s=>s.state==="fail")&&!d.stages.some(s=>s.state==="live"))return "fail";
+  return ms(d.updated)>180000?"idle":"live"}
+
+const MEM={};
+function store(k){if(!MEM[k]){let v=null;try{v=JSON.parse(localStorage.getItem("lsc:"+k))}catch(e){}MEM[k]=v||{lines:{},general:""}}return JSON.parse(JSON.stringify(MEM[k]))}
+function keep(k,v){MEM[k]=v;try{localStorage.setItem("lsc:"+k,JSON.stringify(v))}catch(e){}}
+
+function buildRows(d){
+  const ol=$("#tl");ol.innerHTML="";rows={};
+  d.stages.forEach(({k,name:n})=>{const li=document.createElement("li");li.className="row s-"+k+" todo";
+    li.innerHTML='<div class="rail"><span class="mk"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8.5l2.6 2.6L12 5.5"/></svg></span></div>'+
+      '<div class="main"><button class="h" type="button" aria-expanded="false"><span class="nm">'+esc(n)+'</span><span class="gid" hidden></span><span class="whoa"></span><span class="bud" hidden></span><span class="tm"></span></button>'+
+      '<div class="out"></div><div class="body"></div><ul class="feed"></ul><div class="chips"></div></div>';
+    const h=li.querySelector(".h");h.onclick=()=>{li.classList.toggle("open");h.setAttribute("aria-expanded",li.classList.contains("open"));feed(k,false)};
+    ol.appendChild(li);rows[k]=li});
+}
+function line(e){const li=document.createElement("li");li.dataset.n=e.n;li.className="k-"+e.kind;
+  li.innerHTML='<span class="when">'+hm(e.t)+'</span><span><span class="tag">'+esc(TAG[e.kind]||e.kind)+'</span><span class="tx"></span>'+
+    (e.actor&&e.actor!=="main session"&&e.actor!=="you"&&e.actor!=="guard"&&e.actor!=="rules check"?' '+tag(e.actor,acol(e.actor)):"")+'</span>';
+  li.querySelector(".tx").textContent=e.text;
+  if(e.answer){const a=document.createElement("div");a.className="ans";a.textContent="A: "+e.answer;li.lastElementChild.appendChild(a)}
+  return li}
+function type(el,text){if(REDUCE){el.textContent=text;return}
+  let i=0;const step=Math.max(1,Math.round(text.length/45));el.textContent="";el.classList.add("typing");
+  const iv=setInterval(()=>{i+=step;el.textContent=text.slice(0,i);if(i>=text.length){clearInterval(iv);el.classList.remove("typing");el.textContent=text}},18)}
+/* a failed stage keeps every MUST of its latest round in view, plus the last 5 events */
+function musts(all,sk){const last=all.slice(-5);if(!sk||sk.state!=="fail")return last;
+  const i=all.map(e=>e.kind).lastIndexOf("start"),m=all.slice(i+1).filter(e=>e.kind==="must");
+  return [...new Set([...m,...last])].sort((a,b)=>a.n-b.n)}
+function feed(k,animate){
+  const ul=rows[k].querySelector(".feed"),all=D.events.filter(e=>e.stage===k&&NOTE.includes(e.kind)),sk=D.stages.find(s=>s.k===k),want=musts(all,sk),have=new Set([...ul.children].map(li=>+li.dataset.n));
+  want.forEach(e=>{if(have.has(e.n))return;const li=line(e);ul.appendChild(li);if(animate&&e.n>seen){li.classList.add("new");type(li.querySelector(".tx"),e.text);setTimeout(()=>li.classList.remove("new"),2600)}});
+  const ok=new Set(want.map(e=>e.n));[...ul.children].forEach(li=>{if(!ok.has(+li.dataset.n))li.remove()});
+  const chips=rows[k].querySelector(".chips"),byP=new Map();
+  D.events.forEach(e=>{if(e.stage!==k||(e.kind!=="edit"&&e.kind!=="integrate")||!e.file)return;const m=/^(?:Wrote|Edited) (.+)$/.exec(e.text||""),p=e.path||(m?m[1]:e.file);if(!byP.has(p))byP.set(p,e.file)});
+  const files=[...byP].slice(-8),hc=new Set([...chips.children].map(c=>c.dataset.p));
+  files.forEach(([p,f])=>{if(hc.has(p))return;const c=document.createElement("button");c.type="button";c.className="chip"+(animate?" pop":"");c.dataset.p=p;c.title="Open "+p;c.textContent=f;chips.appendChild(c)});
+}
+function count(id,v){const el=$(id),old=+el.textContent||0;if(old===v)return;el.textContent=v;el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}
+
+function apply(d){
+  const first=!D||D.id!==d.id||D.stages.length!==d.stages.length,prev=first?null:D;
+  if(first){buildRows(d);seen=0;gateKey=null;bodyKey={};LAST={}}
+  D=d;$("#idle").hidden=true;$("#app").hidden=false;$("#demoTag").hidden=!(demo||d.demo);
+  const c=cur(d),ov=overall(d);document.body.dataset.ov=ov;
+  document.documentElement.style.setProperty("--cur","var(--"+c.k+")");
+  $("#tid").textContent=d.id;$("#ttl").textContent=d.title;
+  const rk=$("#risk"),rv=["low","medium","high"].includes(d.risk)?d.risk:"";rk.hidden=!rv;rk.className="risk "+rv;rk.textContent=rv+" risk";
+  rk.title=rv?(d.riskWhy&&d.riskWhy.length?"Risk evidence: "+d.riskWhy.join("; "):"Risk "+rv):"";
+  $("#size").textContent="Size "+d.size;$("#tool").textContent=d.tool==="cursor"?"Cursor":"Claude Code";
+  const pm=d.mode==="product",mp=$("#mode"),cp=$("#code");mp.hidden=!pm;mp.textContent="Product";cp.hidden=!pm;
+  cp.textContent="Code "+(d.codeOpen?"open":"closed");cp.title=d.root?"Product root: "+d.root:"";
+  const pn=d.project||PROJ.name;document.title=(pn?pn+" - ":"")+d.id+" live status";
+  const pill=$("#state");pill.className="pill st-"+ov;pill.textContent={live:"Live",wait:"Your turn",done:"Done",fail:"Fixing",idle:"Idle"}[ov];
+  const ev=d.events.length?d.events[d.events.length-1]:null;
+  const W=working(),par=ov==="live"&&W.length>1,pn2=W.map(r=>DN(r.expert)).join(", "),dn=runsOf(c.k).filter(r=>r.state!=="live").length;
+  if(par)say(W.length+" agents working in parallel: "+pn2+(dn?" · "+dn+" done":""),!first,
+    '<span class="n">'+W.length+" agents working in parallel</span>: "+esc(pn2)+(dn?' <span class="sub">· '+dn+" done</span>":""));
+  else say(ov==="wait"?(d.gate?gname(d.gate)+": "+whoWaits(d.gate):"Waiting for you"):ov==="done"?"All stages done":ov==="idle"?"No activity for "+fmt(ms(d.updated)):ov==="fail"?NAMES[c.k]+" found problems":c.state==="done"?between(d,c):
+    ev&&ms(ev.t)<90000&&ev.kind!=="gate"?(ev.actor&&ev.actor!=="you"?DN(ev.actor)+": ":"")+(TOOLK.includes(ev.kind)?ing(ev.text)+"\u2026":ev.text):DN(c.actor||ACTOR[c.k])+" "+(VERB[c.k]||"is working"),!first&&ov==="live");
+  d.stages.forEach(s=>{const li=rows[s.k],was=prev?(prev.stages.find(x=>x.k===s.k)||{}).state:null;
+    li.className="row s-"+s.k+" "+s.state+(li.classList.contains("open")?" open":"");
+    if(was&&was!=="done"&&s.state==="done"){li.classList.add("just");setTimeout(()=>li.classList.remove("just"),1700)}
+    const ex=((d.plan&&d.plan.rows)||[]).filter(r=>r.stage===s.k),lv=ex.filter(r=>r.state==="live");
+    li.querySelector(".whoa").textContent=s.state==="live"?"":s.state==="skip"?"skipped for this size":ex.length?(lv.length?lv:ex).map(r=>DN(r.expert)).join(", "):DN(s.actor||ACTOR[s.k]);
+    li.querySelector(".out").textContent=s.out||"";
+    const gb=li.querySelector(".gid");gb.hidden=!s.gate;if(s.gate){const gs=((d.gates||{})[s.gate]||{}).state||"open";
+      gb.className="gid "+gs;gb.textContent=s.gate+({approved:" approved",waiting:" waiting",changes:" changes"}[gs]||"")}
+    if(["live","wait","fail"].includes(s.state)||li.classList.contains("open")||li.querySelector(".chips").children.length||d.events.some(e=>e.stage===s.k&&e.kind==="edit"))feed(s.k,!first)});
+  const last=d.events.length?d.events[d.events.length-1].n:0;if(last>seen){lastChange=Date.now();beat()}seen=last;
+  const n=d.counts||{},T=d.tally||{},tl=(T.lead||0)+(T.agents||0);$("#c-lead").textContent=tl?Math.round((T.lead||0)/tl*100)+"%":"-";count("#c-read",n.read||0);count("#c-edit",n.edit||0);count("#c-run",n.run||0);
+  gate();bodies();crew();tick();
+}
+/* agent runs (1.5.0): one card per run inside its stage (the live-rolling prototype, variant B). A step comes as a
+   plain imperative ("Read context.md", a Bash call's own description) and reads as "Reading ..." while it runs and
+   "Read ..." once done; finished runs fold into their summary for people */
+const TCOL={lead:"wrap",product:"product",design:"design",architecture:"spec",engineering:"build",domain:"verify",quality:"review",audit:"stories",operations:"release",helpers:"base"};
+const TOOLK=["read","edit","run","search","skill"],NOTE=["block","flag","fail","must","gate","ok","changes","ask","note","route","decide","integrate"];
+const V2={Read:["Reading","Read"],List:["Listing","Listed"],Show:["Showing","Showed"],Write:["Writing","Wrote"],Count:["Counting","Counted"],Grep:["Searching","Searched"],
+Map:["Mapping","Mapped"],Inspect:["Inspecting","Inspected"],Check:["Checking","Checked"],Run:["Running","Ran"],Find:["Finding","Found"],Search:["Searching","Searched"],
+Change:["Changing","Changed"],Compare:["Comparing","Compared"],Extract:["Extracting","Extracted"],Verify:["Verifying","Verified"],Print:["Printing","Printed"],Open:["Opening","Opened"],
+Test:["Testing","Tested"],Look:["Looking","Looked"],Diff:["Comparing","Compared"],Confirm:["Confirming","Confirmed"],Locate:["Locating","Located"],Get:["Getting","Got"],
+Apply:["Applying","Applied"],Copy:["Copying","Copied"],Create:["Creating","Created"],Measure:["Measuring","Measured"],Build:["Building","Built"],Validate:["Validating","Validated"],
+Scan:["Scanning","Scanned"],Stamp:["Stamping","Stamped"],Trace:["Tracing","Traced"],Fetch:["Fetching","Fetched"],Update:["Updating","Updated"],Add:["Adding","Added"],
+View:["Viewing","Viewed"],Save:["Saving","Saved"],Parse:["Parsing","Parsed"],Load:["Loading","Loaded"],Propose:["Proposing","Proposed"],Draft:["Drafting","Drafted"],Plan:["Planning","Planned"],
+Note:["Noting","Noted"],Record:["Recording","Recorded"],Review:["Reviewing","Reviewed"],Design:["Designing","Designed"],Prepare:["Preparing","Prepared"],Edit:["Editing","Edited"],
+Remove:["Removing","Removed"],Fix:["Fixing","Fixed"],Patch:["Patching","Patched"],Rerun:["Re-running","Re-ran"],Use:["Using","Used"],Delete:["Deleting","Deleted"],Append:["Appending","Appended"],
+Summarize:["Summarizing","Summarized"],Tick:["Ticking","Ticked"],Drop:["Dropping","Dropped"],Restamp:["Restamping","Restamped"],Render:["Rendering","Rendered"],Ask:["Asking","Asked"],
+Install:["Installing","Installed"],Compile:["Compiling","Compiled"],Start:["Starting","Started"],Stop:["Stopping","Stopped"],Move:["Moving","Moved"],Rename:["Renaming","Renamed"],
+Merge:["Merging","Merged"],Sort:["Sorting","Sorted"],Split:["Splitting","Split"],Clean:["Cleaning","Cleaned"],Format:["Formatting","Formatted"],Lint:["Linting","Linted"],
+Collect:["Collecting","Collected"],Explain:["Explaining","Explained"],Describe:["Describing","Described"],Wait:["Waiting","Waited"],Try:["Trying","Tried"]};
+function verb(t,i){t=String(t==null?"":t);const m=t.match(/^([A-Z][a-z]+)\b([\s\S]*)$/);return m&&V2[m[1]]?V2[m[1]][i]+m[2]:t}
+const ing=t=>verb(t,0),past=t=>verb(t,1),lc=s=>s?s.charAt(0).toLowerCase()+s.slice(1):"",uc=s=>s?s.charAt(0).toUpperCase()+s.slice(1):"";
+const JOB={spec:"Write the spec",design:"Design the change",build:"Build the change",review:"Review the diff",test:"Run the tests",verify:"Check it in the running app",release:"Check the release",
+  wrap:"Wrap up the task",intake:"Read the requirement",base:"Build the base",requirements:"Write the spec",product:"Review the product",prototype:"Build the prototype",stories:"Size the stories",audit:"Audit the product"};
+const INI={"n8n-expert":"n8n","ai-engineer":"AI","ux-designer":"UX","sf-expert":"SF","sf-skills-expert":"SK","qa-engineer":"QA","main session":"TL"};
+let LAST={},OPEN=new Set(),bodyKey={};
+function ini(a){const b=String(a).split(" (")[0];return INI[b]||b.split(/[-\s]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?"}
+function acol(a,team){if(a==="main session")return "var(--wrap)";
+  const R=(D.plan&&D.plan.rows)||[],r=R.find(x=>x.expert===a)||R.find(x=>x.agent===a);
+  return "var(--"+(TCOL[team||(r&&r.team)||benchTeam(r?r.agent:a)]||"base")+")"}
+function col(r){return acol(((D.plan&&D.plan.rows)||[]).some(x=>x.expert===r.expert)?r.expert:r.agent)}
+function prow(k){return ((D.plan&&D.plan.rows)||[]).filter(r=>r.stage===k)}
+function runsOf(k){return (D.runs||[]).filter(r=>r.stage===k)}
+function ago(t){const s=Math.max(0,Math.round(ms(t)/1000));return s<60?s+"s ago":s<3600?Math.round(s/60)+" min ago":Math.round(s/3600)+" h ago"}
+/* what the step is doing, drawn from its verb: reading, searching, writing or running */
+const SCENE={
+ read:'<svg class="scene" viewBox="0 0 30 20" aria-hidden="true"><rect class="pg" x="6" y="1.5" width="18" height="17" rx="2"/><path class="ln" d="M9 6h12M9 9.5h12M9 13h8"/><rect class="hl" x="8" y="4.6" width="14" height="2.8" rx="1"/></svg>',
+ search:'<svg class="scene" viewBox="0 0 30 20" aria-hidden="true"><path class="ln" d="M3 6h15M3 10h19M3 14h12"/><g class="mg"><circle cx="18" cy="9" r="4.2"/><path d="M21.2 12.2l3.6 3.6"/></g></svg>',
+ write:'<svg class="scene" viewBox="0 0 30 20" aria-hidden="true"><rect class="pg" x="2" y="1.5" width="20" height="17" rx="2"/><path class="ln" d="M5 6h14M5 9.5h14"/><path class="ink" d="M5 13h14"/><path class="pen" d="M19 14.5l6-7.5 2.2 1.7-6 7.5-2.8.9z"/></svg>',
+ run:'<svg class="scene" viewBox="0 0 30 20" aria-hidden="true"><rect class="pg" x="2" y="2" width="26" height="16" rx="2.5"/><path d="M5.5 7l2.4 2-2.4 2"/><path class="o1" d="M10.5 9h9"/><path class="o2" d="M5.5 14h12"/><rect class="cur" x="19" y="12.6" width="3" height="2.8" rx=".5"/></svg>'};
+const KIND=t=>/^(Search|Grep|Find|Locate|Trace|Scan|Look|List)/.test(t)?"search":/^(Write|Change|Edit|Add|Update|Create|Patch|Fix|Draft|Record|Note|Save|Stamp|Apply|Remove|Delete|Append|Tick)/.test(t)?"write":
+ /^(Run|Re-run|Rerun|Test|Check|Verify|Validate|Compare|Diff|Measure|Build|Confirm|Execute|Print|Compile|Install|Render|Use)/.test(t)?"run":"read";
+const scene=t=>SCENE[KIND(String(t||""))];
+/* a working agent is an orb that floats, blinks and glances at its step; a finished one its initials with a check */
+function pres(a,on,cls,c){return on?'<span class="pres on'+(cls?" "+cls:"")+'" style="--a:'+c+'"><span class="aorb" aria-hidden="true"><span class="eyes"><i class="eye l"></i><i class="eye r"></i></span></span>'+esc(DN(a))+"</span>"
+  :'<span class="pres off'+(cls?" "+cls:"")+'" style="--a:'+c+'"><span class="av">'+esc(ini(a))+"</span>"+esc(DN(a))+"</span>"}
+function tag(a,c){return '<span class="atag" style="--a:'+c+'"><span class="adot"></span>'+esc(DN(a))+"</span>"}
+function calls(n,b){if(!b)return '<span class="calls"><span class="num">'+n+" call"+(n===1?"":"s")+"</span></span>";const o=n>b;
+  return '<span class="calls" title="'+n+" of about "+b+' tool calls"><span class="meter'+(o?" over":"")+'"><i style="width:'+Math.min(100,n/b*100)+'%"></i></span><span class="num'+(o?" over":"")+'">'+n+"/"+b+"</span></span>"}
+function phases(r){return ["Read the brief","Look into it","Write "+(r.file||"its output file"),"Check and finish"]}
+/* a run's live plan: the "## Plan" of its file, ticked as it goes; else its job phases; the Tech Lead's are the stages */
+function planOf(r){if(r.plan&&r.plan.length)return r.plan;const P=r.pat||[],fin=r.state==="done";
+  return phases(r).map((t,i)=>({text:t,done:fin||i<(r.ph||0),at:P[i]||(fin?r.end:"")}))}
+function leadPlan(){return D.stages.filter(s=>s.state!=="skip").map(s=>({text:NAMES[s.k]||s.name,done:s.state==="done",at:s.state==="done"?s.end||"":""}))}
+function pinfo(L){const d=L.filter(x=>x.done).length;return {N:L.length,d,cur:L.findIndex(x=>!x.done)}}
+function itemOf(L,t){const T=Date.parse(t),i=L.findIndex(x=>!(x.done&&x.at&&Date.parse(x.at)<=T));return i<0?L.length-1:i}
+function nextItem(L){const p=pinfo(L),nx=p.cur<0?null:L.slice(p.cur+1).find(x=>!x.done);return nx?lc(nx.text):"hand the result to the Tech Lead"}
+function planBtn(id,L,c){const p=pinfo(L);return '<button type="button" class="planb" data-plan="'+esc(id)+'" aria-haspopup="dialog" aria-expanded="'+(OPENP===id)+'" style="--a:'+c+'">Plan <b>'+p.d+"</b>/"+p.N+"</button>"}
+const psig=L=>L.map(x=>(x.done?1:0)+x.text).join("|");
+function will(who,why){return DN(who)+(why?(ing(why)!==why?" will "+lc(why):": "+lc(why)):" is next")}
+function upNext(k){const pl=prow(k).find(r=>r.state==="todo"&&r.agent!=="main session");if(pl)return will(pl.expert,pl.why);
+  const i=D.stages.findIndex(s=>s.k===k),nx=D.stages.slice(i+1).find(s=>s.state==="todo");if(!nx)return "";
+  const nr=prow(nx.k).find(r=>r.state==="todo"&&r.agent!=="main session");return (NAMES[nx.k]||nx.name)+": "+(nr?will(nr.expert,nr.why):"the Tech Lead takes over")}
+/* the roll: just done (faded, past tense, "Ns ago"), now (a drawn scene, typing itself out, elapsed time), up next;
+   on a new step all three slide up one slot, only on the card that stepped */
+function roll(p,n,start,next,go){let h="";
+  if(p)h+='<div class="rl past"><span class="ic">✓</span><span class="tx" title="'+esc(past(p[1]))+'">'+esc(past(p[1]))+'</span><span class="num ago" data-ago="'+esc(p[0])+'">'+ago(p[0])+"</span></div>";
+  const t=n?ing(n[1]):"Getting started";
+  h+='<div class="rl now"><span class="ic">'+scene(n?n[1]:"Read")+'</span><span class="tx typing" title="'+esc(t)+'"'+(go&&n&&!REDUCE?' data-type="'+esc(t)+'">':">"+esc(t))+"</span>"+
+    (start?'<span class="num el" data-el="'+esc(start)+'">'+fmt(ms(start))+"</span>":"")+"</div>";
+  if(next)h+='<div class="rl next"><span class="ic">→</span><span class="tx">Up next: '+esc(next)+"</span></div>";
+  return '<div class="roll'+(go?" go":"")+'">'+h+"</div>"}
+function seen1(key,v){const go=LAST[key]!==v;LAST[key]=v;return go}
+const keyed=(key,sig,cls,c,inner)=>'<div class="'+cls+'" data-key="'+esc(key)+'" data-sig="'+esc(JSON.stringify(sig))+'" style="--a:'+c+'">'+inner+"</div>";
+function runCard(r){const c=col(r),L=r.steps||[],P=planOf(r),nx=nextItem(P),go=seen1(r.id,L.length+":"+r.n);
+  return keyed(r.id,[L.length,r.n,psig(P),nx,r.goal||"",(r.generic||[]).length],"acard"+(go?" go":""),c,'<div class="ah">'+pres(r.expert,true,"",c)+planBtn(r.id,P,c)+calls(r.n||0,r.b||(D.calls||{})[r.agent]||0)+"</div>"+
+    (r.goal||r.job?'<div class="job">'+esc(r.goal||r.job)+"</div>":"")+roll(L[L.length-2],L[L.length-1],r.start,nx,go)+genChip(r))}
+/* a plan with no Goal or Output line, or items that name nothing in the task (live_status.plan_issues) */
+function genChip(r){return r.generic&&r.generic.length?'<div class="chips"><span class="chip quiet" title="'+esc("Plan too generic: "+r.generic.join("; "))+'">plan too generic</span></div>':""}
+/* a working row the hook saw no run for (started by hand, or a task from before 1.5.0): its latest action */
+function rowCard(w){const N=(D.now||{})[w.expert]||{},c=acol(w.expert),P=phases({}).map(t=>({text:t,done:false})),id="row:"+w.stage+":"+w.expert,go=seen1(id,(N.n||0)+":"+(N.last||""));
+  return keyed(id,[N.n,N.last],"acard"+(go?" go":""),c,'<div class="ah">'+pres(w.expert,true,"",c)+planBtn(id,P,c)+calls(N.n||0,(D.calls||{})[w.agent]||0)+"</div>"+
+    (w.why?'<div class="job">'+esc(w.why)+"</div>":"")+roll(null,N.last?[w.start,N.last]:null,w.start,"",go))}
+/* the Tech Lead works the stage alone: its own card, its steps from the stage's events, the task's stages as its plan */
+function leadEvents(k,t0){return D.events.filter(e=>e.actor==="main session"&&TOOLK.includes(e.kind)&&(!k||e.stage===k)&&Date.parse(e.t)>=(t0||0))}
+/* the Tech Lead decides and routes: its state, where it sent the work and what was decided (its reads and edits are in
+   its plan panel); a chip when it edited product code itself instead of routing it to the area agent */
+const YOURK=["gate","ok","changes"];
+function leadState(){const g=D.gate,w=working(),ev=D.events.filter(e=>e.actor==="main session"&&(["route","decide","integrate","plan"].includes(e.kind)||TOOLK.includes(e.kind))),e=ev[ev.length-1],k=e?e.kind:"";
+  if(g)return ["Waiting for you","Asked: "+(g.question||"approve?")];
+  const on=w.length?w.map(r=>DN(r.expert)).join(", ")+(w.length>1?" are":" is")+" working":"";
+  if(on&&(!e||ms(e.t)>15000))return ["Waiting",on];
+  return [k==="route"?"Routing":k==="integrate"?"Integrating":k==="run"?"Checking":k==="edit"&&e.pc?"Writing code":"Deciding",
+    on||(!e?"Triage":k==="run"||k==="edit"&&e.pc?ing(e.text):k==="edit"?"Updating the task's files":TOOLK.includes(k)?"Reading what the decision needs":"")]}
+function leadLog(){const r=(D.routes||[]).map(x=>({t:x.t,k:"route",x:"Routed "+(NAMES[x.stage]||x.stage)+" to "+x.agent+(x.job?": "+x.job:"")+(x.files&&x.files.length?" ("+x.files.join(", ")+")":"")}));
+  const d=D.events.filter(e=>(e.actor==="main session"&&["decide","integrate","plan"].includes(e.kind)&&!e.file)||YOURK.includes(e.kind)).map(e=>({t:e.t,k:e.kind,x:DN(e.text)}));
+  return r.concat(d).sort((a,b)=>Date.parse(a.t)-Date.parse(b.t)).slice(-4).reverse()}
+function leadCard(s){const k=s.k,t0=Date.parse(s.run||s.start)||0,n=leadEvents(k,t0).length,P=leadPlan(),W=leadState(),L=leadLog(),pc=D.leadCode||[],
+    sig=[W,L.map(x=>x.t),pc.length,n,psig(P)],go=seen1("lead:"+k,JSON.stringify(sig));
+  return keyed("lead:"+k,sig,"acard lead"+(go?" go":""),"var(--wrap)",'<div class="ah">'+pres("main session",true,"","var(--wrap)")+'<span class="lw">'+esc(W[0])+"</span>"+planBtn("lead",P,"var(--wrap)")+calls(n,0)+"</div>"+
+    (W[1]?'<div class="job">'+esc(W[1])+"</div>":"")+(L.length?'<ul class="lr">'+L.map(x=>'<li class="k-'+x.k+'"><span class="ic" aria-hidden="true">'+(x.k==="route"?"→":"✓")+'</span><span class="tx" title="'+esc(x.x)+'">'+esc(x.x)+
+    '</span><span class="num ago" data-ago="'+esc(x.t)+'">'+ago(x.t)+"</span></li>").join("")+"</ul>":"")+
+    (pc.length?'<div class="chips"><span class="chip warn" title="Product code goes to its area agent; the Tech Lead edited it itself">Tech Lead edited product code: '+esc(pc.map(x=>x.file+" (route to "+x.agent+")").join(", "))+"</span></div>":""))}
+function planCard(w){const c=acol(w.expert),id="row:"+w.stage+":"+w.expert,P=phases({}).map(t=>({text:t,done:false}));
+  return keyed(id,[w.why],"acard plan",c,'<div class="ah">'+tag(w.expert,c)+'<span class="sub">planned</span>'+planBtn(id,P,c)+"</div>"+(w.why?'<div class="job">'+esc(w.why)+"</div>":""))}
+/* a finished run: avatar with a check, the first summary line, the time and its plan; opened, the other lines, the
+   output file and its steps in past tense (a command shows behind its step) */
+function sumHtml(r){const key="s:"+r.id,o=OPEN.has(key),ox=OPEN.has(key+"x"),c=col(r),st=r.state==="done"?"":r.state,S=(r.summary||[]).map(DN),first=r.why?uc(r.why):S[0]||"Finished",rest=r.why?S:S.slice(1),L=r.steps||[],P=planOf(r);
+  return keyed(key,[r.state,S,o,ox,psig(P),L.length,r.file||""],"sum"+(o?" open":"")+(st?" "+st:""),c,'<div class="sum-top"><button type="button" class="sum-h" data-o="'+key+'" aria-expanded="'+o+'">'+pres(r.expert,false,st,c)+
+    '<span class="first'+(r.why?" why":"")+'">'+esc(first)+'</span><span class="num">'+(r.end?fmt(ms(r.start,r.end)):"")+"</span></button>"+planBtn(r.id,P,c)+"</div>"+
+    "<ul>"+rest.map(x=>"<li>"+esc(x)+"</li>").join("")+'</ul><div class="ft">'+(r.file?"<span>Output: "+(r.href?'<button type="button" class="lnk" data-p="'+esc(r.href)+'">'+esc(r.file)+"</button>":esc(r.file))+"</span>":"")+
+    "<span>"+(r.n||0)+" step"+(r.n===1?"":"s")+(r.b?", about "+r.b+" planned":"")+"</span>"+(L.length?'<button type="button" class="lnk" data-o="'+key+'x">'+(ox?"Hide":"Show")+" the steps</button>":"")+"</div>"+
+    (ox?'<ol class="steps">'+L.map(x=>"<li><span>"+hm(x[0])+"</span><span>"+(x[2]?"<details><summary>"+esc(past(x[1]))+"</summary><code>"+esc(x[2])+"</code></details>":esc(past(x[1])))+"</span></li>").join("")+"</ol>":""))}
+function rowSum(w){const c=acol(w.expert);return keyed("rs:"+w.stage+":"+w.expert,[w.out,w.why,w.end],"sum",c,'<div class="sum-h">'+pres(w.expert,false,"",c)+'<span class="first">'+esc(DN(w.out||w.why||"Finished"))+
+  '</span><span class="num">'+(w.start&&w.end?fmt(ms(w.start,w.end)):"")+"</span></div>")}
+function curStage(){const c=D.stages.find(x=>["live","fail","wait"].includes(x.state));return c?c.k:""}
+function stageParts(s){const k=s.k,R=runsOf(k),live=R.filter(r=>r.state==="live"),rows=prow(k).filter(r=>r.agent!=="main session"),ran=new Set(R.map(r=>r.expert.toLowerCase()));
+  const lr=rows.filter(r=>r.state==="live"&&!ran.has(r.expert.toLowerCase())),open=["live","wait","fail"].includes(s.state);
+  return {R,live,lr,alone:s.state==="live"&&!live.length&&!lr.length,lead:curStage()===k,plan:open?rows.filter(r=>r.state==="todo"):[],fin:R.filter(r=>r.state!=="live"),
+    doneRows:rows.filter(r=>r.state==="done"&&!ran.has(r.expert.toLowerCase()))}}
+function stageBody(s){if(s.state==="todo"||s.state==="skip")return null;const P=stageParts(s);
+  return {cards:(P.lead?[leadCard(s)]:[]).concat(P.live.map(runCard),P.lr.map(rowCard),P.plan.map(planCard)),fin:P.fin.map(sumHtml).concat(P.doneRows.map(rowSum)),
+    upn:s.state==="live"?upNext(s.k):""}}
+/* a card is redrawn only when it changed, so the others keep floating and only the one that stepped rolls */
+function patch(box,list){const tpl=document.createElement("div");tpl.innerHTML=list.join("");const want=[...tpl.children],keep=new Map();
+  [...box.children].forEach(o=>{const n=want.find(w=>w.dataset.key===o.dataset.key);if(n&&n.dataset.sig===o.dataset.sig)keep.set(o.dataset.key,o);else o.remove()});
+  let ref=box.firstElementChild;want.forEach(n=>{const o=keep.get(n.dataset.key);if(o){ref=o.nextElementSibling;return}box.insertBefore(n,ref)})}
+function bodies(){const f=document.activeElement,fsel=f&&f.dataset?(f.dataset.plan!==undefined?'[data-plan="'+f.dataset.plan+'"]':f.dataset.o?'[data-o="'+f.dataset.o+'"]':null):null;
+  D.stages.forEach(s=>{const P=stageParts(s),last=D.events.length?D.events[D.events.length-1].n:0;
+    const key=JSON.stringify([s.state,P.R.map(r=>[r.id,r.n,r.state,r.ph,(r.steps||[]).length,(r.summary||[]).length,r.file||"",psig(r.plan||[])]),prow(s.k).map(r=>[r.expert,r.state]),
+      P.lead?[last,psig(leadPlan()),(D.routes||[]).length,(D.leadCode||[]).length,!!D.gate,working().length]:0,P.lr.map(r=>((D.now||{})[r.expert]||{}).n),[...OPEN].join()]);
+    if(bodyKey[s.k]===key)return;bodyKey[s.k]=key;const el=rows[s.k].querySelector(".body"),B=stageBody(s);
+    if(!B){el.innerHTML="";return}
+    if(!el.querySelector(":scope>.agrid"))el.innerHTML='<div class="agrid"></div><div class="fin"></div><div class="upn" hidden></div>';
+    patch(el.querySelector(":scope>.agrid"),B.cards);patch(el.querySelector(":scope>.fin"),B.fin);
+    const u=el.querySelector(":scope>.upn");u.hidden=!B.upn;u.textContent=B.upn?"Up next: "+B.upn:""});
+  if(fsel&&!(f&&f.isConnected)){const b=document.querySelector(fsel);if(b)b.focus()}
+  typer();drawer()}
+function typer(){document.querySelectorAll("[data-type]").forEach(el=>{const f=el.dataset.type;let i=0;el.removeAttribute("data-type");(function go(){i+=2;el.textContent=f.slice(0,i);if(i<f.length&&el.isConnected)setTimeout(go,18)})()})}
+function working(){return (D.runs||[]).filter(r=>r.state==="live")}
+/* the plan panel: a glass panel (right, or a bottom sheet on a phone) that updates live */
+let OPENP=null,OPENER=null,DSIG="",LASTD={};
+function subject(id){if(id==="lead"){const ev=leadEvents("",0),cur=D.stages.find(s=>s.state==="live"||s.state==="fail"),st=D.stages.filter(s=>s.start);
+    return {who:"main session",c:"var(--wrap)",on:!!cur,job:"Run the task's stages and the agents in them",L:leadPlan(),steps:ev.map(e=>[e.t,e.text]),start:st.length?st[0].start:"",end:"",n:ev.length,b:0,state:cur?"live":"done"}}
+  const r=(D.runs||[]).find(x=>x.id===id);if(r)return {who:r.expert,ag:r.agent,c:col(r),on:r.state==="live",job:r.job,goal:r.goal||r.job,output:r.output,doneWhen:r.doneWhen,generic:r.generic,L:planOf(r),steps:r.steps||[],start:r.start,end:r.end,n:r.n||0,b:r.b||0,state:r.state,why:r.why,file:r.file};
+  const m=String(id).match(/^row:([^:]+):(.+)$/),w=m&&prow(m[1]).find(x=>x.expert===m[2]);if(!w)return null;
+  return {who:w.expert,ag:w.agent,c:acol(w.expert),on:w.state==="live",job:w.why||"",L:phases({}).map(t=>({text:t,done:false})),steps:[],start:w.start||"",n:0,b:0,state:w.state==="live"?"live":"todo"}}
+function ring(p){return '<span class="ring" role="img" aria-label="'+p.d+" of "+p.N+' done"><svg viewBox="0 0 20 20" aria-hidden="true"><circle class="tr" cx="10" cy="10" r="8"/>'+
+  (p.d?'<circle class="fg" cx="10" cy="10" r="8" pathLength="100" stroke-dasharray="'+(p.d/p.N*100)+' 100"/>':"")+"</svg>"+p.d+"/"+p.N+"</span>"}
+function drawer(){const el=$("#pdr");document.querySelectorAll("[data-plan]").forEach(b=>b.setAttribute("aria-expanded",b.dataset.plan===OPENP));
+  const S=OPENP===null?null:subject(OPENP);if(!S){if(!el.hidden){el.hidden=true;el.innerHTML=""}OPENP=null;DSIG="";return}
+  const L=S.L,p=pinfo(L),sig=JSON.stringify([OPENP,psig(L),S.steps.length,S.state,S.goal||"",S.output||"",S.doneWhen||"",(S.generic||[]).join(),[...OPEN].filter(k=>k.startsWith("p:")).join()]);if(sig===DSIG)return;DSIG=sig;
+  const ae=document.activeElement,fk=ae&&el.contains(ae)?(ae.dataset.o||"x"):null,was=LASTD[OPENP],first=el.hidden;LASTD[OPENP]=p.d;
+  el.style.setProperty("--a",S.c);el.setAttribute("aria-label","Plan of "+DN(S.who));
+  const by=L.map(()=>[]);S.steps.forEach(x=>{const b=by[itemOf(L,x[0])];if(b)b.push(x)});
+  const took=S.start?(S.on?'<span data-el="'+esc(S.start)+'">'+fmt(ms(S.start))+"</span>":S.end?fmt(ms(S.start,S.end)):""):"";
+  const C=(D.certs||{})[S.ag]||[];
+  const M=[["Goal",S.goal],["Output",S.output],["Done when",S.doneWhen]].filter(x=>x[1]),meta=M.length>1||S.output||S.doneWhen;
+  let h='<div class="dr-h">'+pres(S.who,S.on,"",S.c)+"<b>Plan</b>"+ring(p)+'<button type="button" class="dr-x" aria-label="Close the plan">×</button></div>'+
+    (C.length?'<div class="dr-cert">'+esc(C.join(" · "))+"</div>":"")+'<div class="dr-sub">'+(meta?"":esc(S.job)+(S.n?" · ":""))+(S.n?took+" · "+S.n+(S.b?"/"+S.b:"")+" calls":S.state==="todo"?(meta?"":" · ")+"planned":"")+"</div>"+
+    (meta?'<dl class="dr-meta">'+M.map(x=>"<dt>"+x[0]+"</dt><dd>"+esc(x[1])+"</dd>").join("")+"</dl>":"")+
+    (S.generic&&S.generic.length?'<div class="dr-gen">Plan too generic: '+esc(S.generic.join("; "))+"</div>":"")+'<ol class="pl">';
+  L.forEach((it,i)=>{const key="p:"+OPENP+":"+i,o=OPEN.has(key),st=it.done?"d":i===p.cur&&S.state!=="todo"?"c":"u",steps=by[i];
+    if(st==="d")h+='<li class="d'+(was!==undefined&&i>=was&&i<p.d?" just":"")+'"><button type="button" class="pi" data-o="'+key+'" aria-expanded="'+o+'"><span class="pn">✓</span><span class="pt">'+esc(DN(it.text))+
+      '</span><span class="pw">'+(it.at?hm(it.at):"")+"</span></button>"+(o&&steps.length?'<ol class="ps">'+steps.map(s=>"<li>"+esc(past(s[1]))+"</li>").join("")+"</ol>":"")+"</li>";
+    else if(st==="c"){const T=steps.slice(-3),nw=S.on?T.pop():null;
+      h+='<li class="c"><div class="pi"><span class="pn">'+(i+1)+'</span><span class="pt">'+esc(DN(it.text))+'</span><span class="pw">'+(S.on?"now":"")+"</span></div>"+
+        (T.length?'<ol class="ps">'+T.map(s=>"<li>"+esc(past(s[1]))+"</li>").join("")+"</ol>":"")+(nw?'<div class="pnow">'+scene(nw[1])+'<span class="typing">'+esc(ing(nw[1]))+"</span></div>":"")+"</li>"}
+    else h+='<li class="u"><div class="pi"><span class="pn">'+(i+1)+'</span><span class="pt">'+esc(DN(it.text))+"</span></div></li>"});
+  h+='</ol><div class="dr-ft">'+(S.on?"Live: the plan ticks as "+esc(DN(S.who))+" finishes each item":S.why?esc(uc(S.why)):S.state==="todo"?"Not started yet":"Finished"+(S.file?". Output: "+esc(S.file):""))+"</div>";
+  el.innerHTML=h;el.hidden=false;const fo=first||fk==="x"?el.querySelector(".dr-x"):fk?el.querySelector('[data-o="'+fk+'"]'):null;if(fo)fo.focus()}
+function closePlan(){const id=OPENER;OPENP=null;drawer();if(id!==null){const b=document.querySelector('[data-plan="'+id+'"]');if(b)b.focus()}}
+$("#pdr").addEventListener("click",e=>{if(e.target.closest(".dr-x")){closePlan();return}const b=e.target.closest("[data-o]");if(!b)return;const k=b.dataset.o;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);drawer()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&OPENP!==null&&!document.querySelector("dialog[open]"))closePlan()});
+$("#tl").addEventListener("click",e=>{const p=e.target.closest(".lnk[data-p]");if(p){fvFrom=p;openFile(p.dataset.p);return}
+  const pb=e.target.closest("[data-plan]");if(pb){const id=pb.dataset.plan;if(OPENP===id){closePlan();return}OPENP=OPENER=id;LASTD={};DSIG="";drawer();return}
+  const b=e.target.closest("[data-o]");if(!b)return;const k=b.dataset.o;OPEN.has(k)?OPEN.delete(k):OPEN.add(k);bodies()});
+/* header: types the latest activity while the keyboard presses the matching keys */
+const KB={};
+(function(){const kb=$("#kb");["qwertyuiop","asdfghjkl","zxcvbnm"," "].forEach(r=>{const row=document.createElement("div");row.className="r";
+  [...r].forEach(ch=>{const k=document.createElement("i");if(ch===" ")k.className="sp";KB[ch]=k;row.appendChild(k)});kb.appendChild(row)})})();
+const LETTERS=Object.keys(KB).filter(k=>k!==" ");
+let typed="",typing=false,typeT=null;
+function press(ch){const k=KB[ch]||KB[LETTERS[Math.floor(Math.random()*LETTERS.length)]];k.classList.add("dn");setTimeout(()=>k.classList.remove("dn"),110)}
+function say(text,animate,html){$("#doingSr").textContent=text;if(text===typed)return;typed=text;clearTimeout(typeT);const el=$("#doing"),end=()=>{typing=false;if(html)el.innerHTML=html};
+  if(!animate||REDUCE){el.textContent=text;end();return}
+  let i=0;typing=true;(function step(){i++;el.textContent=text.slice(0,i);press(text[i-1].toLowerCase());
+    if(i<text.length)typeT=setTimeout(step,28+Math.random()*45);else end()})()}
+setInterval(()=>{if(!REDUCE&&!typing&&document.body.dataset.ov==="live"&&Math.random()<.6)press()},700);
+function between(d,c){const i=d.stages.indexOf(c),nx=d.stages.slice(i+1).find(s=>s.state==="todo");return nx?"Getting ready for "+NAMES[nx.k]:"Finishing up"}
+function beat(){const u=$("#upd");u.classList.remove("pulse");void u.offsetWidth;u.classList.add("pulse")}
+/*budget:start*/
+/* Working time of a stage in ms: start to end (or now, or the gate that stopped it) minus the gate waits (wait_s)
+   and the idle gaps between rounds (idle_s) that live_status.py keeps on the stage. null while it has not started. */
+function worked(s,now){
+  if(!s.start||s.state==="todo"||s.state==="skip")return null;
+  const g=D&&D.gate&&D.gate.stage===s.k?D.gate:null;let e;
+  if(s.state==="done")e=s.end?Date.parse(s.end):Date.parse(s.start);
+  else if(s.state==="wait"&&g)e=Date.parse(g.at);
+  else if(s.state==="fail"&&s.end)e=Date.parse(s.end);
+  else e=now;
+  return Math.max(0,e-Date.parse(s.start)-((s.wait_s||0)+(s.idle_s||0))*1000)}
+function budgetNote(s,now){
+  const B=(D.budgets||{})[s.k],w=worked(s,now);if(!B||w==null)return null;
+  const m=w/60000,done=s.state==="done";
+  if(w>B*60000)return{t:(done?"ran over by ":"over by ")+Math.max(1,Math.round(m-B))+" min",c:done?"bud past":"bud over"};
+  return done?null:{t:Math.floor(m)+" of "+B+" min",c:"bud"}}
+/*budget:end*/
+function tick(){if(!D)return;
+  document.querySelectorAll(".crew-x[data-s]").forEach(el=>{el.textContent="working "+fmt(ms(el.dataset.s))});
+  document.querySelectorAll("[data-ago]").forEach(el=>{el.textContent=ago(el.dataset.ago)});
+  document.querySelectorAll("[data-el]").forEach(el=>{el.textContent=fmt(ms(el.dataset.el))});
+  D.stages.forEach(s=>{let t="";
+    if(s.state==="done"&&s.start&&s.end)t=hm(s.start)+"  "+fmt(ms(s.start,s.end));
+    else if((s.state==="live"||s.state==="fail")&&(s.run||s.start))t=fmt(ms(s.run||s.start));
+    else if(s.state==="wait")t=(D.gate&&D.gate.stage===s.k?waiters(D.gate).join(", ")+" waiting for you ":"waiting ")+fmt(ms(D.gate&&D.gate.stage===s.k?D.gate.at:s.start));
+    rows[s.k].querySelector(".tm").textContent=t;
+    const n=budgetNote(s,Date.now()),b=rows[s.k].querySelector(".bud");b.hidden=!n;
+    if(n){b.className=n.c;b.textContent=n.t;b.title="Working time without gate waits, against the "+(D.risk||"medium")+"-risk budget of "+D.budgets[s.k]+" min"}});
+  const c=cur(D);$("#total").textContent=fmt(ms(D.started,overall(D)==="done"?D.updated:null));
+  $("#stagetime").textContent=c&&(c.run||c.start)?fmt(ms(c.run||c.start,c.state==="done"?c.end:null)):"-";
+  const since=ms(D.updated);$("#upd").textContent=demo?"demo run":since<4000?"updated just now":"updated "+fmt(since)+" ago";
+  if(!demo&&overall(D)!==document.body.dataset.ov)apply(D);
+}
+
+/* Gate documents: g.files (several per gate) or the older single g.file/g.lines. */
+let crewKey=null,CREW=true;try{CREW=localStorage.getItem("ls:crew")!=="0"}catch(e){}
+const XS={todo:"planned",live:"working",done:"done",skip:"not needed"};
+function moves(c){return [].concat((c.added||[]).map(x=>"+ "+x),(c.removed||[]).map(x=>"- "+x))}
+function crew(){const p=D.plan,box=$("#crew");
+  if(!p||!p.rows||!p.rows.length){box.hidden=true;box.innerHTML="";crewKey=null;return}
+  const ch=p.changes||[],sig=D.id+":"+CREW+":"+JSON.stringify([p.rows.map(r=>[r.expert,r.state,r.end||""]),ch.length,p.confirmed]);
+  if(sig+VIEW===crewKey){if(CREW&&VIEW==="map")renderMap();return}crewKey=sig+VIEW;box.hidden=false;
+  const pm=D.mode==="product",sub=p.confirmed?(pm?"Confirmed at G0":"Confirmed at the spec gate")+(p.confirmedAt?" "+hm(p.confirmedAt):"")
+    :pm?(p.default?"The factory's default team: you confirm it at G0":"Proposed: you confirm it at G0"):"Proposed: you confirm it with the spec";
+  let last="",rows="";
+  p.rows.forEach(r=>{const first=r.stage!==last;last=r.stage;
+    const t=r.state==="live"&&r.start?"working "+fmt(ms(r.start)):r.state==="done"&&r.start&&r.end?"done "+fmt(ms(r.start,r.end)):XS[r.state]||r.state;
+    rows+='<div class="crew-r s-'+esc(r.stage)+(first?" first":"")+'"><div class="crew-s'+(first?"":" more")+'"><i></i>'+esc(NAMES[r.stage]||r.stage)+"</div>"+
+      '<div class="crew-e '+esc(r.state)+'">'+esc(r.expert)+(r.added?'<span class="crew-a">added</span>':"")+"</div>"+
+      '<div class="crew-x '+esc(r.state)+'"'+(r.state==="live"&&r.start?' data-s="'+esc(r.start)+'"':"")+">"+esc(t)+"</div>"+
+      '<div class="crew-w">'+esc(r.why||"")+(r.out?" &middot; "+esc(r.out):"")+"</div></div>"});
+  box.innerHTML='<div class="crew-h"><b>Team</b>'+(p.kinds||[]).map(k=>'<span class="crew-k">'+esc(k)+"</span>").join("")+
+    '<span class="sub">'+esc(sub)+(ch.length?" &middot; "+ch.length+" change"+(ch.length>1?"s":"")+" since":"")+"</span>"+
+    (CREW?'<span class="crew-v" role="group" aria-label="View">'+[["map","Map"],["list","List"]].map(([v,n])=>
+      '<button type="button" data-v="'+v+'" aria-pressed="'+(VIEW===v)+'">'+n+"</button>").join("")+"</span>":"")+
+    '<button type="button" class="crew-t" aria-expanded="'+CREW+'">'+(CREW?"Hide":"Show")+"</button></div>"+
+    (CREW&&VIEW==="map"?'<div id="vis-slot"></div>':"")+
+    (CREW&&VIEW==="list"?'<div class="crew-g"><div class="crew-r hd"><div>Stage</div><div>Expert</div><div>Status</div><div>Why</div></div>'+rows+"</div>":"")+
+    (CREW?ch.map(c=>'<div class="crew-c">'+hm(c.at)+" Team changed"+(c.why?": "+esc(c.why):"")+(moves(c).length?" ("+esc(moves(c).join("; "))+")":"")+"</div>").join(""):"");
+  box.querySelector(".crew-t").onclick=()=>{CREW=!CREW;try{localStorage.setItem("ls:crew",CREW?"1":"0")}catch(e){}crewKey=null;crew()};
+  box.querySelectorAll(".crew-v button").forEach(b=>b.onclick=()=>{VIEW=b.dataset.v;try{localStorage.setItem("ls:crewv",VIEW)}catch(e){}crewKey=null;crew()});
+  const slot=box.querySelector("#vis-slot");if(slot){slot.replaceWith(mapBox());renderMap()}}
+/* team map (ported from the product-factory tracker): every agent as a star, grouped by team, lit along the hand-offs;
+   a working agent spins, and a comet runs along the hand-off when it starts or finishes */
+let VIEW="map";try{VIEW=localStorage.getItem("ls:crewv")||(matchMedia("(max-width:620px)").matches?"list":"map")}catch(e){}
+const MAPT=[["product","Product",115,135,262],["design","Design",315,135,175],["architecture","Architecture",505,135,190],
+  ["domain","Domain experts",730,135,0],["helpers","Helpers",905,135,150],["lead","Lead",500,288,220],
+  ["operations","Operations",110,440,330],["engineering","Engineering",320,440,215],["quality","Quality",560,440,130],["audit","Audit",770,440,38]];
+const MAPIDS=MAPT.map(t=>t[0]);
+function teams(){return D.teams&&D.teams.length?D.teams:CORE_TEAMS}
+function benchTeam(a){const t=teams().find(t=>t.agents.includes(a));return t?t.id:""}
+const MAP={key:"",box:null,pos:{},team:{},el:{},st:{},edges:[]};
+const svgEl=(t,a={})=>{const e=document.createElementNS("http://www.w3.org/2000/svg",t);for(const k in a)e.setAttribute(k,a[k]);return e};
+function mapBox(){if(!MAP.box){MAP.box=document.createElement("div");MAP.box.className="vis";MAP.box.id="vis";
+  MAP.box.innerHTML='<span class="vis-n" id="visN"></span><svg viewBox="0 0 1000 545" preserveAspectRatio="xMidYMid meet" role="img" '+
+    'aria-label="Agents by team: a working agent spins, lines light up along the hand-offs; the List view has the details"></svg>'}return MAP.box}
+const baseOf=k=>{const r=D.plan.rows.find(x=>x.expert===k);return r?r.agent:k};
+const teamOf=k=>{const r=D.plan.rows.find(x=>x.expert===k),t=(r&&r.team)||benchTeam(r?r.agent:k);return MAPIDS.includes(t)?t:"helpers"};
+/* this task's experts first, then the rest of the bench (faded) */
+function mapNodes(){const ks=[];D.plan.rows.forEach(r=>{if(!ks.includes(r.expert))ks.push(r.expert)});
+  teams().forEach(t=>t.agents.forEach(a=>{if(!ks.includes(a)&&!D.plan.rows.some(r=>r.agent===a))ks.push(a)}));return ks}
+/* hand-offs follow the stages: every expert of one stage hands to every expert of the next; focus passes hand to the check pass */
+function mapEdges(){const by={},E=[],add=(f,t)=>{if(f!==t&&!E.some(e=>e[0]===f&&e[1]===t))E.push([f,t])};
+  D.plan.rows.forEach(r=>{if(r.state==="skip")return;by[r.stage]=by[r.stage]||[];if(!by[r.stage].includes(r.expert))by[r.stage].push(r.expert)});
+  let prev=["main session"];
+  D.stages.forEach(s=>{const ex=by[s.k];if(!ex)return;
+    const chk=ex.length>1?ex.find(x=>/\(check\)/.test(x)):null,first=chk?ex.filter(x=>x!==chk):ex;
+    prev.forEach(f=>first.forEach(t=>add(f,t)));if(chk)first.forEach(f=>add(f,chk));prev=chk?[chk]:ex});
+  return E}
+function mapState(k){const rs=D.plan.rows.filter(r=>r.expert===k);
+  if(k==="main session"&&D.stages.some(s=>s.state==="live"))return "working";
+  if(!rs.length)return k==="main session"?"planned":"off";
+  if(rs.some(r=>r.state==="live"))return "working";
+  if(rs.some(r=>r.state==="done"))return "done";
+  return rs.every(r=>r.state==="skip")?"off":"planned"}
+/* two short lines ("solution" / "architect", "reviewer" / "rules") so neighbours never overlap */
+function mapLabel(k){k=DN(k);const m=k.match(/^(.*?)\s*\((.+)\)\s*$/),b=m?m[1]:k,f=m?m[2].split(/[,;]/)[0].trim().slice(0,14):"",w=b.split(/[-\s]/);
+  if(b==="code-reviewer"&&f)return ["reviewer",f];
+  return [w[0],[w.slice(1).join("-"),f].filter(Boolean).join(" · ")]}
+const curve=(f,t)=>{const [x1,y1]=MAP.pos[f],[x2,y2]=MAP.pos[t];return "M"+x1+" "+y1+" Q "+(x1+x2)/2+" "+((y1+y2)/2-18)+" "+x2+" "+y2};
+function buildMap(svg){svg.innerHTML="";MAP.pos={};MAP.team={};MAP.el={};MAP.st={};
+  for(let i=0;i<60;i++){const s=svgEl("circle",{cx:Math.random()*1000,cy:Math.random()*545,r:Math.random()*1.1+.3,class:"star"});
+    s.style.animationDelay=Math.random()*4+"s";svg.append(s)}
+  const ks=mapNodes(),up={};
+  MAPT.forEach(([id,name,x,y])=>{const a=ks.filter(k=>teamOf(k)===id),n=a.length;if(!n)return;
+    const R=[0,0,38,44,50,56,62][Math.min(n,6)];
+    svg.append(svgEl("circle",{cx:x,cy:y,r:R+34,class:"cluster"}));
+    const t=svgEl("text",{x,y:y-R-48,"text-anchor":"middle",class:"cl-name","data-t":id});t.textContent=name;svg.append(t);
+    a.forEach((k,i)=>{const g=-Math.PI/2+i*2*Math.PI/n+(n===4?Math.PI/4:0);
+      MAP.pos[k]=[x+R*Math.cos(g),y+R*Math.sin(g)];MAP.team[k]=id;up[k]=n>1&&Math.sin(g)<-.1})});
+  MAP.edges=mapEdges().filter(([f,t])=>MAP.pos[f]&&MAP.pos[t]);
+  MAP.edges.forEach(([f,t],i)=>{const e=svgEl("path",{d:curve(f,t),class:"edge"});MAP.el["e"+i]=e;svg.append(e)});
+  ks.forEach(k=>{if(!MAP.pos[k])return;const [x,y]=MAP.pos[k],g=svgEl("g",{class:"an"}),[l1,l2]=mapLabel(k);
+    g.style.setProperty("--h",MAPT.find(t=>t[0]===MAP.team[k])[4]);
+    g.append(svgEl("title"));
+    g.append(svgEl("circle",{cx:x,cy:y,r:16,fill:"none","stroke-width":"1.5","stroke-dasharray":"7 9",class:"orbit"}));
+    g.append(svgEl("circle",{cx:x,cy:y,r:k==="main session"?14:9,class:"body"}));
+    const tx=svgEl("text",{x,y:up[k]?y-(l2?27:16):y+23,"text-anchor":"middle"}),s1=svgEl("tspan",{x});s1.textContent=l1;tx.append(s1);
+    if(l2){const s2=svgEl("tspan",{x,dy:"12",class:"l2"});s2.textContent=l2;tx.append(s2)}
+    g.append(tx);svg.append(g);MAP.el[k]=g})}
+function renderMap(){const svg=mapBox().querySelector("svg"),
+    key=D.id+"|"+mapNodes().join("+")+"|"+D.plan.rows.map(r=>r.stage+":"+r.expert+(r.state==="skip"?"-":"")).join(","),first=key!==MAP.key;
+  if(first){MAP.key=key;buildMap(svg)}
+  const was=MAP.st,now={};let w=0;
+  Object.keys(MAP.pos).forEach(k=>{const s=mapState(k),rs=D.plan.rows.filter(r=>r.expert===k);now[k]=s;if(s==="working"&&k!=="main session")w++;
+    MAP.el[k].setAttribute("class","an "+s);
+    MAP.el[k].querySelector("title").textContent=DN(k)+": "+(rs.length?rs.map(r=>(NAMES[r.stage]||r.stage)+" "+(XS[r.state]||r.state)+(r.out?" ("+r.out+")":"")).join("; ")
+      :k==="main session"?"runs the flow":"not on this task's team")});
+  MAP.edges.forEach(([f,t],i)=>MAP.el["e"+i].setAttribute("class","edge"+(/working|done/.test(now[f])&&/working|done/.test(now[t])?" lit":"")));
+  MAP.box.querySelectorAll(".cl-name").forEach(t=>t.classList.toggle("active",Object.keys(now).some(k=>now[k]==="working"&&k!=="main session"&&MAP.team[k]===t.dataset.t)));
+  $("#visN").textContent=w?w+" working"+(w>1?" in parallel":""):"";
+  MAP.st=now;if(first||REDUCE)return;
+  Object.keys(now).forEach(k=>{if(k==="main session"||now[k]===was[k])return;
+    if(now[k]==="working"){const fr=MAP.edges.filter(e=>e[1]===k&&(e[0]==="main session"||now[e[0]]==="done")).map(e=>e[0]);
+      (fr.length?fr:["main session"]).forEach(f=>comet(f,k))}
+    else if(now[k]==="done"&&was[k]==="working"){comet(k,"main session","var(--test)");
+      const r=D.plan.rows.filter(x=>x.expert===k&&x.state==="done").pop(),d=document.createElement("div");d.className="vtoast";
+      d.innerHTML="<b>&#10003; "+esc(k)+"</b> ";d.append(r&&r.out||"finished");MAP.box.append(d);setTimeout(()=>d.remove(),3500)}})}
+function comet(f,t,color){if(!MAP.pos[f]||!MAP.pos[t])return;const g=svgEl("g");
+  [5,3.5,2.2].forEach((r,i)=>{const c=svgEl("circle",{r,opacity:String(1-i*.3)});c.style.fill=color||"hsl("+MAPT.find(x=>x[0]===MAP.team[t])[4]+" 65% 66%)";
+    c.append(svgEl("animateMotion",{dur:"1.3s",begin:(i*.06)+"s",fill:"freeze",path:curve(f,t)}));g.append(c)});
+  MAP.box.querySelector("svg").append(g);g.querySelectorAll("animateMotion").forEach(m=>m.beginElement&&m.beginElement());setTimeout(()=>g.remove(),1500)}
+function gfiles(g){return g.files&&g.files.length?g.files:(g.lines&&g.lines.length?[{file:g.file,href:g.href,lines:g.lines,decision:g.decision,title:g.title}]:[])}
+let MODE="md";try{MODE=localStorage.getItem("ls:mode")||"md"}catch(e){}
+/* Markdown, one row per source line: headings, lists, tables (shared column grid), code and diagram blocks, quotes. */
+function emph(h){return h.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/__([^_]+)__/g,"<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g,"$1<i>$2</i>")}
+function inl(t){return String(t).split(/(`[^`]+`)/).map(p=>p.length>1&&p[0]==="`"&&p[p.length-1]==="`"?"<code>"+esc(p.slice(1,-1))+"</code>":
+  p.split(/(\[[^\]]+\]\([^)\s]+\))/).map(q=>{const m=q.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/);if(!m)return emph(esc(q));
+    return /^https?:\/\//i.test(m[2])?'<a href="'+esc(m[2])+'" target="_blank" rel="noopener">'+emph(esc(m[1]))+"</a>":'<u title="'+esc(m[2])+'">'+emph(esc(m[1]))+"</u>"}).join("")).join("")}
+function cells(t){return t.trim().replace(/^\|/,"").replace(/\|\s*$/,"").split(/(?<!\\)\|/).map(c=>c.trim().replace(/\\\|/g,"|"))}
+function tableRows(R){const rows=R.map(cells),sep=r=>r.length>0&&r.every(c=>/^:?-{2,}:?$/.test(c));
+  const n=Math.max(1,...rows.filter(r=>!sep(r)).map(r=>r.length)),w=Array(n).fill(4),mw=Array(n).fill(3);
+  rows.forEach(r=>{if(!sep(r))r.forEach((c,k)=>{if(k<n){w[k]=Math.max(w[k],Math.min(40,c.length));
+    mw[k]=Math.max(mw[k],Math.min(22,Math.max(0,...c.replace(/[`*]/g,"").split(/\s+/).map(x=>x.length))))}})});
+  const tpl=w.map((x,k)=>"minmax("+(mw[k]+1)+"ch,"+x+"fr)").join(" "),head=rows.length>1&&sep(rows[1]);
+  return rows.map((r,i)=>sep(r)?{c:"md-sep",h:"",skip:1}:{c:"md-tr"+(head&&i===0?" md-th":""),
+    h:'<div class="tr" style="grid-template-columns:'+tpl+'">'+Array.from({length:n},(_,k)=>"<div>"+inl(r[k]||"")+"</div>").join("")+"</div>"})}
+function mdRows(L){const out=[];let fence=false,m;
+  for(let i=0;i<L.length;i++){const t=L[i]||"";
+    if(/^\s*(```|~~~)/.test(t)){fence=!fence;out.push({c:"md-fence",h:"",skip:1});continue}
+    if(fence){out.push({c:"md-code",h:esc(t)||" "});continue}
+    if(/^\s*\|/.test(t)){let j=i;while(j<L.length&&/^\s*\|/.test(L[j]||""))j++;out.push(...tableRows(L.slice(i,j)));i=j-1;continue}
+    if((m=t.match(/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/))){out.push({c:"md-h md-h"+m[1].length,h:inl(m[2])});continue}
+    if(/^\s*([-*_])(\s*\1){2,}\s*$/.test(t)){out.push({c:"md-hr",h:"",skip:1});continue}
+    if((m=t.match(/^\s*>\s?(.*)$/))){out.push({c:"md-q",h:inl(m[1])||" "});continue}
+    if((m=t.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/))){const lv=Math.min(4,Math.floor(m[1].replace(/\t/g,"  ").length/2));
+      out.push({c:"md-li",h:'<span class="md-b" style="margin-left:'+lv*18+'px">'+(/\d/.test(m[2])?esc(m[2]):"&bull;")+"</span><span>"+inl(m[3])+"</span>"});continue}
+    if(!t.trim()){out.push({c:"md-blank",h:" ",skip:1});continue}
+    out.push({c:/^\s{2,}\S/.test(t)?"md-p md-cont":"md-p",h:inl(t.trim())})}
+  return out}
+function gate(){const g=D.gate,box=$("#gate");
+  if(!g){box.hidden=true;box.innerHTML="";gateKey=null;return}
+  const F=gfiles(g),multi=F.length>1,key=D.id+":"+g.stage+":"+g.key;
+  const sig=key+":"+MODE+":"+F.map(f=>(f.lines||[]).length+(f.ok?"y":"")).join(",");if(sig===gateKey)return;gateKey=sig;box.hidden=false;box.className="gate s-"+g.stage;
+  const s=store(key),ok=s.ok||{};
+  const chips=F.filter(f=>f.decision).map(f=>'<span class="dec">'+esc(f.decision+" "+(f.title||""))+"</span>").join("")+(g.decision&&!F.some(f=>f.decision)?'<span class="dec">'+esc(g.decision+" "+(g.title||""))+"</span>":"");
+  box.innerHTML='<div class="gh"><span class="bell" aria-hidden="true"></span><div><div class="gq"><span class="who">'+esc(gname(g)+" stage: "+whoWaits(g))+"</span>"+chips+esc(g.question)+"</div>"+
+    '<div class="sub">'+(multi?" "+F.length+" documents: tick the ones that look right, click any line to comment on it or ask about it.":F.length?" Click any line to comment on it or ask about it.":"")+"</div></div></div>"+
+    F.map((f,fi)=>'<div class="file" data-fi="'+fi+'"><div class="fh"><span>'+(multi&&f.decision?'<span class="dec">'+esc(f.decision)+"</span>":"")+esc(f.file)+'<span class="by">by '+esc(f.by||waiters(g)[0])+"</span>"+(f.ok?'<span class="okd">Approved</span>':"")+'</span><span class="fa">'+
+      (multi&&!f.ok?'<label class="okc"><input type="checkbox" data-ok'+(ok[fi]?" checked":"")+"> Looks right</label>":"")+
+      '<button type="button" class="lnk" data-mode>'+(MODE==="md"?"Show source":"Show formatted")+"</button>"+
+      (f.href?'<a href="'+esc(f.href)+'" target="_blank" rel="noopener">Open file</a>':"")+'</span></div><ol class="lines'+(MODE==="md"?" md":"")+'"></ol></div>').join("")+
+    (g.open?'<a class="btn ghost sm" href="'+esc(g.openHref||g.open)+'" target="_blank" rel="noopener">Open '+esc(g.open)+"</a>":"")+
+    '<label class="sub" for="gen" style="display:block;margin-top:8px">General comment or question</label><textarea id="gen" rows="2" placeholder="Anything else to change, keep in mind or explain"></textarea>'+
+    '<div class="gact"><button class="btn" type="button" id="approve">'+(multi?"Approve all":"Approve")+'</button><button class="btn ghost" type="button" id="changes">'+(multi?"Send my review":"Request changes")+'</button><button class="btn ghost" type="button" id="ask">Ask</button>'+
+    '<span class="sub" id="ghint">Copies one message; paste it in the chat to continue.</span></div>';
+  box.querySelectorAll(".file").forEach(el=>{const fi=+el.dataset.fi,f=F[fi],ol=el.querySelector(".lines"),L=f.lines||[];
+    (MODE==="md"?mdRows(L):L.map(t=>({c:"",h:esc(t)||" "}))).forEach((r,i)=>{const li=document.createElement("li"),n=i+1;
+      li.dataset.n=n;li.dataset.k=fi+":"+n;if(r.c)li.className=r.c;li.innerHTML='<span class="ln">'+n+'</span><span class="lt">'+r.h+"</span>";
+      if(!r.skip){li.tabIndex=0;li.onclick=e=>{if(!e.target.closest("a"))edit(li,key)};li.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();edit(li,key)}}}
+      ol.appendChild(li);if(s.lines[li.dataset.k])note(li,key,s.lines[li.dataset.k])});
+    const cb=el.querySelector("[data-ok]");if(cb)cb.onchange=()=>{const v=store(key);v.ok=v.ok||{};if(cb.checked)v.ok[fi]=1;else delete v.ok[fi];keep(key,v)};
+    el.querySelector("[data-mode]").onclick=()=>{MODE=MODE==="md"?"src":"md";try{localStorage.setItem("ls:mode",MODE)}catch(e){}gateKey=null;gate()}});
+  const gen=$("#gen");gen.value=s.general||"";gen.oninput=()=>{const v=store(key);v.general=gen.value;keep(key,v)};
+  $("#approve").onclick=()=>send(key,true);$("#changes").onclick=()=>send(key,false);$("#ask").onclick=()=>send(key,null);
+}
+function edit(li,key){const nx=li.nextElementSibling;if(nx&&nx.classList.contains("ed"))return;if(nx&&nx.classList.contains("note"))nx.remove();
+  const n=li.dataset.n,k=li.dataset.k,ed=document.createElement("li");ed.className="ed";
+  ed.innerHTML='<input type="text" aria-label="Comment on line '+n+'" placeholder="What should change here, or what is unclear?"><button class="btn sm" type="button">Save</button><button class="btn ghost sm" type="button">Cancel</button>';
+  const inp=ed.querySelector("input"),[sv,cn]=ed.querySelectorAll("button");inp.value=store(key).lines[k]||"";
+  sv.onclick=()=>{const v=inp.value.trim(),s=store(key);if(v)s.lines[k]=v;else delete s.lines[k];keep(key,s);ed.remove();note(li,key,v);li.focus()};
+  cn.onclick=()=>{ed.remove();note(li,key,store(key).lines[k]);li.focus()};
+  inp.onkeydown=e=>{if(e.key==="Enter")sv.click();if(e.key==="Escape")cn.click()};
+  li.after(ed);inp.focus()}
+function note(li,key,text){const nx=li.nextElementSibling;if(nx&&nx.classList.contains("note"))nx.remove();
+  li.classList.toggle("has",!!text);if(!text)return;
+  const no=document.createElement("li");no.className="note";no.innerHTML='<span class="nt"></span><button type="button" class="x">Remove</button>';
+  no.querySelector(".nt").textContent=text;
+  no.querySelector(".x").onclick=()=>{const s=store(key);delete s.lines[li.dataset.k];keep(key,s);no.remove();li.classList.remove("has")};
+  li.after(no)}
+function clip(t){t=String(t||"").trim();return t.length>60?t.slice(0,57)+"...":t}
+async function send(key,approve){const g=D.gate,F=gfiles(g),multi=F.length>1,s=store(key),tick=s.ok||{};
+  const one=!multi&&((F[0]&&F[0].decision)||g.decision),nm=gname(g)+(one?" "+one:""),label=f=>f.decision?f.decision+" "+(f.title||""):f.file;
+  const by={};Object.keys(s.lines).forEach(k=>{const p=k.split(":"),fi=+p[0],n=+p[1];if(F[fi]&&n)(by[fi]=by[fi]||[]).push(n)});
+  const notesOf=fi=>(by[fi]||[]).sort((a,b)=>a-b).map(n=>"- "+F[fi].file+" line "+n+' ("'+clip((F[fi].lines||[])[n-1])+'"): '+s.lines[fi+":"+n]);
+  const notes=[].concat(...F.map((f,fi)=>notesOf(fi)));
+  if(s.general&&s.general.trim())notes.push("- General: "+s.general.trim());
+  let msg;
+  if(approve===false&&multi){const open=F.map((f,fi)=>({f,fi})).filter(x=>!x.f.ok);
+    const okd=open.filter(x=>tick[x.fi]),chg=open.filter(x=>!tick[x.fi]&&by[x.fi]),rest=open.filter(x=>!tick[x.fi]&&!by[x.fi]);
+    if(!okd.length&&!notes.length){$("#ghint").textContent="Tick a document that looks right, or comment on a line first.";return}
+    msg=D.id+" "+gname(g)+": my review (approve each ticked document with live_status.py ok --decision or --file, change the rest, then ask me again):"+
+      (okd.length?"\nApproved: "+okd.map(x=>label(x.f)).join(", "):"")+
+      (chg.length?"\nPlease change:\n"+[].concat(...chg.map(x=>notesOf(x.fi))).join("\n"):"")+
+      (okd.some(x=>by[x.fi])?"\nAlso please (approved documents):\n"+[].concat(...okd.map(x=>notesOf(x.fi))).join("\n"):"")+
+      (s.general&&s.general.trim()?"\nGeneral: "+s.general.trim():"")+
+      (rest.length?"\nNot reviewed yet, keep open: "+rest.map(x=>label(x.f)).join(", "):"")}
+  else{
+  if(approve!==true&&!notes.length){$("#ghint").textContent=approve===null?"Write the question first: click a line, or use the general box.":"Add a comment first: click a line, or use the general box.";return}
+  msg=approve===true?D.id+" "+nm+": approved"+(multi?" all ("+F.filter(f=>!f.ok).map(label).join(", ")+")":"")+"."+(notes.length?"\nAlso please:\n"+notes.join("\n"):"")
+    :approve===null?D.id+" "+nm+": questions before I decide (keep the gate open, answer and log each with live_status.py ask):\n"+notes.join("\n")
+    :D.id+" "+nm+": please change these, then ask me again:\n"+notes.join("\n")}
+  const ok=await copy(msg);toast(ok?"Copied. Paste it in the chat and the agent continues.":"Copy was blocked. Copy this and paste it in the chat:",ok?null:msg);
+  $("#ghint").textContent=ok?(approve===null?"Copied. The answers appear in the card and the activity list.":"Copied. Waiting for the agent to pick it up."):"";
+  if(approve===null){s.lines={};s.general="";keep(key,s);gateKey=null;gate()}
+  if(demo&&approve!==null)demoAnswer(approve,notes)}
+async function copy(t){try{await navigator.clipboard.writeText(t);return true}catch(e){
+  const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(_){}ta.remove();return ok}}
+let toastT=null;function toast(text,raw){const t=$("#toast");t.textContent=text;
+  if(raw){const ta=document.createElement("textarea");ta.rows=4;ta.value=raw;t.appendChild(ta);ta.select()}
+  t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),raw?15000:3500)}
+
+/* file viewer: a file chip opens the file read-only through `live_status.py serve` (GET /_file?p=<repo path>&o=<offset>,
+   read in pieces because some machines stall loopback responses over 64 KB) */
+let fvN=0,fvFrom=null;
+function fvMsg(t){const b=$("#fvb");b.innerHTML='<p class="fv-m"></p>';b.firstChild.textContent=t}
+async function openFile(p){const dl=$("#fv"),url="_file?p="+encodeURIComponent(p),n=++fvN;
+  $("#fvp").textContent=p;$("#fvp").title=p;fvMsg("Loading...");if(!dl.open)dl.showModal();
+  if(location.protocol==="file:")return fvMsg("Open this page through the live-status server (live_status.py open) to view files.");
+  try{const parts=[];let o=0,size=1,r;
+    while(o<size){r=await fetch(url+"&o="+o,{cache:"no-store"});if(n!==fvN)return;
+      if(!r.headers.get("X-Live"))return fvMsg("The live-status server is the old one: restart it (stop and start the live-status preview, or run live_status.py open) to view files.");
+      if(r.status===415)return fvMsg("Binary file: nothing to show.");
+      if(!r.ok)return fvMsg("This file can't be shown: it is outside the repo, holds secrets, or no longer exists.");
+      const piece=await r.arrayBuffer();if(n!==fvN)return;size=+r.headers.get("X-Size")||0;if(!piece.byteLength)break;parts.push(piece);o+=piece.byteLength}
+    const t=await new Blob(parts).text();if(n!==fvN)return;
+    const L=t.replace(/\r\n?/g,"\n").split("\n");if(L.length>1&&L[L.length-1]==="")L.pop();
+    const md=/\.(md|mdc|markdown)$/i.test(p),R=md?mdRows(L):L.map(x=>({c:"",h:esc(x)||" "})),b=$("#fvb");
+    b.innerHTML='<ol class="lines'+(md?" md":"")+'">'+R.map((x,i)=>'<li class="'+x.c+'"><span class="ln">'+(i+1)+'</span><span class="lt">'+x.h+"</span></li>").join("")+"</ol>"+
+      (r.headers.get("X-Truncated")?'<p class="fv-m">Showing the first 1 MB.</p>':"");b.scrollTop=0}
+  catch(e){if(n===fvN)fvMsg("Can't reach the live-status server.")}}
+document.addEventListener("click",e=>{const c=e.target.closest("button.chip[data-p]");if(c){fvFrom=c;openFile(c.dataset.p)}});
+$("#fvx").onclick=()=>$("#fv").close();
+$("#fvcp").onclick=async()=>{const b=$("#fvcp");b.textContent=await copy($("#fvp").textContent)?"Copied":"Copy failed";setTimeout(()=>b.textContent="Copy path",1500)};
+$("#fv").onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.close()};
+$("#fv").addEventListener("close",()=>{fvN++;if(fvFrom&&fvFrom.isConnected)fvFrom.focus();fvFrom=null});
+
+/* live data: re-read live.js (or <task>/status.js) every 1.5 s; works from file:// */
+const P=new URLSearchParams(location.search),SRC=P.get("task")?encodeURIComponent(P.get("task"))+"/status.js":"live.js";
+function poll(){if(demo)return;const s=document.createElement("script");s.src=SRC+"?v="+Date.now();
+  s.onload=()=>{s.remove();const d=window.__LIVE__;if(d&&d.stages&&(!D||d.updated!==D.updated||d.id!==D.id||(d.events.length&&d.events[d.events.length-1].n!==seen)))apply(d)};
+  s.onerror=()=>s.remove();document.head.appendChild(s)}
+function thm(){const v=document.documentElement.dataset.theme;$("#thm").textContent=v==="system"?"Theme: system":"Theme: light"}
+$("#thm").onclick=()=>{const v=document.documentElement.dataset.theme==="system"?"light":"system";document.documentElement.dataset.theme=v;try{localStorage.setItem("ls:theme",v)}catch(e){}thm()};thm();
+setInterval(poll,1500);setInterval(tick,1000);poll();
+
+/* demo run: same renderer, simulated events (task mode) */
+const DID=(PROJ.ticket||"DEMO-")+"101";
+const SPEC=["# "+DID+" Export a list as CSV","","Goal: admins download the current list as a CSV file to share it outside the app.","For: admins.","","## Acceptance criteria",
+"- AC1 The list page shows an Export button for admins only.","- AC2 The CSV has one row per visible item: name, owner, status, last changed.","- AC3 Non-admins get 403 from the export call.",
+"- AC4 An export of 2,000 rows finishes in under 5 seconds.","- AC5 The button label and errors exist in every language the app ships.","- AC6 Today's list calls keep their response shape.",
+"","## Decisions this change needs","- D3 API: one new export call","- D4 Access: export is admin-only","","## Open questions","- Q1 Include archived items? Recommended: no."];
+const RUN=[
+{s:"spec",k:"start",a:"spec-analyst",x:"Spec started"},{s:"spec",k:"read",a:"spec-analyst",x:"Read context.md"},{s:"spec",k:"read",a:"spec-analyst",x:"Read ListController.java"},
+{s:"spec",k:"search",a:"spec-analyst",x:'Search for "requireAdmin"'},{s:"spec",k:"read",a:"spec-analyst",x:"Read ListPage.tsx"},
+{s:"spec",k:"edit",a:"spec-analyst",x:"Write spec.md",file:"spec.md"},{s:"spec",k:"run",a:"spec-analyst",x:"Check the spec has every part",cmd:"python .claude/core/scripts/handoff_check.py "+(PROJ.ticket||"DEMO-")+"101"},
+{s:"spec",k:"done",a:"spec-analyst",x:"spec-analyst finished",out:"spec.md, 6 criteria, D3 + D4, 1 question",keep:1,
+  sum:["Looked at the list page and how admin checks work today.","Wrote 6 criteria for the CSV export, for admins only.","Two decisions for you: the new export call and who may use it.","One question is open: should archived items be in the file?"]},
+{s:"spec",k:"gate",a:"you",x:"Review spec.md: 6 criteria and 1 open question",file:"spec.md",lines:SPEC},
+{s:"design",k:"start",a:"solution-architect",x:"Design started",job:"Plan the export call and the file-by-file change"},{s:"design",k:"agent",a:"ux-designer",x:"ux-designer started",job:"Show you 3 places for the Export button"},
+{s:"design",k:"agent",a:"security-architect",x:"security-architect started",job:"Decide who may export the list"},
+{s:"design",k:"read",a:"solution-architect",x:"Read context.md"},{s:"design",k:"read",a:"ux-designer",x:"Read context.md"},{s:"design",k:"read",a:"security-architect",x:"Read context.md"},
+{s:"design",k:"read",a:"solution-architect",x:"Read ReportController.java"},{s:"design",k:"edit",a:"ux-designer",x:"Write prototype.html",file:"prototype.html"},
+{s:"design",k:"search",a:"security-architect",x:'Search for "requireAdmin"'},{s:"design",k:"read",a:"ux-designer",x:"Read ListPage.tsx"},
+{s:"design",k:"edit",a:"solution-architect",x:"Write design.md",file:"design.md"},{s:"design",k:"edit",a:"security-architect",x:"Write D4-access.md",file:"D4-access.md"},
+{s:"design",k:"read",a:"solution-architect",x:"Read ListService.java"},{s:"design",k:"read",a:"security-architect",x:"Read Roles.java"},
+{s:"design",k:"edit",a:"ux-designer",x:"Write prototype.html",file:"prototype.html"},{s:"design",k:"edit",a:"security-architect",x:"Write D4-access.md",file:"D4-access.md"},
+{s:"design",k:"fin",a:"security-architect",x:"security-architect finished",out:"D4: export is admin-only",
+  sum:["Checked who may see the list today and how admin checks are done.","Decided the export is for admins only; others get a clear refusal.","Nothing else needs your answer."]},
+{s:"design",k:"run",a:"ux-designer",x:"Check prototype.html at 360 px",cmd:"python shot.py prototype.html --width 360"},
+{s:"design",k:"edit",a:"solution-architect",x:"Write design.md",file:"design.md"},{s:"design",k:"edit",a:"solution-architect",x:"Write D3-api.md",file:"D3-api.md"},
+{s:"design",k:"fin",a:"ux-designer",x:"ux-designer finished",out:"prototype.html, 3 variants",
+  sum:["Built 3 places for the Export button: toolbar, menu and footer.","Each works on a phone and with the keyboard.","Waiting for your pick."]},
+{s:"design",k:"run",a:"solution-architect",x:"Check the design has every part",cmd:"python .claude/core/scripts/handoff_check.py "+(PROJ.ticket||"DEMO-")+"101"},
+{s:"design",k:"fin",a:"solution-architect",x:"solution-architect finished",out:"design.md, D3 card",
+  sum:["Planned the change in 7 small steps, following the report export that already exists.","One new export call; today's list calls keep their shape.","The API card needs your OK."]},
+{s:"design",k:"done",a:"main session",x:"Design ready",out:"design.md, 7 changes, D3 D4 cards, 3 variants",keep:1},
+{s:"design",k:"gate",a:"you",x:"Pick a button placement (A, B or C) and OK the plan",open:"prototype.html"},
+{s:"build",k:"start",a:"main session",x:"Build started"},{s:"build",k:"edit",a:"main session",x:"Write ListExportService.java",file:"ListExportService.java"},
+{s:"build",k:"edit",a:"main session",x:"Edit ListController.java",file:"ListController.java"},
+{s:"build",k:"run",a:"main session",x:"Compile the backend",cmd:"mvn -q compile"},{s:"build",k:"block",a:"guard",x:"Blocked: the app is running and a full build would restart it; run the tests instead"},
+{s:"build",k:"edit",a:"main session",x:"Edit ListPage.tsx",file:"ListPage.tsx"},
+{s:"build",k:"flag",a:"rules check",x:"Rule check: fixed colour #2563EB in ListPage.tsx, now a theme token"},
+{s:"build",k:"skill",a:"main session",x:"Use the labels skill"},{s:"build",k:"done",a:"main session",x:"Build done",out:"6 files changed"},
+{s:"review",k:"start",a:"code-reviewer",x:"Review started",job:"Check the change before testing"},{s:"review",k:"read",a:"code-reviewer",x:"Read review-pack.md"},
+{s:"review",k:"edit",a:"code-reviewer",x:"Write review.md",file:"review.md"},{s:"review",k:"run",a:"code-reviewer",x:"Show the export call's admin check",cmd:"grep -n requireAdmin src/list/ListController.java"},
+{s:"review",k:"must",a:"code-reviewer",x:"MUST ListController.java:88: export has no admin check -> call requireAdmin first"},
+{s:"review",k:"must",a:"code-reviewer",x:"MUST ListExportService.java:41: owners loaded per row in a loop (N+1) -> one query"},
+{s:"review",k:"edit",a:"code-reviewer",x:"Write review.md",file:"review.md"},
+{s:"review",k:"fail",a:"code-reviewer",x:"Review FAIL: 2 MUST",out:"2 MUST, 1 SHOULD",
+  sum:["Reviewed the 6 changed files against the plan and the rules.","Verdict: fail. Two things must be fixed: the admin check on export and a slow loop.","One suggestion, nothing else."]},
+{s:"build",k:"start",a:"main session",x:"Back to build: fixing 2 MUST"},{s:"build",k:"edit",a:"main session",x:"Edit ListController.java",file:"ListController.java"},
+{s:"build",k:"done",a:"main session",x:"Fix done",out:"6 files changed"},{s:"review",k:"start",a:"code-reviewer",x:"Re-review started",job:"Check the two fixes"},
+{s:"review",k:"read",a:"code-reviewer",x:"Read review-pack.md"},{s:"review",k:"done",a:"code-reviewer",x:"Review PASS",out:"PASS, 1 SHOULD",
+  sum:["Checked the two fixes and every earlier finding.","Verdict: pass. Nothing must be fixed; one suggestion stays."]},
+{s:"test",k:"start",a:"qa-engineer",x:"Test started",job:"Test each criterion"},{s:"test",k:"edit",a:"qa-engineer",x:"Write ListExportServiceTest.java",file:"ListExportServiceTest.java"},
+{s:"test",k:"run",a:"qa-engineer",x:"Run the export tests",cmd:"mvn -q test -Dtest=ListExportServiceTest"},{s:"test",k:"done",a:"qa-engineer",x:"Tests pass",out:"6 pass, 0 fail",
+  sum:["Wrote one test per criterion: 6 tests.","All 6 pass; the rest of the suite is as before."]},
+{s:"verify",k:"gate",a:"you",x:"Restart the app: new endpoint"},
+{s:"verify",k:"start",a:"verifier",x:"Verify started",job:"Check it in the running app"},{s:"verify",k:"run",a:"verifier",x:"Open the list page and export it"},{s:"verify",k:"done",a:"verifier",x:"Verified",out:"6 of 6 criteria PASS",
+  sum:["Exported the list in the running app as an admin and as a normal user.","All 6 criteria pass."]},
+{s:"release",k:"start",a:"release-manager",x:"Release check started",job:"Check it can ship"},{s:"release",k:"done",a:"release-manager",x:"Release check done",out:"READY",
+  sum:["Checked the steps to ship: no migration, one restart.","Ready to ship."]},
+{s:"wrap",k:"start",a:"main session",x:"Writing the commit message"},{s:"wrap",k:"done",a:"main session",x:"Commit message ready",out:"commit message ready"}];
+/* the demo team: Design runs three experts in parallel while the main session waits */
+const DTEAM=[["spec","spec-analyst","Criteria, decisions, open questions"],["design","solution-architect","File plan and the D3 API card"],["design","ux-designer","Export button: 3 placements to pick from"],
+  ["design","security-architect","D4: who may export"],["build","main session","Build the plan"],["review","code-reviewer","One pass over the diff"],["test","qa-engineer","Tests per criterion"],
+  ["verify","verifier","Check it in the running app"],["release","release-manager","Ready to ship?"]];
+const DCALLS={"spec-analyst":35,"solution-architect":20,"ux-designer":35,"security-architect":35,"code-reviewer":20,"qa-engineer":20,"verifier":20,"release-manager":20};
+function demoState(){const t=new Date().toISOString(),tm=a=>(CORE_TEAMS.find(x=>x.agents.includes(a))||{}).id;
+  return {id:DID,title:"Export a list as CSV",size:"L",tool:"claude",mode:"task",project:PROJ.name,started:t,updated:t,seq:0,events:[],counts:{},gate:null,teams:CORE_TEAMS,risk:"medium",budgets:{spec:15,design:20,build:45,review:20,test:15,verify:15,release:15,wrap:5},
+  plan:{kinds:["feature"],confirmed:true,rows:DTEAM.map(([stage,a,why])=>({stage,expert:a,agent:a,why,state:"todo",team:tm(a)}))},calls:DCALLS,now:{},bg:[],runs:[],
+  stages:TASK.map(([k,n])=>({k,name:n,state:"todo",actor:ACTOR[k]}))}}
+/* a run in the demo moves as the hook moves a real one: steps, calls, job phase (brief, look into it, write its file, check and finish) */
+function dstep(r,e,t){if(TOOLK.includes(e.k))r.n++;r.steps.push([t,e.x].concat(e.cmd?[e.cmd]:[]));
+  const own=e.k==="edit"&&e.file&&(!r.file||r.file===e.file);if(own&&!r.file)r.file=e.file;
+  if(r.ph===0&&!/context|pack|triage|status|brief|decision|spec\b|questions/i.test(e.x))r.ph=1;
+  if(own){r.fw=(r.fw||0)+1;if(r.ph<2&&(r.fw>1||r.n>=.4*r.b))r.ph=2}else if(r.ph===2&&e.k==="run")r.ph=3}
+function dpush(e){const st=demo.st,t=new Date().toISOString(),s=st.stages.find(x=>x.k===e.s),R=st.plan.rows,row=R.find(r=>r.stage===e.s&&r.agent===e.a);
+  const go=()=>{if(row){row.state="live";row.start=t;delete row.end}st.now[e.a]={n:0,last:e.x,wrote:""};
+      if(DCALLS[e.a])st.runs.push({id:"d"+(st.runs.length+1),agent:e.a,expert:e.a,stage:e.s,job:e.job||(row&&row.why)||"",start:t,state:"live",n:0,ph:0,b:DCALLS[e.a],steps:[]})},
+    fin=r=>{r.state="done";r.end=t},run=st.runs.slice().reverse().find(r=>r.agent===e.a&&r.state==="live");
+  const stop=(r,sum)=>{if(!r)return;r.state="done";r.end=t;if(sum)r.summary=sum};
+  if(e.k==="start"){s.state="live";s.start=s.start||t;s.run=t;s.actor=e.a;go();st.now["main session"]={n:0,last:e.x,wrote:""}}
+  else if(e.k==="agent")go();
+  else if(e.k==="fin"){if(row){fin(row);if(e.out)row.out=e.out}stop(run,e.sum)}
+  else if(e.k==="done"){if(e.sum)stop(run,e.sum);s.state=e.keep?"live":"done";if(!e.keep){s.end=t;R.filter(r=>r.stage===e.s&&r.state==="live").forEach(fin);st.runs.filter(r=>r.stage===e.s&&r.state==="live").forEach(r=>stop(r))}if(e.out)s.out=e.out}
+  else if(e.k==="fail"){stop(run,e.sum);s.state="fail";s.out=e.out;R.filter(r=>r.stage===e.s&&r.state==="live").forEach(fin)}
+  else if(e.k==="gate"){s.state="wait";st.gate={stage:e.s,question:e.x,at:t,key:String(st.seq+1),file:e.file,lines:e.lines,open:e.open,openHref:"#"}}
+  else if(e.k==="ok"){st.gate=null;if(e.s==="spec"||e.s==="design"){s.state="done";s.end=t;R.filter(r=>r.stage===e.s&&r.state==="live").forEach(fin)}else{s.state="live";s.run=t}}
+  else if(e.k==="changes"){st.gate=null;s.state="live";s.run=t}
+  else if(run&&e.a!=="main session")dstep(run,e,t);
+  const n=st.now[e.a]||(st.now[e.a]={n:0,last:"",wrote:""});
+  if(TOOLK.includes(e.k))n.n++;if(!["gate","ok","changes"].includes(e.k))n.last=e.x;if(e.k==="edit"&&e.file)n.wrote=e.file;
+  st.seq++;st.events.push({n:st.seq,t,stage:e.s,kind:e.k==="fin"?"agent":e.k,actor:e.a,text:e.x,file:e.file&&e.k==="edit"?e.file:undefined,cmd:e.cmd});
+  st.counts[e.k]=(st.counts[e.k]||0)+1;st.updated=t;apply(JSON.parse(JSON.stringify(st)))}
+function demoNext(){if(!demo||demo.wait)return;const e=RUN[demo.i++];if(!e){clearInterval(demo.iv);return}
+  dpush(e);if(e.k==="gate"){demo.wait=true;if(e.s==="verify")setTimeout(()=>{demoAnswer(true,[])},5000)}}
+function demoAnswer(approve,notes){if(!demo||!demo.wait)return;const g=demo.st.gate;if(!g)return;
+  if(approve){dpush({s:g.stage,k:"ok",a:"you",x:"You approved"+(notes.length?" with "+notes.length+" note(s)":"")})}
+  else{dpush({s:g.stage,k:"changes",a:"you",x:"You asked for "+notes.length+" change(s)"});
+    const who=ACTOR[g.stage];setTimeout(()=>dpush({s:g.stage,k:"edit",a:who,x:"Updated "+(g.file||"design.md")+" for your comments",file:g.file||"design.md"}),1200);
+    setTimeout(()=>dpush({s:g.stage,k:"gate",a:"you",x:"Updated: "+g.question.replace(/^Updated: /,""),file:g.file,lines:g.lines,open:g.open}),2600);return}
+  demo.wait=false}
+function startDemo(){demo={i:0,wait:false,st:demoState()};demo.iv=setInterval(demoNext,REDUCE?600:1400);demoNext()}
+$("#demoBtn").onclick=startDemo;if(P.has("demo"))startDemo();
+</script>
+</body>
+</html>

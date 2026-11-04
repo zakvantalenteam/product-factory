@@ -1,0 +1,219 @@
+"""PostToolUse check of the agent core: the project's hard rules that a guard can't block up front.
+
+Rules come from .claude/project.json `rules`, one object each:
+  {"id": "rule 5", "paths": ["**/*.css"], "pattern": "#[0-9a-fA-F]{3,8}\\b", "message": "fixed hex colour; use the theme",
+   "unless": "var\\(", "part": "line" | "value", "comments": false}
+  paths     globs (project.match); the rule runs only on matching files
+  pattern   regex; a line it finds is a problem
+  unless    optional regex; a line it finds is fine
+  part      "value" checks only the text after the first "=" (properties files); default the whole line
+  comments  true also checks comment lines (//, /*, *, #, !, <!--); default false
+  not_paths optional globs the rule skips (vendor, theme or test files)
+  redact    true leaves the matched line out of the message (secrets)
+Looks only at the lines an Edit/Write/MultiEdit added (not context lines that were already there), so legacy code
+never triggers it.
+
+Checks a regex can't do come from `checks`, one object each:
+  {"id": "EP2", "paths": ["src/**/*.java"], "command": "python .claude/scripts/checks.py ep2", "message": "..."}
+  The command runs as `<command> "<repo-relative path>"` in the repo root with the hook JSON on stdin. Exit 1 = a
+  problem, one per stdout line (at most 5); exit 0, any other exit or over 10 s = fine.
+
+Plan check (every repo, no config): a write to a task file in the work folder whose `## Plan` is too generic (no
+Goal or Output line, or items that name nothing in the task; live_status.plan_issues) gets a note with how to fix
+it, once per file, as additional context (no error); the live page shows the same as a chip.
+
+Test location (every repo, no config): a new test file (a Write, or a Cursor edit) named like a test and holding test
+code, under `src/main/` or in the repo root, is a problem: tests go in the project's test folder, mirroring the
+package of the code under test (common.md, hard rule).
+
+Contract (Claude Code): exit 2 + a message on stderr reports the problems (the edit already happened, so the agent
+fixes it); exit 0 when clean, with the plan note as hookSpecificOutput.additionalContext when there is one. Cursor (`--cursor`, postToolUse): prints {"additional_context": "..."}; nothing when
+clean. A repo without .claude/project.json is never checked. An internal error prints a one-line warning on stderr
+and exits 1 (Claude shows it; the edit is not checked) or 0 in Cursor, and is logged.
+"""
+import json
+import os
+import re
+import sys
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
+import project  # noqa: E402
+
+CURSOR = "--cursor" in sys.argv
+if __name__ == "__main__":
+    project.hook_start()
+COMMENT = ("//", "/*", "*", "#", "!", "<!--")
+# where "#" starts code (a CSS id selector, a JS private field), only the language's own comment marks count
+C_STYLE = ("//", "/*", "*")
+COMMENT_BY_EXT = dict([(e, C_STYLE) for e in ("css", "scss", "less", "js", "jsx", "mjs", "cjs", "ts", "tsx")]
+                      + [(e, C_STYLE + ("<!--",)) for e in ("html", "htm", "vue", "svelte")])
+
+
+def comment_marks(r):
+    return COMMENT_BY_EXT.get(r.rsplit(".", 1)[-1] if "." in r else "", COMMENT)
+
+
+def added_lines(tool, inp):
+    """Lines the call introduced: new text minus lines that were already in the replaced text."""
+    if tool == "Write":
+        return (inp.get("content") or "").splitlines()
+    out = []
+    for e in inp.get("edits") or [inp]:
+        old = set((e.get("old_string") or "").splitlines())
+        out += [l for l in (e.get("new_string") or "").splitlines() if l not in old]
+    return out
+
+
+def cursor_edit(inp):
+    """Cursor's file tools name their fields differently; map them onto (path, added lines)."""
+    path = next((inp[k] for k in ("file_path", "path", "target_file", "filePath") if inp.get(k)), "")
+    if "old_string" in inp or inp.get("edits"):
+        return path, added_lines("Edit", inp)
+    text = next((inp[k] for k in ("content", "contents", "code_edit", "file_text") if isinstance(inp.get(k), str)), "")
+    return path, text.splitlines()
+
+
+def check(r, lines, rules):
+    problems = []
+    marks = comment_marks(r)
+    for rule in rules:
+        if not project.match(r, rule.get("paths")) or project.match(r, rule.get("not_paths") or []):
+            continue
+        try:
+            pat = re.compile(rule["pattern"])
+            unless = re.compile(rule["unless"]) if rule.get("unless") else None
+        except (KeyError, re.error):
+            continue
+        for l in lines:
+            s = l.strip()
+            if not s or (not rule.get("comments") and s.startswith(marks)):
+                continue
+            text = s.split("=", 1)[1] if rule.get("part") == "value" and "=" in s else s
+            if pat.search(text) and not (unless and unless.search(text)):
+                problems.append("%s: %s -> %s" % (rule.get("id", "rule"), rule.get("message", "breaks a hard rule"),
+                                                   "(line not shown)" if rule.get("redact") else s[:120]))
+    return problems
+
+
+def run_checks(path, r, checks, data):
+    """The project's own check scripts for this file (`checks`); they get the path in its real case."""
+    import subprocess
+    problems = []
+    root = project.repo_root()
+    real = os.path.relpath(os.path.abspath(path), root).replace("\\", "/")
+    payload = json.dumps(data).encode("utf-8")
+    for c in checks:
+        if not c.get("command") or not project.match(r, c.get("paths")) or project.match(r, c.get("not_paths") or []):
+            continue
+        try:
+            p = subprocess.run('%s "%s"' % (c["command"], real), shell=True, cwd=root, input=payload,
+                               capture_output=True, timeout=10)
+        except Exception:
+            continue
+        if p.returncode != 1:
+            continue
+        for line in p.stdout.decode("utf-8-sig", "replace").splitlines()[:5]:
+            if line.strip():
+                problems.append("%s: %s -> %s" % (c.get("id", "check"), c.get("message", "project check"),
+                                                   line.strip()[:160]))
+    return problems
+
+
+TEST_NAME = re.compile(r"(Tests?|IT|TestCase)\.(java|kt)$|\.(test|spec)\.[cm]?[jt]sx?$|^test_[^/]*\.py$|_test\.(py|go)$")
+TEST_BODY = re.compile(r"org\.junit|@Test\b|\bexpect\(|\bdescribe\(|\bQUnit\.|import pytest|\bassert\w*\(")
+
+
+def test_place(path, r, lines):
+    """A test written under src/main/ or in the repo root (built in, no config; name and body must both look like a test)."""
+    if ("/" in r and "src/main/" not in r) or not TEST_NAME.search(os.path.basename(path)):
+        return []
+    if not any(TEST_BODY.search(x) for x in lines):
+        return []
+    return ["test-location: %s is a test outside the test folder. Tests go in the project's test folder, mirroring "
+            "the package of the code under test (Java `src/test/java/<same package>/`, JavaScript the stack pack's test "
+            "folder); write it there and delete this file (common.md, hard rule)." % r]
+
+
+def live(text, data):
+    try:
+        import live_status
+        live_status.record("flag", text, "rules check", data)
+    except Exception:
+        pass
+
+
+def plan_note(path):
+    """Once per output file in the work folder: its `## Plan` is too generic (no Goal or Output line, or items that
+    name nothing in the task: live_status.plan_issues), with how to fix it in the next write."""
+    w = project.work_dir()
+    a = os.path.abspath(path)
+    if not w or not os.path.normcase(a).startswith(os.path.normcase(os.path.abspath(w)) + os.sep):
+        return ""
+    import hashlib
+    import live_status as ls
+    parts = ls.plan_of(a)
+    if not parts or not parts[1]:
+        return ""
+    issues = ls.plan_issues(parts[0], parts[2])
+    flag = ls.path(".sessions", "plan-" + hashlib.md5(os.path.normcase(a).encode("utf-8")).hexdigest()[:12])
+    if not issues or os.path.exists(flag):
+        return ""
+    os.makedirs(os.path.dirname(flag), exist_ok=True)
+    ls.write(flag, "1")
+    return ("The plan in %s is too generic (%s). In your next write to this file, rewrite `## Plan`: `Goal:` what "
+            "this run must achieve for this task, `Output:` what the person gets (the files changed and the behaviour, "
+            "or the file and what is in it), `Done when:` the check that proves it, then 4-8 items that each name the "
+            "concrete thing: a file, endpoint, node, screen, criterion id, or a decision with its options. Process "
+            "steps (\"Read the brief\", \"Check every caller\", \"Write lessons\") are not plan items (common.md, "
+            "Output file).\n" % (os.path.basename(a), "; ".join(issues)))
+
+
+def main():
+    try:
+        data = json.loads(sys.stdin.buffer.read().decode("utf-8-sig", "replace") or "{}")
+    except Exception:
+        return
+    cfg = project.config()
+    rules, checks = cfg.get("rules") or [], cfg.get("checks") or []
+    tool = data.get("tool_name", "")
+    inp = data.get("tool_input") or {}
+    if isinstance(inp, str):
+        inp = json.loads(inp)
+    if CURSOR:
+        path, lines = cursor_edit(inp)
+    elif tool in ("Edit", "Write", "MultiEdit"):
+        path, lines = inp.get("file_path") or "", added_lines(tool, inp)
+    else:
+        return
+    r = project.rel(path) if path else None
+    if not r:
+        return
+    try:
+        note = plan_note(path)
+    except Exception:
+        note = ""
+    problems = check(r, lines, rules) + run_checks(path, r, checks, data) if rules or checks else []
+    if CURSOR or tool == "Write":
+        problems += test_place(path, r, lines)
+    if problems:
+        msg = "Hard-rule check on " + r + ":\n- " + "\n- ".join(problems[:10]) + "\n" + note
+        live("Hard-rule check on " + r.rsplit("/", 1)[-1] + ": " + problems[0][:160], data)
+        if CURSOR:
+            print(json.dumps({"additional_context": msg}))
+            return
+        sys.stderr.write(msg)
+        sys.exit(2)
+    if note:  # a quiet note, not an error: the agent fixes the plan in a write it makes anyway
+        print(json.dumps({"additional_context": note} if CURSOR else
+                         {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except SystemExit:
+        raise
+    except Exception as e:
+        sys.stderr.write(project.hook_error("rules check", e) + "; the edit was not checked\n")
+        sys.exit(0 if CURSOR else 1)

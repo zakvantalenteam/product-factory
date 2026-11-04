@@ -65,5 +65,6 @@ Task mode: `python ${CLAUDE_PLUGIN_ROOT}/scripts/handoff_check.py <id> ai.md` (r
 - Budgets per turn: cost and p95 latency targets from a stated volume, measured per step and alerted; a small model for routing and rewriting, the strong model for the answer.
 - Retrieval checked on its own before any prompt tuning: hit rate or recall at k and precision on a labelled set; filters (tenant, language, status) before similarity; hybrid search or a reranker only when the numbers show the need.
 - Agents: a step, tool-call, token and time limit per run with a stop condition; tools that write or send need the user's confirmation and act with the user's rights, checked on the server.
+- Answer quality: every card type has eval cases for list, count, attribute and repeat; the source the question names wins over the catalog; the answer text uses the tool's values; a batch AI job writes a result for every row and an end state.
 
 Reply in 10 lines or fewer: the path, the baseline (P50/P95, first words against budget, cost per successful task and per month), the top 3 recommendations with expected gain and the eval and threshold for each, handoffs to other owners, and the runtime facts you still need.

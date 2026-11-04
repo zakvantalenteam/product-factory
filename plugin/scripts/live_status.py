@@ -65,6 +65,17 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:  # `python -I` leaves the script's folder off sys.path
     sys.path.insert(0, _HERE)
 import project  # noqa: E402
+
+if __name__ == "__main__" and sys.argv[1:2] == ["hook"] and not project.has_project():
+    # a repo without .claude/project.json: record nothing (Cursor still waits on a reply for these events)
+    if "--cursor" in sys.argv:
+        try:
+            _ev = json.loads(sys.stdin.buffer.read().decode("utf-8-sig", "replace") or "{}").get("hook_event_name")
+        except Exception:
+            _ev = None
+        if _ev in ("preToolUse", "subagentStart", None):
+            print(json.dumps({"permission": "allow"}))
+    sys.exit(0)
 import timing  # noqa: E402
 
 ROOT = project.repo_root()
@@ -73,7 +84,7 @@ CFG = project.config(ROOT)
 TEMPLATE = os.path.join(_HERE, "live_status.html")
 PORT = int(CFG.get("live_port") or project.DEFAULTS["live_port"])
 KEEP_EVENTS = 200
-SCRIPT = "python .claude/core/scripts/live_status.py"
+SCRIPT = "python " + project.core_path("scripts/live_status.py")
 
 # ---- modes, stages, gates ---------------------------------------------------------------------
 
@@ -2124,7 +2135,7 @@ def cmd_hook(a):
     bound to a task when it runs a live_status.py command for that task (init, stage, gate, ...)."""
     data = {}
     try:
-        data = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace") or "{}")
+        data = json.loads(sys.stdin.buffer.read().decode("utf-8-sig", "replace") or "{}")
         if not isinstance(data, dict):
             data = {}
         sid = session_of(data)

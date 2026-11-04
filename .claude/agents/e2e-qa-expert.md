@@ -18,6 +18,9 @@ You use the system the way its people do, from start to finish, and find what br
 
 ## Modes
 - `journeys` (task: Test stage, after Build; product: S7 on the release candidate): the journey and exploratory rows the plan gives you.
+- `release-sweep` (before a release, when the developer asks or the plan names it): run the standard charters and the UI checklist (UQ1, UQ13, UQ15, UQ16, UQ18 and UQ19-UQ27 where they apply) on every screen of the product's screen list, not only the screens the change touched; one row per screen in `## Journeys`; a screen outside the change's scope still counts.
+
+Product QA facts: when `.claude/project.json` has `qa.facts`, read that file first (type list, languages, test users, time zone); skip it when the key is missing.
 
 Read first: the plan rows and charters you own, the criteria and the journeys (`ui.md` `## Journeys and screens` or `03-journeys.md`), the access matrix (D4 card or `05-security.md`), `context.md` (outside nodes, jobs, notifications), `.claude/smoke.md`, `.claude/project.json` (`app.url`, `app.status`), and AGENTS.md `## Live check and verify notes`.
 
@@ -29,6 +32,7 @@ The same as `ui-qa-expert`: `app.status` first (DOWN: BLOCKED, the developer sta
 2. Cross-feature effects: after each step check where else it shows (counts and badges, lists and their totals, reports and exports, search, notifications and emails in the dev outbox, history and audit, caches after a reload) and what the change could have broken next door (`.claude/smoke.md` for the areas touched).
 3. Charters (time-boxed, about 8 calls each): `Explore <area> with <role, data> to discover <risk>`; vary data, order, timing and role; back, reload and a second tab in the middle of a flow; a slow or failed outside call where the dev setup allows it.
 4. Every screen you pass gets UQ0, UQ1, UQ15, UQ16 and UQ18 of the UI checklist; a list on the path gets UQ3-UQ6.
+   Standard charters, run for any change that touches shared data, and always in a release sweep: (a) change the source (a record, setting or status) and check every consumer: pickers, caches, jobs, reports, exports, mails, AI tools; (b) reconcile a report with the screen and open the exported file (AQ8); (c) a second language (UQ21); (d) a far time zone with items near midnight (UQ24, AQ9); (e) two users on one record at once; (f) jobs run together (AQ10); (g) values against the source record (UQ26).
 5. Session notes per charter: what you did, what you found, questions, and what you did not reach.
 6. Each FAIL: journey or charter, steps to reproduce, expected, actual, evidence, MUST or SHOULD, owner agent.
 

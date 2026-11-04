@@ -561,3 +561,75 @@ and never ships a change that breaks something else.
 - Sync scope (4 Nov, from the developer): SkillsOS gets no repo install from 1.9.0 on; its developers use the
   product-factory plugin and the repo's agents are being removed. "All projects in sync" now means product-factory,
   Blend, TalentBox and the plugin (AGENTS-core, sdlc Setup work, README step 5, AGENTS.md rule 7).
+
+## 32. 1.10.0 - ready for the switch to the plugin
+- Why: the setup review of 4 Nov (`work/claude-setup-review/`), MUST and SHOULD approved by the developer. The plugin
+  is on at user level, so its guard blocked edits and `git merge` in every repo without the core; the `sdlc` header
+  was not valid YAML (its description was lost); removing `.claude/core/` would have switched the guard off without
+  a word, for Claude and Cursor; teammates had no way to get the plugin.
+- Opt-in by `.claude/project.json` (M1, S4): plugin.json `defaultEnabled: false`; every hook (guard, rules_check,
+  flow_check, live_status hook, session_start) exits 0 at once without project.json (`project.hook_start`).
+  SessionStart adds nothing there, nothing when the repo carries the core, one line naming the plugin folder when
+  AGENTS.md has the core block, the block itself otherwise.
+- Headers (M2): `project.front_errors` (PyYAML when installed, plus the plain-value rules YAML applies) runs in
+  build_plugin.py (the build stops), install.py --check and cursor_sync --check, for every agent and SKILL.md;
+  build_plugin also checks plugin.json against VERSION and runs `claude plugin validate --strict` when the CLI is on
+  PATH (a warning when not).
+- Fail closed (M3, S7, S9): the guard blocks on an internal error (exit 2, Cursor deny) with a one-line reason and a
+  log line (`project.error_log()`: `$CLAUDE_PLUGIN_DATA` or the temp folder), and its hook entry has
+  `"onFailure": "block"` (Claude Code 2.1.295+). The launcher warns on stderr and exits 1 for a missing script or a
+  launcher error (the guard entry then blocks; other hooks show the warning). rules_check and flow_check warn and
+  exit 1. Hooks write UTF-8 and strip a byte-order mark from their input (a piped BOM made the guard fail).
+- Paths (M4): build_plugin rewrites `.claude/core/` to `${CLAUDE_PLUGIN_ROOT}/` in every markdown file of the plugin;
+  scripts and hook messages use `project.core_path()` (relative inside the repo, the absolute core folder from the
+  plugin); install.py turns the plugin's paths back when it installs from the plugin. common.md says what a core path
+  means in each layout.
+- Read work off the guard (S3): `--write-settings` adds `Read(//**/<glob>)` deny rules for `guard.secret_files` and
+  `guard.no_read`; the guard's matcher drops Read (Cursor keeps beforeReadFile). The big-file check on Read goes (the
+  Read tool's own limits remain) and no-read hints are now the plain deny. Measured (median of 15, Blend): bare
+  python 120 ms; guard on Read 254 ms before, none after; on Bash 245 ms before, 229 after.
+- Cursor runtime (M3): cursor_sync writes `.cursor/runtime/` (guard, rules and flow checks, project.py, live_status
+  with its page and imports, VERSION, README) and `.cursor/hooks.json` runs those. In a repo without the in-repo
+  core it writes the whole core there (skills too, so cursor_sync and install --check run from the copy) and the core
+  agents and skills into `.cursor/agents/` and `.cursor/skills/`, with core paths pointing at `.cursor/runtime/`.
+- Switch (M5, S1): `install.py <repo> --switch-to-plugin` does it in one change: removes the locked core files and
+  `.claude/core/`, removes the core hooks, writes `extraKnownMarketplaces.talenteam` (autoUpdate) and
+  `enabledPlugins: true` from `templates/plugin-source.json` (`--marketplace-url` overrides), points the core paths
+  in AGENTS.md, CLAUDE.md, .claude/ text files, the forwarder shims, the allow rules and launch.json at
+  `.cursor/runtime/`, and regenerates `.cursor/`. It refuses on hand-edited core files (`--force`), and install.py
+  refuses to re-add the in-repo core to a switched repo. Tested on a scratch copy of Blend only.
+- Skills (S6): `sdlc` keeps triage, start, live status, gates and rules (27 KB to 15 KB); Who joins, Briefing,
+  Safety net and Stages are `team.md`, `briefing.md`, `safety-net.md`, `stages.md` with their section numbers, each
+  linked with a summary of its rules. `factory` keeps the playbook and a stage table (11 KB to 6 KB) with one file
+  per stage. Both descriptions are quoted and lead with when to use them.
+- Core block (S5): the `AGENTS.md` block, always loaded in every repo, went from 9.4 KB to 2.8 KB. It keeps the five
+  lanes (one line each) and the hard rules (Tech Lead writes no product code, no repo-changing git, no servers, no
+  secrets, the live page is the only tracker, tests in the test folder, core files only from the core source). The
+  rest (agents, models, how agents work, safety net, QA, hooks, live page, sync, Cursor) moved to
+  `reference/how-work-flows.md`, linked from the block and from `sdlc`; the paths resolve in every layout (repo,
+  plugin, `.cursor/runtime/`).
+- Permissions (S8): `templates/settings-permissions.json` is the one source for the permissions `--write-settings`
+  writes (and `--switch-to-plugin`, retargeted): read-only allow rules (`Bash(ls)` and `Bash(ls *)`, `git branch
+  --list*` and `-a*`, the work folder, read-only browser tools), the same deny list everywhere (git writes, `target`,
+  `releases`, `createDDL.jdbc`, `approuter/resources`), plus Read deny rules for `guard.secret_files` and `no_read`
+  and Edit deny rules for `secret_files`. Broad forms (`Bash(ls*)`, `Bash(git branch*)`) are replaced; the project's
+  own rules stay. `install.py --check` lists a missing or broad rule. The switch also adds a user-level allow rule
+  for the plugin's script folder (`--user-settings` picks the file), since `.claude/core/scripts/*` points nowhere
+  after it.
+
+## 33. 1.11.0 - QA checks from two years of bugs
+- Why: the MAY26 bug-pattern study (Blend's two years of Jira bugs and ObservIQ's, `qa-bug-patterns/patterns.md` in
+  Blend's work folder), approved by the developer on 5 Nov. Most escaped bugs fall in a few repeatable patterns
+  (parity across views and content types, state after reopen, a second language, desktop widths, time zones, values
+  against the source, reports and exports, jobs, roles).
+- UI checklist UQ19-UQ27 (parity, reopen and return, second language, variants with a new-type sweep, desktop widths
+  and scroll, dates and time zones, copy pass, values against the source, an other-browser runbook); UQ2, UQ6, UQ16
+  extended. API checklist AQ3, AQ4 (a second user of the same role, a user without the permission, a direct URL) and
+  AQ7 extended; AQ8 reports and exports, AQ9 time, AQ10 jobs added.
+- QA agents: `qa-lead`'s matrix gets a parity set, a variant table, language and role columns, and a regression ring
+  for bug fixes; `ui-qa-expert` UQ1-UQ27 and a data recipe in its practice pack; `e2e-qa-expert` standard charters
+  and a `release-sweep` mode; `qa-engineer` AQ8-AQ10.
+- Build agents get one prevention rule each (spec-analyst, explorer, frontend, backend, integration, ai-engineer,
+  n8n-expert, code-reviewer); the review checklist gets the matching MUST and SHOULD items.
+- New project key `qa.facts`: a path to the project's QA facts file. The QA agents, spec-analyst and explorer read it
+  when set; the installer never overwrites a project's `project.json`.

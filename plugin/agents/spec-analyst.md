@@ -45,6 +45,8 @@ Read `00-prd.md` (or the document the lead names) and `00-intake.md`; list its s
 5. Run `python ${CLAUDE_PLUGIN_ROOT}/scripts/handoff_check.py <id> brief.md spec.md` and fix every PROBLEM line.
 
 ## Gap hunt (spec and task)
+When `.claude/project.json` has `qa.facts`, read that file first (parity map, type list, variants, languages, roles); skip it when the key is missing.
+Criteria name the sibling views, the content types, statuses and settings in scope, a second-language row, a long-content row, the roles including a second user of the same role, and the expected value per state. A bug spec asks: where else does this render?
 A gap the code or the repo rules already answer is an assumption. Check: who (roles, scope, who must not see it); data (new or changed, personal, source, retention); states (empty, loading, error, outside system slow or down, no permission, long text, many rows); limits and volume; existing behaviour that changes or conflicts with the code (cite it); repo rules it would break (`AGENTS.md` hard rules, `.claude/rules/`); languages, labels, devices; other owners, config per tenant, rollout and undo; how each criterion is checked.
 
 ## Brief layout (`brief.md`; `02-gaps.md` in product mode)

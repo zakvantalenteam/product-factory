@@ -1,12 +1,13 @@
 ---
 name: sdlc
-description: Triage every request, then run the delivery flow only for real work - answer questions directly, route obvious small changes to their area agent as quick fixes, do AI-setup work (.claude, .cursor, AGENTS.md) with no task, send a new product (idea, PRD, "build a new product") to the factory skill, and give every other change a task: a context pack first, a risk level from its evidence, only the agents it needs (the Tech Lead decides and routes, the area agents write the code), a safety net scaled by risk so nothing else breaks, and the developer's OK where there is something to decide. Use at the start of any request that may change code, when the developer types /sdlc, or when unsure what step comes next.
+description: "Use at the start of any request that may change code, when the developer types /sdlc, or when unsure what step comes next. Triages every request into its lane (answer, read-only, setup work, quick fix routed to its area agent, a new product to the factory skill, task) and runs task mode: a context pack first, a risk level from its evidence, only the agents the task needs (the Tech Lead decides and routes, the area agents write the code), a safety net scaled by risk, and the developer's OK where there is something to decide."
 ---
 # Delivery flow (agent core)
 
 Paths: the work folder `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`); scripts are
 `python .claude/core/scripts/<name>.py` (below just `live_status.py`); file names per mode are in
-`.claude/core/reference/flow-files.md`.
+`.claude/core/reference/flow-files.md`; the agents, models, QA, hooks and sync rules that the `AGENTS.md` core block
+leaves out are in `.claude/core/reference/how-work-flows.md`. The longer sections are files next to this one, read when their step comes: [team.md](team.md) (section 3), [briefing.md](briefing.md) (4), [safety-net.md](safety-net.md) (5) and [stages.md](stages.md) (8); every rule in them applies.
 
 ## 1. Triage (every request, first)
 Pick the lane yourself; never ask the developer which one. Say the lane in one line only when you start a task.
@@ -42,63 +43,13 @@ Deploy facts (any lane that changes code, quick fixes too): `.claude/project.jso
 7. Show the live page (section 6) and tell the developer the lane, the risk with its strongest evidence, and the team, in two lines.
 
 ## 3. Who joins (by need, not by size)
-The usual task is: `qa-lead` at Design (test plan), the area agents at Build (you brief and route them), `code-reviewer` at Review (one pass), the QA experts the plan names and `qa-lead` (sign-off) at Test, you at Verify, you at Wrap-up. An agent joins only when the task gives it the reason:
-
-| The task has | Agent (stage) |
-|---|---|
-| A goal with real gaps, or many affected areas | `spec-analyst` (Spec, mode `task`) |
-| A bug whose cause is not obvious | `bug-investigator` (Spec) |
-| Something slow | `performance-engineer` (Spec, Design, Verify) |
-| A large new feature: is it a good product? | `product-critic` (Spec), `story-sizer` when it splits into several stories |
-| A new approach, or a change across layers | `solution-architect` (Design) |
-| Table or entity changes (D2) | `data-architect` (Design) |
-| New roles, permissions, personal data or outside access (D4) | `security-architect` (Design); a small permission change: `solution-architect` |
-| A new or changed screen, however small (a demo or a single file too) | `ux-designer` (Design, mode `variants`: it builds the prototype by the `prototype` skill's rules; you show it and ask for the pick; Review `ux-designer (ui)` only for a large screen change). Never design a screen yourself |
-| An outside system (sync, API client, SSO, files) | `integration-engineer` (Design) |
-| Deploy, environment or pipeline changes | `devops-engineer` (Design) |
-| SuccessFactors job profiles, roles, competencies or skills (Job Profile Builder, Talent Intelligence Hub, the skills model, Career Development or Opportunity Marketplace where they use skills) | `sf-skills-expert` (Design, modes `fit` then `field`; Review `sf-skills-expert (sf-skills)` only when most of the change is in this area); other SuccessFactors data stays with `sf-expert`, and a need that spans both gets both |
-| A domain the repo lists in `experts` (SuccessFactors, AI, ...) | that domain expert (Design; Review `<expert> (<domain>)` only when most of the change is in that domain, reading the same review pack) |
-| Any code change | its area agent at Build, quick fixes too: `backend-developer` (Java and server code), `frontend-developer` (UI: JS, TS, HTML, CSS, views), `integration-engineer` (a connection to an outside system), `n8n-expert` (workflow JSON), `devops-engineer` (build, deploy and pipeline files), `qa-engineer` (tests); `routing.areas` in project.json maps paths to agents. One agent per part; parts with no shared files run in parallel |
-| Any code change | `code-reviewer` (Review), one pass |
-| Risk medium or high | `qa-engineer` (Design, mode `characterize`: lock today's outputs before Build) |
-| Any task that changes code | `qa-lead` (Design, mode `plan`: `test-plan.md`, the risk-based test matrix and who tests what; Test, mode `sign-off`: `qa-signoff.md`, one verdict from every QA result). No task closes without the sign-off |
-| A UI change: a template, script, style, view or label a user sees | `ui-qa-expert` (Test, mode `ui`: every item of `.claude/core/reference/qa/ui-checklist.md` in the running app) |
-| A journey change: a step across screens, roles or features, a notification, a status flow | `e2e-qa-expert` (Test, mode `journeys`: end-to-end and exploratory, across roles, real data volumes) |
-| A new or changed endpoint, or new tests to write | `qa-engineer` (Test: the tests, and the API checks of `.claude/core/reference/qa/api-checklist.md` for each endpoint); existing tests only: `main session` |
-| A pushed change to verify, or many criteria | `verifier` (Verify, mode `change`); otherwise `main session` |
-| A release branch or go-live | `release-manager` (Release) |
-
-- With no Spec agent, `triage.md` is the spec. With no Design agent and a small plan, write a short `design.md` yourself only when a decision card needs one.
-- Owners when they overlap: `performance-engineer` keeps the time budget and baseline, `ai-engineer` decides model, prompt, cache and cost, a domain expert answers its domain's facts.
-- Speed budget unless the spec says otherwise: first useful content 3 s, fully usable 6 s, a server call 2 s, an AI answer's first words 5 s (median of 3, measured in the browser by `ui-qa-expert`, or by you).
-- When a Spec agent ran, it writes the team into `spec.md`; run `plan <id>` again. After the spec gate the team changes only with a reason: `plan <id> --why "<reason>"`.
-- Agents move their own row on the page through the hooks. Without a SubagentStop hook (Cursor) run `expert <id> <stage> "<expert>" done`.
+The usual team: `qa-lead` at Design (test plan), the area agents at Build (you brief and route them), `code-reviewer` at Review, the QA experts the plan names and `qa-lead` (sign-off) at Test, you at Verify and Wrap-up. Any other agent joins only for a reason the task gives. Read [team.md](team.md) before you write `## Who will work on this`: which need brings which agent (spec, bug, speed, product, design, data, access, screens, outside systems, deploy, domain experts, the area agent per code path, QA), who owns what when they overlap, and the speed budget.
 
 ## 4. Briefing agents (keeps them fast)
-- Every brief opens with three lines: `Goal: <what this run must achieve for this task, one plain line>`, `Output: <what it hands back: the files changed and the behaviour, or the file it writes and what is in it>` and `Files: <the files it works on>`. The live page shows the goal and the files on the agent's card and in your route event, and the agent's `## Plan` starts from the goal and the output, so make the goal specific to this task ("Decide how Ask shows the answer sentence by sentence without changing the cards", not "Design the change"). Then the task id, the folder, its mode, the risk, what it must write and the scratchpad folder for any test or script. Keep your view of the solution out: the reviewer gets the diff, not your opinion of it.
-- Build briefs: the planned files of this part, the approved cards that cover them, the commands to run (`commands` in project.json) and the repo's area skill files that apply (`.claude/skills/<name>/SKILL.md`, for example a labels, admin-page or mcp-tool skill): agents cannot run skills, so they read the named files as instructions. Split the build by area; parts whose files do not overlap go in one message, in parallel.
-- Quick brief (quick fix lane, no task folder): `Goal:`, `Output:` and `Files:`, then `Quick fix:` with the exact files and lines, the fix and the test to run; no context pack. The agent's budget is about 8 calls, so the handoff costs about 1-2 minutes.
-- Start every brief with: "Read `<work>/<id>/context.md` first and do not explore beyond it; fill only a named gap and add it there." End it with: "Write your output file first, then improve it. Stay within the tool-call budget in your agent file, at most 3 web lookups. Reply in 10 lines or fewer."
-- Models: each agent's own `model:` line, so a brief needs no model override: Opus for the agents that decide (spec, investigation, product review, design, data, security, AI, review, audit, speed, domain experts), Sonnet 5.5 for the ones that build and check (the developers, integration, devops, base, tests, verify, explorer, release, sizing). `code-reviewer` and `solution-architect` (task mode) work from a pack in about 20 tool calls; the other agents that decide have about 35, the others about 20; `maxTurns` is about 1.5 times that.
-- Packs (seconds, no agent): before Design run `review_pack.py <id> --design` (`design-pack.md`: criteria, impact rows, the cards the paths may need, hard rules, path rules, repo facts and lessons for the paths in `context.md`; plus a `design.md` skeleton with one Changes row per criterion and one Impact map row per impact line). Before Review run `review_pack.py <id>` (`review-pack.md`: the diff with line numbers, scope, safety and unchecked callers as pre-filled MUST rows, criteria, cards, and only the checklist sections, rules and lessons for the changed paths). Brief the agent with the pack, not with a list of documents to read.
-- Parallel by default: all Design experts in one message; the Build parts with no shared files in one message; after Build, Review (`code-reviewer`) and Test (the QA experts `test-plan.md` names) in one message, then `qa-lead` (sign-off) once they are done. Run them in the background when you have other work; wait only when the next step needs the result.
-- Agents cannot run skills. Only `ui-qa-expert` and `e2e-qa-expert` use the browser (each in its own tab, with the browser tools named in its frontmatter); for the others you run `prototype`, `live-check` and reproductions that need the app, and pass them the results. Brief a QA expert with the app URL, the role to sign in as and the test data the plan names.
-- A QA expert with no browser tools (Cursor) writes `## Runbook`: run its steps in the browser and send it the results. A line `Consult: <expert>: <question>` in a QA file (for example `sf-expert`, `sf-skills-expert`, `n8n-expert`, `ai-engineer`): brief that expert with the question (quick brief, about 8 calls) and pass the answer back; QA agents cannot start agents.
+Every brief opens with `Goal:`, `Output:` and `Files:` lines; a quick brief adds `Quick fix:` (the exact files and lines, the fix, the test; about 8 calls, no context pack). Read [briefing.md](briefing.md) before the first brief of a task: what a brief holds, models and budgets, the design and review packs, what runs in parallel, and the QA experts' browser, runbook and consult lines.
 
 ## 5. Safety net (nothing may break; depth set by risk)
-| Step | low | medium | high |
-|---|---|---|---|
-| Before Build: `python .claude/core/scripts/scope_check.py baseline <id>`; `commands.compile`; the full unit suite (`commands.test_all`, else `commands.test` with no filter); record pass and fail counts | yes | yes | yes |
-| Characterization tests: `qa-engineer` (mode `characterize`) locks today's outputs of every changed shared method in the session scratchpad; `char_test.py run <id> before` passes | - | yes | yes |
-| After Build: compile; the full unit suite (no new failure); `char_test.py run <id> after` and `char_test.py diff <id>` (no change outside `## Intended changes`); `scope_check.py check <id>` (every changed file planned) | yes | yes | yes |
-| Review: every caller in the impact map checked by someone | - | yes | yes |
-| QA: `qa-lead`'s plan at Design and sign-off at Test; the UI checklist on every changed screen and the API checklist on every changed endpoint; a checklist MUST fails Test | yes | yes | yes |
-| Verify: the changed flow, plus the `.claude/smoke.md` items for each area touched | flow | + smoke | + smoke |
-
-- Record it in `<work>/<id>/safety.md`: `## Before build`, `## After build` (commands, counts, results) and `## Intended changes` (one bullet per characterization test whose output the spec changes on purpose, with the `AC#`).
-- A test that already failed before Build is noted, never fixed silently. A new failure after Build sends the task back to Build.
-- An unplanned file is a MUST: drop it, or accept it with `scope_check.py add <id> <path> --why "<reason>"`. The stop hook sends the turn back once while one is left.
-- Commands come from `.claude/project.json` (`commands`); never one that `guard.block_while_app_up` blocks while the app runs.
+Before Build: the scope baseline, compile and the full unit suite (and characterization tests at risk medium and high); after Build: compile, the full suite, the characterization diff and the scope check; QA plan and sign-off at every risk; smoke items at Verify from medium. Read [safety-net.md](safety-net.md) when Build starts: the steps per risk, `safety.md`, and what a new failure or an unplanned file means.
 
 ## 6. Live status
 `live_status.py` keeps `<work>/<id>/status.json` (+ `status.md`) and the page `<work>/live.html`. Hooks add reads, edits, commands, agents, guard blocks and rule flags; you add the stage boundaries and gates:
@@ -135,16 +86,7 @@ The usual task is: `qa-lead` at Design (test plan), the area agents at Build (yo
 - The guard blocks edits that trigger D2, D4 or D6 (as configured) until that card is approved for the session's task. Only the developer approves: run `ok` only on their reply. Build follows the approved cards; anything they don't cover needs a change card (`decisions/D2-change-1.md`), gated, never a silent change.
 
 ## 8. Stages
-
-| # | Stage | Who | Output in `<work>/<id>/` | Done when |
-|---|---|---|---|---|
-| 1 | Spec (when on the team) | `spec-analyst`, `bug-investigator` or `performance-engineer` | `brief.md`, `spec.md` (bugs: reproduction and root cause; speed: `perf.md`) | `handoff_check.py` passes; `plan <id>` |
-| 2 | Design (when on the team) | `review_pack.py <id> --design`, then `solution-architect` and the design experts on the team, all in one message, all reading `design-pack.md` (you merge their notes into `design.md`); `qa-engineer` (`characterize`) at risk medium or high; `qa-lead` (`plan`) in the same message; `ux-designer` builds the prototype for UI and you ask for the pick | `design.md` (with `## Planned files`), `test-plan.md`, `decisions/*.md`, `ui.md` / `perf.md` / `sf.md` / `ai.md`, `safety.md` `## Before build` | Every criterion maps to a planned change; `handoff_check.py` passes |
-| 3 | Build | The area agents from your build briefs (section 4), in parallel where their files do not overlap, after the "before" steps of section 5; you integrate their results and run the "after" steps | The code change | Follows AGENTS.md, `.claude/rules/`, the repo's area skills and the planned files; the "after" steps of section 5 pass |
-| 4+5 | Review and Test, in parallel | `review_pack.py <id>`, then one `code-reviewer` run (`focus: all`, re-checks its own findings) and, in the same message, the QA experts `test-plan.md` names (`qa-engineer` `test` with the API checks, `ui-qa-expert` `ui` for any UI change, `e2e-qa-expert` `journeys` for any journey change), then `qa-lead` (`sign-off`) when they are done; an expert review pass (ui, speed, sf, ai, n8n) only when most of the change is its area, in the same message and reading the same pack. No check pass: the verdict is FAIL when `review.md` or any `review-<x>.md` has a MUST | `review.md`, `test.md`, `qa-ui.md`, `qa-e2e.md`, `qa-signoff.md`, `safety.md` `## After build` | Verdict PASS, tests green and `qa-signoff.md` SIGNED OFF (`stage <id> test done` refuses otherwise). Any MUST, failing test or checklist MUST = FAIL (the QA expert re-runs its failed checks after the fix, then `qa-lead` signs off again): list each (`path:line` + fix), `stage <id> review fail`, back to Build, re-run only what failed. A re-review runs `review_pack.py <id>` again: a delta pack (the files changed since the review and the previous MUSTs to re-check) for the same reviewer |
-| 6 | Verify | You: the criteria and smoke items the QA files did not cover (`live-check` when the app is up, otherwise against the diff); `verifier` when on the team; smoke items at risk medium or high | PASS/FAIL per criterion and smoke item in `status.md` | Every criterion and smoke item PASS. A restart needed first: say why and leave the stage open |
-| 7 | Release (when on the team) | `release-manager` | `release.md` | READY |
-| 8 | Wrap-up | `commit-msg` skill; `dev-handoff` when another owner must act; the lessons (section 9) | Commit message; `handoff-<developer>.md` | The developer has what they need to commit or hand over |
+Spec, Design, Build, Review and Test in parallel, Verify, Release and Wrap-up; a stage with nobody on it is skipped. Read [stages.md](stages.md) when each stage starts: who runs it, its output files in `<work>/<id>/` and when it is done (Test only with `qa-signoff.md` SIGNED OFF; any MUST or failing test goes back to Build).
 
 ## 9. Lessons loop
 Every MUST from a review (once fixed) and every bug found later in a change this flow made adds one line to `.claude/review/lessons.md`: `- <date> <task id>: <the rule, one line> (<area or path glob>)`, from the `## Lessons` of `review.md` or `spec.md`. Add only what the project checklist and lessons do not already say; for a repeat, add ` (again <date>)` to the existing line. Agents read the lines for their area, and the reviewer fails a repeat.

@@ -4,9 +4,15 @@
 
 Writes <home>/plugin/ (home = the folder above core/, which holds .claude-plugin/marketplace.json): the core's
 agents, skills, hooks, scripts, reference, templates, VERSION and .claude-plugin/plugin.json, with every
-`.claude/core/` path in agent and skill text turned into `${CLAUDE_PLUGIN_ROOT}/` (Claude Code fills it in, so the
-plugin works in a repo that does not carry the core). install.py runs it when it installs into the home repo.
-Repos that carry the core switch the plugin off in their settings (install.py), so its hooks never run twice.
+`.claude/core/` path in markdown (agents, skills and their files, reference, templates) turned into
+`${CLAUDE_PLUGIN_ROOT}/`: Claude Code fills it in inside agent and SKILL.md bodies, and the plugin's session start
+note names the folder for the rest. Scripts and hooks need no rewrite: they find the core from their own folder
+(project.core_path). install.py turns the paths back when it installs from the plugin, and runs this build when it
+installs into the home repo. Repos that carry the core switch the plugin off in their settings, so no hook runs
+twice; the plugin's hooks do nothing in a repo without .claude/project.json.
+The build fails on a skill or agent header that is not valid YAML (Claude Code would drop its fields) and on a
+plugin.json version that differs from VERSION, then runs `claude plugin validate --strict` on the result when the
+claude CLI is on PATH (a warning when it is not).
 It also writes the "Certified agents" table of <home>/README.md (between its certified-agents markers) from each
 agent's `role:`, `model:` and `certifications:` frontmatter, with the exam scores in core/exam-scores.json.
 --check exits 1 when plugin/ or that table is not what a build would write (the sync workflow runs it before
@@ -33,7 +39,6 @@ MARKS = ("<!-- certified-agents:start (build_plugin.py writes this table from th
          "<!-- certified-agents:end -->")
 SCORES = os.path.join(CORE, "exam-scores.json")  # blind exam scores per agent and core version, for the table
 SKIP = {"__pycache__", "migration", "core-plan.md", "core.lock", "exam-scores.json"}
-REWRITE = ("agents", "skills")  # markdown Claude reads: paths into the core point at the plugin root
 
 
 def certified_table():
@@ -76,6 +81,43 @@ def cert_drift():
     return out
 
 
+def header_errors():
+    """Skill and agent files whose YAML frontmatter Claude Code cannot parse, and a plugin.json version that is not
+    the core's VERSION."""
+    out = []
+    for d in ("agents", "skills"):
+        folder = os.path.join(CORE, d)
+        for name in sorted(os.listdir(folder)):
+            rel = d + "/" + name + ("/SKILL.md" if d == "skills" else "")
+            if rel.endswith(".md") and os.path.isfile(os.path.join(CORE, rel)):
+                with open(os.path.join(CORE, rel), encoding="utf-8") as fh:
+                    out += ["%s: %s" % (rel, e) for e in project.front_errors(fh.read())]
+    with open(os.path.join(CORE, "VERSION"), encoding="utf-8") as fh:
+        ver = fh.read().strip()
+    with open(os.path.join(CORE, ".claude-plugin", "plugin.json"), encoding="utf-8") as fh:
+        pj = json.load(fh)
+    if pj.get("version") != ver:
+        out.append(".claude-plugin/plugin.json: version %s, VERSION %s" % (pj.get("version"), ver))
+    if pj.get("defaultEnabled") is not False:
+        out.append(".claude-plugin/plugin.json: defaultEnabled must be false (a project turns the plugin on)")
+    return out
+
+
+def validate(folder):
+    """`claude plugin validate --strict` on the built plugin; (ok, text). Without the CLI: ok with a warning."""
+    import subprocess
+    cli = shutil.which("claude")
+    if not cli:
+        return True, "warning: claude CLI not on PATH, so `claude plugin validate --strict` did not run"
+    try:
+        p = subprocess.run([cli, "plugin", "validate", "--strict", folder], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=120)
+    except Exception as e:
+        return True, "warning: claude plugin validate could not run (%s)" % e
+    text = (p.stdout + p.stderr).strip()
+    return p.returncode == 0, "claude plugin validate --strict: " + ("ok" if p.returncode == 0 else text[-1500:])
+
+
 def readme(write):
     """The README with its certified-agents table rebuilt; True when the file already matched."""
     with open(README, encoding="utf-8", newline="") as fh:
@@ -103,7 +145,7 @@ def build(dest):
                 continue
             src, dst = os.path.join(top, f), os.path.join(dest, rel, f)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            if rel.split(os.sep)[0] in REWRITE and f.endswith(".md"):
+            if f.endswith(".md"):
                 with open(src, encoding="utf-8", newline="") as fh:
                     text = fh.read()
                 with open(dst, "w", encoding="utf-8", newline="") as fh:
@@ -130,6 +172,9 @@ def main():
     drift = cert_drift()
     if drift:
         sys.exit("Certified as line differs from the certifications list in: " + ", ".join(drift))
+    bad = header_errors()
+    if bad:
+        sys.exit("Not built, fix these first:\n  " + "\n  ".join(bad))
     if a.check:
         tmp = tempfile.mkdtemp(prefix="plugin-")
         try:
@@ -146,6 +191,10 @@ def main():
         sys.exit(1 if diff or not same else 0)
     build(OUT)
     readme(write=True)
+    ok, text = validate(OUT)
+    print(text)
+    if not ok:
+        sys.exit("plugin built but not valid: %s" % OUT)
     print("plugin built: %s" % OUT)
 
 

@@ -19,7 +19,7 @@ You test one change or one product. You may create or edit test files (the repo'
 
 ## Modes and files (`<work>/<id>/`)
 - Task `characterize` (before Build, risk medium or high): lock today's behaviour. For each shared method the change touches (the targets in `context.md` `## Impact map` with callers outside the change, and the files under `## Planned files`), write characterization tests in the scratchpad folder the lead names (never the repo): fixed inputs covering the cases its callers use (empty, one, many, another user or tenant, another language, null and edge values), printing the outputs. Run them with `python ${CLAUDE_PLUGIN_ROOT}/scripts/char_test.py run <id> before --dir <folder>` (it runs `commands.char_run` per test and saves the outputs). Every test must pass on today's code. Output: `## Before build` in `safety.md` (each test, the method it locks, PASS).
-- Task `test`: add the missing tests for a change and run them, with the API checks (AQ1-AQ7) for every new or changed endpoint; then `char_test.py run <id> after` and `char_test.py diff <id>` when characterization tests exist: any changed output not listed under `## Intended changes` in `safety.md` is a FAIL. Output `test.md`, plus `## After build` in `safety.md`.
+- Task `test`: add the missing tests for a change and run them, with the API checks (AQ1-AQ10) for every new or changed endpoint; then `char_test.py run <id> after` and `char_test.py diff <id>` when characterization tests exist: any changed output not listed under `## Intended changes` in `safety.md` is a FAIL. Output `test.md`, plus `## After build` in `safety.md`.
 - Product `plan` (S6): write the tests from the criteria and start `07-test-report.md` with a `## Test plan` table.
 - Product `run` (S7): run and fill `07-test-report.md` (criteria table, API checks, failures, gaps).
 
@@ -31,6 +31,8 @@ Read first: `context.md`, `safety.md` when it exists, `status.md`, `decisions.md
 3. App DOWN: `commands.compile` then `commands.test` is fine. Servers are started by the developer, never by you.
 4. Scratch scripts and characterization runs go in the session scratchpad, never a test meant to stay.
 
+Product QA facts: when `.claude/project.json` has `qa.facts`, read that file first (type list, test users, time zone); skip it when the key is missing. For Ask, new eval cases (list, count, attribute, repeat) go under `n8n_workflows/eval/`.
+
 ## Method
 1. Pick tests: existing tests for the touched classes (Grep the class name under the test folders), the repo's guard tests named in AGENTS.md, and the eval commands it lists.
 2. Cases per criterion: id `TC-<story>-<n>` (task: `AC<n>`), type (unit, API or contract, end-to-end, permission, tenant isolation, edge, failure), data, steps, expected result. Add what the criteria imply but do not state: validation limits, a stale version giving 409, every role in the access matrix (allowed and denied), another tenant's record giving 404, empty and many rows, an outside system down.
@@ -38,7 +40,7 @@ Read first: `context.md`, `safety.md` when it exists, `status.md`, `decisions.md
 4. No unit harness for a screen: list the live checks for Verify instead. An end-to-end journey: write the script and say what is needed to run it (a running app is the developer's step).
 5. On a failure decide whether the test or the code is wrong; report the probable cause and the agent who should fix it.
 6. Impact map: every line of `## Impact map` (from `context.md`, plus `design.md` or `perf.md`) gets a test, an eval case or a live check, and a result. A line with no way to test it is reported as a gap, never skipped.
-7. API checks: every new or changed endpoint gets AQ1-AQ7 of `api-checklist.md` (contract, paging bounds, filters and sort, access per role, input, big data, speed budget), as API tests in the test folder where the repo has a harness, else as recorded calls on the developer's running app; a FAIL goes back to Build with the request and both responses.
+7. API checks: every new or changed endpoint gets AQ1-AQ10 of `api-checklist.md` (contract, paging bounds, filters and sort, access per role, input, big data, speed budget, and where the endpoint applies: reports and exports with the file opened (AQ8), time (AQ9), jobs (AQ10)); AQ3, AQ4 and AQ7 include the extended steps (odd input and wildcards, a second user and a user without the permission, a cold first call); as API tests in the test folder where the repo has a harness, else as recorded calls on the developer's running app; a FAIL goes back to Build with the request and both responses.
 8. Refactor and speed work (kind `refactor` or `performance`): before and after tests that lock today's outputs. Use the tests named in `perf.md` "Behaviour unchanged" (or `design.md`); add the missing ones (empty, one, many, another user, another language, a deleted or expired record). They pass on the code before the change and unchanged after it; any changed result is a failure, even when it looks better.
 
 ## Output

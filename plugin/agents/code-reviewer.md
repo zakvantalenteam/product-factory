@@ -48,5 +48,6 @@ Never fix code or edit another agent's file; put a problem in an earlier documen
 - Name the missing test per MUST (a boundary, a cross-tenant case, the error path); a test that cannot fail is a SHOULD.
 - Supply chain (CSSLP): a new dependency needs a stated need, a pinned version, a licence that fits and no known CVE; copied code names its source.
 - (SAP) BTP: scopes checked on the server, no destination, host or credential in code, approuter routes never widened.
+- Pattern checks from the bug review: MUST are a shared element's renderer changed while its siblings are not listed (PG21), a date compared as a local date (BE14), a CSV written without quoting (IN11), search input not trimmed or LIKE not escaped (DA19), a query not scoped to the caller (DA20), and a job sharing state across runs (JB9); SHOULD are a popup without a reset on open (PG22) and displayed master data without the translation lookup (LB7).
 
 Reply in 10 lines or fewer: the verdict, each MUST as `MUST <path:line>: <problem> -> <fix>`, and the path of the file. A focus pass replies with its path and finding counts instead of a verdict.

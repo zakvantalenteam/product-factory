@@ -3,14 +3,17 @@
 Every core agent reads this file once, at its start. Your own agent file adds your certification, your expert
 standard, your call budget and your modes. The hard rules in `AGENTS.md`, confirmed answers and approved decisions
 win over this file and over your own habits; when one conflicts with your standard, follow it and say so.
+Core paths: a path that starts with the core folder (`.claude/core` in a repo that carries the core,
+`${CLAUDE_PLUGIN_ROOT}` in the plugin, `.cursor/runtime` in Cursor once the repo uses the plugin) means the folder
+two levels above this file.
 
 ## Start (no extra round trip)
-- First message, in parallel: this file, your practice pack (`.claude/core/reference/practice/<your name>.md`: the
+- First message, in parallel: this file, your practice pack (`${CLAUDE_PLUGIN_ROOT}/reference/practice/<your name>.md`: the
   practical knowledge behind your credentials), `<work>/<id>/context.md` when the task has one (or the pack your
   file names), and, when you design, write or review code, a Grep of `.claude/project.json` for `"stack"` (8 lines
   after).
 - Next message, next to your first code reads: the stack packs `stack.packs` names that match the files you touch
-  (`.claude/core/reference/stacks/<pack>.md`), and the lines of `.claude/review/lessons.md` for your area
+  (`${CLAUDE_PLUGIN_ROOT}/reference/stacks/<pack>.md`), and the lines of `.claude/review/lessons.md` for your area
   (mistakes this repo has already made).
 
 ## Output file (the live page reads it)
@@ -67,7 +70,7 @@ card, and your plan starts from the goal and the output. An older brief may open
   `maxTurns` is about 1.5 times that budget: a run that hits it stops, so the output file written first is your result.
 - Batch: every independent Read, Grep and Glob goes in one message; never one file per turn.
 - Write the output file first, then improve it with Edit.
-- Big files: `python .claude/core/scripts/codemap.py <file>` or Grep first, then Read with offset and limit.
+- Big files: `python ${CLAUDE_PLUGIN_ROOT}/scripts/codemap.py <file>` or Grep first, then Read with offset and limit.
 - Never re-read a file you already hold, and never re-check what a script already checked.
 - Web (agents with a web tool): only for a version-specific or outside fact the repo cannot answer (an API field,
   a library or platform version, a limit), at most 3 lookups, each cited with its URL; never for general knowledge.
@@ -92,7 +95,7 @@ practical knowledge those exams test (your practice pack); you do not claim to h
 `.claude/project.json` is `sap-btp`; every other rule always applies. On another platform use its own services and
 docs, and bring no SAP advice (XSUAA, destinations, HANA, UI5, Fiori, SAP Activate) to it.
 
-## Stack packs (`.claude/core/reference/stacks/`)
+## Stack packs (`${CLAUDE_PLUGIN_ROOT}/reference/stacks/`)
 | Pack | For | Read by |
 |---|---|---|
 | `java17-spring-boot3.md` | Java 17, Spring Boot 3, JPA with EclipseLink, SAP HANA or PostgreSQL | backend-developer, base-builder, code-reviewer, performance-engineer, qa-engineer, integration-engineer, solution-architect (design), data-architect |

@@ -19,7 +19,9 @@ line, or a screenshot for layout and colour.
   read: force the error (stop the call with a bad filter or an offline request) and look.
 - **UQ2** Long and odd text: a 200-character name with no spaces, a long URL, Unicode and emoji, an apostrophe and
   `<b>` in a title. Nothing overflows its box; cut-off text has a way to read it in full (a tooltip on hover and on
-  keyboard focus, or an expand); markup shows as text.
+  keyboard focus, or an expand); markup shows as text. Also many items (a card or list with far more than fits), Read
+  more working in every mode of the element, equal card heights in a row, and special characters in data that is used
+  as a filter value.
 
 ## Lists and paging (any list that can grow past one screen)
 - **UQ3** Server paging with a total: the request asks for one page (`page`/`size`, `top`/`skip` or a cursor) and the
@@ -32,7 +34,8 @@ line, or a screenshot for layout and colour.
   size change, and a page past the end (a hand-edited URL or a stale page after rows were deleted) gives the last page
   or an empty state, never an error.
 - **UQ6** A filter, search or sort change goes back to page 1 and updates the total; the filter runs on the server over
-  all rows, not only over the rows on screen.
+  all rows, not only over the rows on screen. Search by id and by title, every filter option including 'All', inactive
+  records, Enter to search and the clear (X) control.
 
 ## Master and detail
 - **UQ7** Opening a row's detail (panel, drawer, dialog, expanded row) puts it where the user is looking: next to or
@@ -63,9 +66,30 @@ line, or a screenshot for layout and colour.
 - **UQ15** Each action shows progress and its outcome, a double click sends one request, a failure keeps what the user
   typed and allows retry, and a delete or other destructive action asks first.
 - **UQ16** After a save the list and the detail show the new value without a full reload, and a reload shows the
-  stored value.
+  stored value. Save, then reopen in edit mode and in copy mode: every field is as saved; the validation rules are the
+  same as the sibling form's.
 - **UQ17** Every role in the access matrix sees what it should: allowed actions work, a role without access sees the
   no-permission state; a hidden button is never the only protection (the API check for that endpoint is `qa-engineer`'s).
+
+## Parity, state, language and values
+- **UQ19** Parity: the changed element matches every sibling view on the plan's parity list (same fields, order,
+  actions, text, states).
+- **UQ20** Reopen and return: reopening a popup after cancel starts clean; a tab switch and back keeps the page and
+  the search; an action updates the dependent controls without a reload; no overlay or blur is left behind.
+- **UQ21** Second language: labels and data values are translated; an untranslated value falls back and still shows;
+  dates and months are localised; the admin language is unaffected.
+- **UQ22** Variants and new-type sweep: run each row of the plan's variant table; when a content type, status or
+  setting is added or changed, every screen on the product's type list handles it.
+- **UQ23** Desktop sizes and scroll: 1366, 1920 and 2560 px; dropdowns and sticky bars stay attached to their control
+  while the page scrolls.
+- **UQ24** Dates and time zones: a far time zone, items near midnight, date sorts both ways, one date format on list
+  and detail.
+- **UQ25** Copy pass: each mode's heading and messages read right; no raw keys, no HTML tags, no missing spaces.
+- **UQ26** Values against the source: for 3 records, each displayed field equals the source record; an action is
+  offered only when the record's state allows it.
+- **UQ27** Other browsers: when the agent cannot run Firefox, Safari or the mobile view, it writes a 5-step runbook of
+  the main journey (open, act, check result, reload, check console) for the human tester and marks the item BLOCKED
+  until the tester reports.
 
 ## Console and network
 - **UQ18** On load and after each action: no new console errors or unhandled rejections (`read_console_messages`,

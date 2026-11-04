@@ -28,7 +28,8 @@ package of the code under test (common.md, hard rule).
 
 Contract (Claude Code): exit 2 + a message on stderr reports the problems (the edit already happened, so the agent
 fixes it); exit 0 when clean, with the plan note as hookSpecificOutput.additionalContext when there is one. Cursor (`--cursor`, postToolUse): prints {"additional_context": "..."}; nothing when
-clean. Any internal error exits 0 (fail open).
+clean. A repo without .claude/project.json is never checked. An internal error prints a one-line warning on stderr
+and exits 1 (Claude shows it; the edit is not checked) or 0 in Cursor, and is logged.
 """
 import json
 import os
@@ -40,6 +41,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import project  # noqa: E402
 
 CURSOR = "--cursor" in sys.argv
+if __name__ == "__main__":
+    project.hook_start()
 COMMENT = ("//", "/*", "*", "#", "!", "<!--")
 # where "#" starts code (a CSS id selector, a JS private field), only the language's own comment marks count
 C_STYLE = ("//", "/*", "*")
@@ -110,7 +113,7 @@ def run_checks(path, r, checks, data):
             continue
         if p.returncode != 1:
             continue
-        for line in p.stdout.decode("utf-8", "replace").splitlines()[:5]:
+        for line in p.stdout.decode("utf-8-sig", "replace").splitlines()[:5]:
             if line.strip():
                 problems.append("%s: %s -> %s" % (c.get("id", "check"), c.get("message", "project check"),
                                                    line.strip()[:160]))
@@ -168,7 +171,7 @@ def plan_note(path):
 
 def main():
     try:
-        data = json.loads(sys.stdin.buffer.read().decode("utf-8", "replace") or "{}")
+        data = json.loads(sys.stdin.buffer.read().decode("utf-8-sig", "replace") or "{}")
     except Exception:
         return
     cfg = project.config()
@@ -211,5 +214,6 @@ if __name__ == "__main__":
         main()
     except SystemExit:
         raise
-    except Exception:
-        sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(project.hook_error("rules check", e) + "; the edit was not checked\n")
+        sys.exit(0 if CURSOR else 1)

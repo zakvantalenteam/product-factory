@@ -1,0 +1,49 @@
+{
+  "about": "The permissions install.py --write-settings writes into .claude/settings.json of every project, so all products get the same rules (--switch-to-plugin too, with core paths pointing at .cursor/runtime/). allow: read-only commands and tools only. replace: broad rules removed in favour of their read-only forms. {work_dir} is work_dir in .claude/project.json. From project.json install.py also adds Read deny rules for guard.secret_files and guard.no_read, and Edit deny rules for guard.secret_files. Rules the project added itself are kept.",
+  "allow": [
+    "Bash(git status*)",
+    "Bash(git log*)",
+    "Bash(git diff*)",
+    "Bash(git show*)",
+    "Bash(git ls-tree*)",
+    "Bash(git ls-files*)",
+    "Bash(git grep*)",
+    "Bash(git blame*)",
+    "Bash(git branch --list*)",
+    "Bash(git branch -a*)",
+    "Bash(ls)",
+    "Bash(ls *)",
+    "Bash(wc *)",
+    "Bash(head *)",
+    "Bash(tail *)",
+    "Bash(grep *)",
+    "Bash(rg *)",
+    "Bash(python .claude/core/scripts/*)",
+    "Bash(python -I .claude/core/scripts/*)",
+    "Edit(/{work_dir}/**)",
+    "Write(/{work_dir}/**)",
+    "mcp__Claude_Browser__tabs_context",
+    "mcp__Claude_Browser__find",
+    "mcp__Claude_Browser__get_page_text",
+    "mcp__Claude_Browser__read_console_messages",
+    "mcp__Claude_Browser__read_network_requests",
+    "mcp__Claude_Browser__preview_logs",
+    "mcp__claude-in-chrome__tabs_context_mcp",
+    "mcp__claude-in-chrome__find"
+  ],
+  "deny": [
+    "Bash(git commit*)",
+    "Bash(git push*)",
+    "Bash(git stash*)",
+    "Bash(git reset*)",
+    "Bash(git checkout*)",
+    "Edit(/target/**)",
+    "Edit(/releases/**)",
+    "Edit(/createDDL.jdbc)",
+    "Edit(/approuter/resources/**)"
+  ],
+  "replace": {
+    "Bash(ls*)": ["Bash(ls)", "Bash(ls *)"],
+    "Bash(git branch*)": ["Bash(git branch --list*)", "Bash(git branch -a*)"]
+  }
+}

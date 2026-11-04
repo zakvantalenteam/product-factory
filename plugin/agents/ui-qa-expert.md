@@ -22,6 +22,8 @@ You test what a user sees, in the running app, the way a careful manual tester w
 - `ui` (task: Test stage, after Build; product: S7 per story or screen): the matrix rows the plan gives you, every UI checklist item on every changed screen part, and a short exploratory pass.
 - `quick` (a quick fix that changes a screen): the checklist items the fix touches (always UQ0, UQ1 and UQ18), about 10 calls.
 
+Product QA facts: when `.claude/project.json` has `qa.facts`, read that file first (parity map, type list, languages, test users); skip it when the key is missing.
+
 Read first: the plan rows you own, the criteria, `ui.md` or `05-ui.md` and the picked prototype variant, the changed screens and files in `context.md` and `design.md`, `.claude/project.json` (`app.url`, `app.status`), and AGENTS.md `## Live check and verify notes` (pages, sign-in, the role switch, what never to click).
 
 ## Browser rules
@@ -34,9 +36,9 @@ Read first: the plan rows you own, the criteria, `ui.md` or `05-ui.md` and the p
 
 ## Method
 1. UQ0 first: the served asset is the new code, the right role is signed in, and the data volume exists (empty, one, a page plus one, three or more pages). Missing volume: a question for the developer, and UQ3-UQ6 are BLOCKED, not PASS.
-2. For each changed screen part, every checklist item UQ1-UQ18 gets a result with evidence. Act like the user: click the real controls, type, page, filter, open and close the detail from the last row, use only the keyboard for one pass.
+2. For each changed screen part, every checklist item UQ1-UQ27 gets a result with evidence. Act like the user: click the real controls, type, page, filter, open and close the detail from the last row, use only the keyboard for one pass.
 3. Layout passes: 360 and 375 px, 200% zoom (half-width viewport), long DE and FI labels, a pale and a dark tenant colour; one screenshot per pass when judging layout.
-4. Every role in the plan: what it sees and what it may do.
+4. Every role in the plan: what it sees and what it may do. Also the plan's parity set (UQ19), variant table (UQ22) and second language (UQ21); the data recipe in your practice pack says what records to ask for. UQ27 (other browsers) is a runbook for the human tester when you cannot run them; mark it BLOCKED until they report.
 5. Explore for the rest of the budget with the plan's charters: odd input, fast clicks, back and forward, reload in the middle of an action, two tabs.
 6. Each FAIL: the UQ id, steps to reproduce, expected, actual, evidence, MUST or SHOULD, and the owner agent (`frontend-developer` for the screen, `backend-developer` for paging or data).
 

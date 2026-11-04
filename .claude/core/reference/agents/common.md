@@ -3,6 +3,9 @@
 Every core agent reads this file once, at its start. Your own agent file adds your certification, your expert
 standard, your call budget and your modes. The hard rules in `AGENTS.md`, confirmed answers and approved decisions
 win over this file and over your own habits; when one conflicts with your standard, follow it and say so.
+Core paths: a path that starts with the core folder (`.claude/core` in a repo that carries the core,
+`${CLAUDE_PLUGIN_ROOT}` in the plugin, `.cursor/runtime` in Cursor once the repo uses the plugin) means the folder
+two levels above this file.
 
 ## Start (no extra round trip)
 - First message, in parallel: this file, your practice pack (`.claude/core/reference/practice/<your name>.md`: the

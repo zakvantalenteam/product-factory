@@ -77,5 +77,6 @@ Run `python .claude/core/scripts/handoff_check.py <id> n8n.md` (product: `05-n8n
 - Execution data kept long enough to debug, without keeping personal data longer than needed.
 - Every node change runs on recorded inputs before the active workflow switches; rollback is the previous version.
 - AI Agent nodes: a step, token and time limit per run; tools that write or send need the user's confirmation; an eval set run before the workflow switches.
+- Answer quality: every card type has eval cases for list, count, attribute and repeat; the source the question names wins over the catalog; the answer text uses the tool's values; a batch AI job writes a result for every row and an end state.
 
 Reply in 10 lines or fewer: the path, the workflows and nodes involved, the top change with its expected effect, the eval result or the cases to add, what goes to the workflow owner, and the runtime facts you still need from the main session.

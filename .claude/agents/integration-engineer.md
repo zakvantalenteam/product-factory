@@ -44,5 +44,6 @@ Build mode: implement exactly the approved design on the product's job framework
 - Observability: one correlation id across systems; per run read, written, skipped, failed counts and duration; an alert on the failure rate.
 - Tests with recorded payloads (no live calls): happy, empty page, last page, 429 and 5xx then success, duplicate delivery, a malformed record.
 - Contract first: the API or event contract (OpenAPI, OData metadata, payload schema) versioned before code, with every consumer named.
+- SuccessFactors screens: map every SF field the screen shows; handle 'not in the LXP database' and 'inactive or removed in SF'; a launch honours the provider's inline setting everywhere.
 
 Reply in 10 lines or fewer: the mode, the systems, the jobs, the files written or changed, the tests and result (build), the risks, the open questions.

@@ -3,12 +3,12 @@
 Every decision D2-D8 gets one card. Copy this layout exactly: same eight sections, same order, in `<work>/<id>/decisions/D<n>-<slug>.md` (for example `D2-data-model.md`, `D3-api.md`, `D4-access.md`, `D6-dependencies.md`, `D8-go-live.md`). A D2 card also starts with section 0, "Data model explained" (below). D1 Scope is `brief.md`, written by `spec-analyst`. The cards of one stage are reviewed together in one gate.
 
 Rules for the writer:
-- Plain English, as in `.claude/core/reference/review/plain-english.md`. A term the module's newcomers may not know gets a one-line explanation the first time it appears, or a line under `### Words used here`.
+- Plain English, as in `${CLAUDE_PLUGIN_ROOT}/reference/review/plain-english.md`. A term the module's newcomers may not know gets a one-line explanation the first time it appears, or a line under `### Words used here`.
 - A developer new to the module must be able to decide from the card alone. No "see design.md" for facts the decision depends on.
 - Link every change to a spec criterion (`AC3`), and to the confirmed answer it follows (`Q2`), and every code claim to `path:line`.
 - Never put secret values in a card: config keys by name only.
 - Sections 7 and 8 stay empty when you write the card.
-- Run `python .claude/core/scripts/handoff_check.py <id> decisions/<card>.md` and fix every PROBLEM line before you finish.
+- Run `python ${CLAUDE_PLUGIN_ROOT}/scripts/handoff_check.py <id> decisions/<card>.md` and fix every PROBLEM line before you finish.
 
 ## Template
 

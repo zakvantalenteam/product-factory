@@ -1,6 +1,6 @@
 # Where this repo uses AI
 
-Read by `ai-engineer` next to the generic reference (`.claude/core/reference/domains/ai.md`). Keep it to facts
+Read by `ai-engineer` next to the generic reference (`${CLAUDE_PLUGIN_ROOT}/reference/domains/ai.md`). Keep it to facts
 with `path:line`. No keys, endpoints with secrets or personal data: name the config key only. Delete this line
 and the hints in brackets when you fill it in.
 

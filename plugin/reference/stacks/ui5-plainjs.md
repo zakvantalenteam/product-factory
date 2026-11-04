@@ -1,7 +1,7 @@
 # Stack pack: SAP UI5, plain JS widgets, approuter
 
 Read once, at the start, by the agents that design, write or review UI5 or plain JS front ends. The repo's own rules,
-the UI standard (`.claude/core/reference/standards/ui.md`) and the approved prototype win over this pack.
+the UI standard (`${CLAUDE_PLUGIN_ROOT}/reference/standards/ui.md`) and the approved prototype win over this pack.
 
 ## Versions
 - The bootstrap URL in the `index.html` files sets the UI5 version (an unversioned URL means "latest", so pin when

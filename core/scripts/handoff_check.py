@@ -38,7 +38,7 @@ import project  # noqa: E402
 ROOT = project.repo_root()
 WORK = project.work_dir(ROOT)
 CFG = project.config(ROOT)
-CARD_LAYOUT = ".claude/core/reference/review/decision-card.md"
+CARD_LAYOUT = project.core_path("reference/review/decision-card.md")
 
 SECRETISH = re.compile(r"(password|passwd|secret|token|api[_-]?key|client[_-]?secret)[\"']?\s*[=:]\s*[\"']?"
                        r"(?=[A-Za-z0-9_\-./+=]*\d)[A-Za-z0-9_\-./+=]{12,}|\bBearer\s+[A-Za-z0-9._\-~+/=]{16,}", re.I)

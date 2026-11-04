@@ -9,8 +9,8 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | Project config | `.claude/project.json` (commands, protected paths, decision triggers, rules) |
 | Project facts and hard rules | `AGENTS.md`, `.claude/rules/*.md` (path rules), `.claude/review/checklist.md` (project checklist), `.claude/review/lessons.md` (one line per past mistake), `.claude/smoke.md` (neighbours to check per area) |
 | Domain facts for a domain expert | `.claude/experts/<sf|ai|n8n|...>.md` (where this repo uses the domain) |
-| Core reference | `.claude/core/reference/` (`review/`, `qa/` (the UI and API test checklists), `standards/`, `base/`, `platform-btp.md`) |
-| Core scripts | `python .claude/core/scripts/<script>.py` |
+| Core reference | `${CLAUDE_PLUGIN_ROOT}/reference/` (`review/`, `qa/` (the UI and API test checklists), `standards/`, `base/`, `platform-btp.md`) |
+| Core scripts | `python ${CLAUDE_PLUGIN_ROOT}/scripts/<script>.py` |
 | Product root (product mode) | the `root` of the task (`live_status.py init <id> --mode product --root <path>`) |
 
 ## Modes

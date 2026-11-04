@@ -29,7 +29,7 @@ alone. `handoff_check.py` blocks a gate when a required part is missing and give
 - No more than 12 items per document; group the rest as "Smaller points" in one list.
 - End with "What happens next" in two lines.
 - Every product-owner document also gets an offline HTML copy:
-  `python .claude/core/scripts/md_to_html.py <file.md>`.
+  `python ${CLAUDE_PLUGIN_ROOT}/scripts/md_to_html.py <file.md>`.
 
 ## Words used here (reuse these explanations)
 | Word | Plain explanation |

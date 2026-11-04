@@ -1,0 +1,9 @@
+{
+  "plugin": "product-factory@talenteam",
+  "marketplace": "talenteam",
+  "source": {
+    "source": "git",
+    "url": "https://github.com/zakvantalenteam/product-factory.git"
+  },
+  "autoUpdate": true
+}

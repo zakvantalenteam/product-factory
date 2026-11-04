@@ -5,12 +5,15 @@ CLAUDE_PROJECT_DIR / CURSOR_PROJECT_DIR, else the nearest folder above the worki
 `.claude/` folder, else the working directory, never from where the core files sit. That way the same
 files run from a repo's `.claude/core/` and from a plugin folder.
 
-The project layer is `.claude/project.json`; anything it leaves out falls back to DEFAULTS.
+The project layer is `.claude/project.json`; anything it leaves out falls back to DEFAULTS. A repo without it has
+not opted in: every hook exits at once there (hook_start), so the plugin switched on at user level changes nothing in
+other repos.
 """
 import copy
 import json
 import os
 import re
+import sys
 
 CORE_DIR = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
@@ -87,6 +90,9 @@ DEFAULTS = {
     },
     "deploy": {},
     "stack": {},
+    # the project's QA facts file (roles, test users, variants, languages, known traps), read by the QA agents,
+    # spec-analyst and explorer when set
+    "qa": {"facts": ""},
     "setup_paths": [],
     # Product code (outside the AI setup and the work folder) is written by its area agent, never by the main
     # session (the Tech Lead); the guard blocks the main session's edits there. First matching area wins.
@@ -128,7 +134,8 @@ DEFAULTS = {
 }
 
 # Always generated or core-owned, in every repo.
-ALWAYS_GENERATED = [".cursor/agents/**", ".cursor/rules/**", ".cursor/hooks.json", ".claude/core/**"]
+ALWAYS_GENERATED = [".cursor/agents/**", ".cursor/rules/**", ".cursor/skills/**", ".cursor/hooks.json",
+                    ".cursor/runtime/**", ".claude/core/**"]
 
 _cache = {}
 
@@ -146,6 +153,103 @@ def repo_root():
         if up == d:
             return here
         d = up
+
+
+def has_project(root=None):
+    """True when the repo has opted in to the core: `.claude/project.json` exists."""
+    return os.path.isfile(os.path.join(root or repo_root(), ".claude", "project.json"))
+
+
+def utf8_io():
+    """UTF-8 stdout and stderr: piped streams are cp1252 on Windows, and a message with another character would
+    raise inside a hook."""
+    for s in (sys.stdout, sys.stderr):
+        try:
+            s.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
+def hook_start(cursor=False):
+    """First call in every hook: UTF-8 output, then exit 0 at once in a repo without `.claude/project.json` (a Cursor
+    guard still answers allow, because Cursor blocks on empty output)."""
+    utf8_io()
+    if not has_project():
+        if cursor:
+            print(json.dumps({"permission": "allow"}))
+        sys.exit(0)
+
+
+def error_log():
+    d = os.environ.get("CLAUDE_PLUGIN_DATA") or os.path.join(__import__("tempfile").gettempdir(), "agent-core")
+    return os.path.join(d, "hook-errors.log")
+
+
+def hook_error(hook, exc):
+    """Log a hook's internal error and return its one-line warning (the hooks print it; the guard also blocks)."""
+    import traceback
+    import time
+    tb = traceback.extract_tb(exc.__traceback__) if exc.__traceback__ else []
+    where = "%s:%d" % (os.path.basename(tb[-1].filename), tb[-1].lineno) if tb else "?"
+    what = "%s: %s at %s" % (type(exc).__name__, str(exc).replace("\n", " ")[:160], where)
+    log = error_log()
+    try:
+        os.makedirs(os.path.dirname(log), exist_ok=True)
+        with open(log, "a", encoding="utf-8") as f:
+            f.write("%s %s %s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), hook, repo_root(), what))
+    except OSError:
+        pass
+    return "agent core %s failed (%s; log %s)" % (hook, what, log.replace("\\", "/"))
+
+
+def core_path(sub=""):
+    """A core file as the developer or an agent types it: relative inside the repo (`.claude/core/...`,
+    `.cursor/runtime/...`), else the absolute core folder (the plugin root), with forward slashes."""
+    root = repo_root()
+    inside = os.path.normcase(CORE_DIR).startswith(os.path.normcase(root).rstrip("\\/") + os.sep)
+    base = (os.path.relpath(CORE_DIR, root) if inside else CORE_DIR).replace("\\", "/")
+    return base + ("/" + sub if sub else "")
+
+
+def front_errors(text):
+    """Problems in a skill or agent file's YAML frontmatter (Claude Code drops every field of a header it cannot
+    parse, so the description falls back to the first body line). PyYAML when installed, plus a check of the plain
+    values YAML rejects (": " or " #" inside an unquoted value), so the result is the same without it."""
+    m = re.match(r"---\r?\n(.*?)\r?\n---(?:\r?\n|$)", text, re.S)
+    if not m:
+        return ["no frontmatter (--- lines)"]
+    front, out = m.group(1).replace("\r\n", "\n"), []
+    try:
+        import yaml
+        data = yaml.safe_load(front)
+        if not isinstance(data, dict):
+            out.append("frontmatter is not a mapping")
+    except ImportError:
+        pass
+    except Exception as e:
+        out.append("YAML: " + str(e).replace("\n", " ")[:200])
+    block = False
+    for n, line in enumerate(front.split("\n"), 2):
+        mt = re.match(r"^(\s*-\s+|[\w-]+:[ \t]*)(.*)$", line)
+        if not mt or line[:1] in " \t" and not line.lstrip().startswith("-"):
+            continue
+        if re.match(r"^[\w-]+:", line):
+            block = mt.group(2).strip()[:1] in ("|", ">")
+        if block:
+            continue
+        v = mt.group(2).strip()
+        if not v:
+            continue
+        if v[0] in "\"'":
+            if len(v) < 2 or v[-1] != v[0]:
+                out.append("line %d: quoted value is not closed" % n)
+        elif v[0] in "[{":
+            continue
+        elif v[0] in "&*!%@`|>":
+            out.append("line %d: a plain value cannot start with %r; quote it" % (n, v[0]))
+        elif ": " in v or " #" in v or v.endswith(":"):
+            out.append("line %d: unquoted value holds \": \" or \" #\"; quote it" % n)
+    return list(dict.fromkeys(out))
 
 
 def _merge(base, over):

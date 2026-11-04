@@ -1,0 +1,228 @@
+{
+ "id": "claude-setup-review",
+ "title": "Review of the Claude setup: skills, hooks, settings, rules, CLAUDE.md, plugin (read-only)",
+ "size": "M",
+ "tool": "claude",
+ "mode": "task",
+ "root": "",
+ "started": "2026-11-04T23:32:54+05:30",
+ "seq": 6,
+ "events": [
+  {
+   "n": 1,
+   "t": "2026-11-04T23:32:54+05:30",
+   "stage": "spec",
+   "kind": "note",
+   "actor": "main session",
+   "text": "Task started: Review of the Claude setup: skills, hooks, settings, rules, CLAUDE.md, plugin (read-only)"
+  },
+  {
+   "n": 2,
+   "t": "2026-11-04T23:34:15+05:30",
+   "stage": "review",
+   "kind": "start",
+   "actor": "Tech Lead",
+   "text": "Review started"
+  },
+  {
+   "n": 3,
+   "t": "2026-11-04T23:44:31+05:30",
+   "stage": "review",
+   "kind": "done",
+   "actor": "Tech Lead",
+   "text": "Review done: 5 MUST, 9 SHOULD, 7 COULD; merged in findings.md (M1, M2, M4 re-checked)"
+  },
+  {
+   "n": 4,
+   "t": "2026-11-04T23:51:29+05:30",
+   "stage": "build",
+   "kind": "start",
+   "actor": "Tech Lead",
+   "text": "Build started"
+  },
+  {
+   "n": 5,
+   "t": "2026-11-05T00:40:19+05:30",
+   "stage": "build",
+   "kind": "done",
+   "actor": "Tech Lead",
+   "text": "Build done: core 1.11.0 (pf-agent-core): M1-M5, S1, S3-S9 built and installed in 3 repos; Blend AGENTS.md 22.5 KB to 11.8 KB"
+  },
+  {
+   "n": 6,
+   "t": "2026-11-05T00:40:19+05:30",
+   "stage": "verify",
+   "kind": "done",
+   "actor": "Tech Lead",
+   "text": "Verify done: 3 repos 1.11.0, 126 core files identical, install + cursor checks ok; no-project guard passes Edit and merge; guard onFailure block; sdlc YAML valid"
+  }
+ ],
+ "counts": {
+  "note": 1,
+  "start": 2,
+  "done": 3
+ },
+ "gate": null,
+ "stages": [
+  {
+   "k": "spec",
+   "name": "Spec",
+   "state": "todo",
+   "actor": "spec-analyst"
+  },
+  {
+   "k": "design",
+   "name": "Design",
+   "state": "todo",
+   "actor": "solution-architect"
+  },
+  {
+   "k": "build",
+   "name": "Build",
+   "state": "done",
+   "actor": "Tech Lead",
+   "run": "2026-11-04T23:51:29+05:30",
+   "start": "2026-11-04T23:51:29+05:30",
+   "end": "2026-11-05T00:40:19+05:30",
+   "out": "core 1.11.0 (pf-agent-core): M1-M5, S1, S3-S9 built and installed in 3 repos; Blend AGENTS.md 22.5 KB to 11.8 KB"
+  },
+  {
+   "k": "review",
+   "name": "Review",
+   "state": "done",
+   "actor": "Tech Lead",
+   "run": "2026-11-04T23:34:15+05:30",
+   "start": "2026-11-04T23:34:15+05:30",
+   "end": "2026-11-04T23:44:31+05:30",
+   "out": "5 MUST, 9 SHOULD, 7 COULD; merged in findings.md (M1, M2, M4 re-checked)"
+  },
+  {
+   "k": "test",
+   "name": "Test",
+   "state": "todo",
+   "actor": "qa-engineer"
+  },
+  {
+   "k": "verify",
+   "name": "Verify",
+   "state": "done",
+   "actor": "verifier",
+   "end": "2026-11-05T00:40:19+05:30",
+   "start": "2026-11-05T00:40:19+05:30",
+   "out": "3 repos 1.11.0, 126 core files identical, install + cursor checks ok; no-project guard passes Edit and merge; guard onFailure block; sdlc YAML valid"
+  },
+  {
+   "k": "release",
+   "name": "Release",
+   "state": "skip",
+   "actor": "release-manager"
+  },
+  {
+   "k": "wrap",
+   "name": "Wrap-up",
+   "state": "todo",
+   "actor": "commit-msg"
+  }
+ ],
+ "updated": "2026-11-05T00:40:19+05:30",
+ "project": "product-factory",
+ "teams": [
+  {
+   "id": "lead",
+   "name": "Lead",
+   "agents": [
+    "main session"
+   ]
+  },
+  {
+   "id": "product",
+   "name": "Product",
+   "agents": [
+    "spec-analyst"
+   ]
+  },
+  {
+   "id": "design",
+   "name": "Design",
+   "agents": [
+    "ux-designer"
+   ]
+  },
+  {
+   "id": "architecture",
+   "name": "Architecture",
+   "agents": [
+    "solution-architect",
+    "data-architect",
+    "security-architect"
+   ]
+  },
+  {
+   "id": "engineering",
+   "name": "Engineering",
+   "agents": []
+  },
+  {
+   "id": "domain",
+   "name": "Domain experts",
+   "agents": [
+    "sf-expert",
+    "ai-engineer"
+   ]
+  },
+  {
+   "id": "quality",
+   "name": "Quality",
+   "agents": [
+    "code-reviewer",
+    "qa-lead",
+    "qa-engineer",
+    "ui-qa-expert",
+    "e2e-qa-expert",
+    "verifier",
+    "performance-engineer",
+    "bug-investigator"
+   ]
+  },
+  {
+   "id": "audit",
+   "name": "Audit",
+   "agents": []
+  },
+  {
+   "id": "operations",
+   "name": "Operations",
+   "agents": [
+    "release-manager"
+   ]
+  },
+  {
+   "id": "helpers",
+   "name": "Helpers",
+   "agents": [
+    "explorer"
+   ]
+  }
+ ],
+ "risk": "medium",
+ "budgets": {
+  "spec": 15,
+  "design": 20,
+  "build": 45,
+  "review": 20,
+  "test": 15,
+  "verify": 15,
+  "release": 15,
+  "wrap": 5
+ },
+ "calls": {},
+ "certs": {},
+ "now": {
+  "main session": {
+   "k": "verify",
+   "n": 0,
+   "last": "",
+   "wrote": ""
+  }
+ }
+}
