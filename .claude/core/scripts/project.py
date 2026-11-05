@@ -160,6 +160,50 @@ def has_project(root=None):
     return os.path.isfile(os.path.join(root or repo_root(), ".claude", "project.json"))
 
 
+PLUGIN_ID = "product-factory@talenteam"
+
+
+def claude_config_dir():
+    return os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude")
+
+
+def _json_file(path):
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def in_repo_copy():
+    """True when this file runs from a repo's own copy of the core (`.claude/core/`), not from the plugin."""
+    here = os.path.normcase(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return here.endswith(os.path.normcase(os.path.join(".claude", "core")))
+
+
+def plugin_active(root=None):
+    """True when the product-factory plugin is on for this Claude session: the highest settings scope that names it
+    (local, project, user) says true, and installed_plugins.json has it installed for the user or for this repo.
+    Then the repo's own copy of the core steps aside and the plugin's hooks do the work. Anything unreadable: False,
+    so the repo copy keeps guarding."""
+    root = os.path.abspath(root or repo_root())
+    cfg = claude_config_dir()
+    on = None
+    for f in (os.path.join(root, ".claude", "settings.local.json"), os.path.join(root, ".claude", "settings.json"),
+              os.path.join(cfg, "settings.json")):
+        e = _json_file(f).get("enabledPlugins")
+        if isinstance(e, dict) and PLUGIN_ID in e:
+            on = e[PLUGIN_ID]
+            break
+    if on is not True:
+        return False
+    recs = (_json_file(os.path.join(cfg, "plugins", "installed_plugins.json")).get("plugins") or {}).get(PLUGIN_ID)
+    here = os.path.normcase(root)
+    return any(isinstance(r, dict) and (r.get("scope") == "user" or (r.get("projectPath") and os.path.normcase(
+        os.path.abspath(r["projectPath"])) == here)) for r in recs or [])
+
+
 def utf8_io():
     """UTF-8 stdout and stderr: piped streams are cp1252 on Windows, and a message with another character would
     raise inside a hook."""
@@ -172,11 +216,14 @@ def utf8_io():
 
 def hook_start(cursor=False):
     """First call in every hook: UTF-8 output, then exit 0 at once in a repo without `.claude/project.json` (a Cursor
-    guard still answers allow, because Cursor blocks on empty output)."""
+    guard still answers allow, because Cursor blocks on empty output), and in Claude when this is the repo's own copy
+    of the core while the product-factory plugin is on (the plugin's hooks run instead; Cursor is unaffected)."""
     utf8_io()
     if not has_project():
         if cursor:
             print(json.dumps({"permission": "allow"}))
+        sys.exit(0)
+    if not cursor and in_repo_copy() and plugin_active():
         sys.exit(0)
 
 

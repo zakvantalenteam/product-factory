@@ -27,7 +27,7 @@
   ".claude/agents/ui-qa-expert.md": "350ccd03f8e94c3f",
   ".claude/agents/ux-designer.md": "1dadfdf9c8170d05",
   ".claude/agents/verifier.md": "db200c6f16042a87",
-  ".claude/core/VERSION": "74ee4d1214639891",
+  ".claude/core/VERSION": "4f9416d650bd2834",
   ".claude/core/hooks/flow_check.py": "4e2b38ed7daec20a",
   ".claude/core/hooks/guard.py": "498d3836099d1585",
   ".claude/core/hooks/rules_check.py": "bf28d3d0475502d3",
@@ -38,7 +38,7 @@
   ".claude/core/reference/domains/n8n.md": "fba25c5a5467ed21",
   ".claude/core/reference/domains/successfactors.md": "0d57d68761f3c176",
   ".claude/core/reference/flow-files.md": "267b297120111fea",
-  ".claude/core/reference/how-work-flows.md": "30768287b5ee6d5a",
+  ".claude/core/reference/how-work-flows.md": "7c7b99b34a821935",
   ".claude/core/reference/platform-btp.md": "ebfbca7f1058d4de",
   ".claude/core/reference/practice/ai-engineer.md": "47b6d2af2ada2859",
   ".claude/core/reference/practice/audit-expert.md": "a5502be89dec1a36",
@@ -88,14 +88,14 @@
   ".claude/core/scripts/cursor_sync.py": "6d99ab543e2dd6bb",
   ".claude/core/scripts/handoff_check.py": "1f3d4153e9f17c2b",
   ".claude/core/scripts/impact.py": "8516348559ffdf22",
-  ".claude/core/scripts/install.py": "c0930fe924f5de18",
+  ".claude/core/scripts/install.py": "c097efaa2afab19e",
   ".claude/core/scripts/live_status.html": "6d8c0b03ccb7bcc5",
-  ".claude/core/scripts/live_status.py": "e33d2a1291939acc",
+  ".claude/core/scripts/live_status.py": "e98f07106d261faf",
   ".claude/core/scripts/md_to_html.py": "3703404ebc37334e",
-  ".claude/core/scripts/project.py": "d9d294d383b788ef",
+  ".claude/core/scripts/project.py": "5a6e678569030ed8",
   ".claude/core/scripts/review_pack.py": "26452fac400d0c01",
   ".claude/core/scripts/scope_check.py": "69ebc13ea3738429",
-  ".claude/core/scripts/simulate.html": "24e0632f6e7e8919",
+  ".claude/core/scripts/simulate.html": "8aec6a0834c95ebd",
   ".claude/core/scripts/simulate.py": "24e1f5ab00021c5d",
   ".claude/core/scripts/timing.py": "299f5ef0deaeff57",
   ".claude/core/templates/AGENTS-core.md": "8fd20b0e468a7781",
@@ -127,5 +127,5 @@
   ".claude/skills/sdlc/team.md": "0ca43e48946c740c",
   ".claude/skills/verify-push/SKILL.md": "fd8fc629262e4643"
  },
- "version": "1.11.0"
+ "version": "1.11.1"
 }

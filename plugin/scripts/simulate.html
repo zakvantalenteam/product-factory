@@ -372,7 +372,7 @@ a{color:var(--lilac-ink)}
 
 <script type="application/json" id="sim-data">
 {
-"version": "1.11.0",
+"version": "1.11.1",
 "baseline": {"from": "review-next16", "kind": "measured", "min": {"spec": 45, "design": 14, "build": 47, "review": 29}},
 "models": {"main session": "You"},
 "bug": {"finding": "MUST JV1: the new code reads a joined row's title without a null check; a favourite whose item was deleted gives a 500 (review.md, path:line).", "fix": "Null-check the joined row and skip it; add a test with a deleted item.", "lesson": "- <date> <task>: a value from a joined row that can be deleted is null-checked before use (src/main/java/**)", "min": 8},

@@ -6,7 +6,7 @@
  "mode": "task",
  "root": "",
  "started": "2026-11-04T23:54:52+05:30",
- "seq": 8,
+ "seq": 9,
  "events": [
   {
    "n": 1,
@@ -71,10 +71,18 @@
    "kind": "note",
    "actor": "main session",
    "text": "S5 core block 9.4 to 2.9 KB, S8 permissions template, QA bug-pattern checks (1.11.0); installed in 3 repos, plugin rebuilt, checks and tests clean"
+  },
+  {
+   "n": 9,
+   "t": "2026-11-05T16:30:13+05:30",
+   "stage": "wrap",
+   "kind": "note",
+   "actor": "main session",
+   "text": "1.11.1: plugin manager decides (no project enabledPlugins, no defaultEnabled, repo copy steps aside when the plugin is on); 3 repos installed, plugin rebuilt, 13/13 hook tests; SkillsOS entry left for the developer (writ"
   }
  ],
  "counts": {
-  "note": 2,
+  "note": 3,
   "start": 2,
   "integrate": 1,
   "done": 3
@@ -141,7 +149,7 @@
    "out": "report and commit messages in the shared notes folder (core-1-10-0-report.md)"
   }
  ],
- "updated": "2026-11-05T00:36:45+05:30",
+ "updated": "2026-11-05T16:30:13+05:30",
  "project": "product-factory",
  "teams": [
   {
@@ -238,7 +246,7 @@
   "main session": {
    "k": "wrap",
    "n": 0,
-   "last": "S5 core block 9.4 to 2.9 KB, S8 permissions template, QA bug-pattern checks (1.11.0); installed in 3 repos, plugin rebuilt, checks and tests clean",
+   "last": "1.11.1: plugin manager decides (no project enabledPlugins, no defaultEnabled, repo copy steps aside when the plugin is on); 3 repos installed, plugin rebuilt, 13/13 hook tests; SkillsOS entry left for the developer (writ",
    "wrote": ""
   }
  }

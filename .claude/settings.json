@@ -135,8 +135,5 @@
         ]
       }
     ]
-  },
-  "enabledPlugins": {
-    "product-factory@talenteam": false
   }
 }

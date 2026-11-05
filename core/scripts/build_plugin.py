@@ -98,8 +98,8 @@ def header_errors():
         pj = json.load(fh)
     if pj.get("version") != ver:
         out.append(".claude-plugin/plugin.json: version %s, VERSION %s" % (pj.get("version"), ver))
-    if pj.get("defaultEnabled") is not False:
-        out.append(".claude-plugin/plugin.json: defaultEnabled must be false (a project turns the plugin on)")
+    if "defaultEnabled" in pj:
+        out.append(".claude-plugin/plugin.json: no defaultEnabled (the plugin manager alone switches the plugin on or off)")
     return out
 
 

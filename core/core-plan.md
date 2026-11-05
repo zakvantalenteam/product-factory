@@ -284,8 +284,8 @@ and never ships a change that breaks something else.
   with one plugin, product-factory (agent-core before 1.4.0), built into `plugin/` by `scripts/build_plugin.py` (paths into the core become
   `${CLAUDE_PLUGIN_ROOT}/`); install.py rebuilds it when it installs into the home repo. In a repo without the core,
   the plugin's SessionStart hook hands Claude the core block of AGENTS.md.
-- Repos that carry the core switch the plugin off (`enabledPlugins: {"product-factory@talenteam": false}`, written by
-  `--write-settings`, checked by `--check`), so no hook runs twice.
+- Each person's plugin manager alone switches the plugin on or off (no project `enabledPlugins` entry since 1.11.1).
+  In a repo that carries the core, the repo copy's hooks step aside while the plugin is on, so no hook runs twice.
 - `.github/workflows/core-sync.yml` runs `.github/core-sync/sync.py` on each push to main that changes the core:
   per repo in `targets.json` it installs the core, runs both checks and pushes one commit to dev, or opens a pull
   request when a person must look (first install, hand-edited core files, failed checks, protected branch).
@@ -633,3 +633,21 @@ and never ships a change that breaks something else.
   n8n-expert, code-reviewer); the review checklist gets the matching MUST and SHOULD items.
 - New project key `qa.facts`: a path to the project's QA facts file. The QA agents, spec-analyst and explorer read it
   when set; the installer never overwrites a project's `project.json`.
+
+## 34. 1.11.1 - the plugin manager decides
+- Why: `--write-settings` wrote `enabledPlugins: {"product-factory@talenteam": false}` into each repo's settings, and a
+  project setting beats the user's toggle, so the plugin could not be switched on from the plugin manager (and a
+  switched repo's `true` could not be switched off). The developer: the plugin manager alone decides, in every
+  project; when it is on Claude always uses it; nobody is forced, so teammates without it keep the repo copy.
+- No project entry: `--write-settings` and `--switch-to-plugin` never write `enabledPlugins` for the plugin and remove
+  an existing one (`--check` lists it). In a switched repo `--write-settings` does only that. `--switch-to-plugin`
+  still writes `extraKnownMarketplaces`, so people get the install prompt. A switched repo is recognised by that
+  marketplace entry.
+- plugin.json has no `defaultEnabled`: an installed plugin is on until its owner turns it off (build_plugin refuses
+  the key). M1 holds: every hook does nothing without `.claude/project.json`.
+- The repo copy steps aside (Claude only): `project.hook_start` and the live_status hook gate exit 0 when the hook runs
+  from `.claude/core/` and `project.plugin_active()` is true (the highest settings scope that names the plugin -
+  local, project, user - says true, and `installed_plugins.json` has it installed for the user or for this repo).
+  Unreadable or missing: false, so the repo copy keeps guarding. Cursor is unaffected.
+- The plugin's SessionStart in a repo that carries the core: a short note to use `product-factory:<name>` agents and
+  `/product-factory:<name>` skills, not the bare-named copies, and to update one side when the versions differ.

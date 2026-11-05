@@ -33,8 +33,8 @@ before any hook runs; the guard no longer runs on Read (Cursor's beforeReadFile 
 
 --switch-to-plugin moves a repo that carries the core onto the Claude Code plugin in one change (so no hook runs twice
 and no skill shows twice): it removes every file of .claude/core/core.lock and the .claude/core/ folder, drops the
-core hook entries from .claude/settings.json, writes `extraKnownMarketplaces` (with autoUpdate) and
-`enabledPlugins: true` from templates/plugin-source.json (--marketplace-url overrides the git URL), points the core
+core hook entries from .claude/settings.json, writes `extraKnownMarketplaces` (with autoUpdate) from
+templates/plugin-source.json (--marketplace-url overrides the git URL), points the core
 paths in AGENTS.md, CLAUDE.md, .claude/ text files, the forwarder shims, the allow rules and launch.json at the
 generated core copy in .cursor/runtime/, and regenerates .cursor/ (cursor_sync.py of this core: agents, skills and
 the whole core for Cursor). It stops when a core file was edited by hand (--force drops those edits). Old files go to
@@ -272,10 +272,20 @@ def merged_settings(current, repo=None):
         hooks[event] = entries + hooks[event]
     apply_permissions(s, repo)
     s.setdefault("env", {}).update({k: v for k, v in want.get("env", {}).items() if k not in s["env"]})
-    plugins = s.setdefault("enabledPlugins", {})
-    for old in OLD_PLUGIN_IDS:
-        plugins.pop(old, None)
-    plugins[PLUGIN_ID] = False  # the repo carries the core: the plugin would repeat it
+    drop_plugin_entry(s)
+    return s
+
+
+def drop_plugin_entry(s):
+    """No project-level `enabledPlugins` entry for the plugin: a project setting beats each person's plugin manager
+    toggle. The plugin manager alone switches product-factory on or off; when it is on, the repo copy's hooks step
+    aside (project.plugin_active), and teammates without the plugin keep the repo copy."""
+    plugins = s.get("enabledPlugins")
+    if isinstance(plugins, dict):
+        for k in (PLUGIN_ID,) + tuple(OLD_PLUGIN_IDS):
+            plugins.pop(k, None)
+        if not plugins:
+            del s["enabledPlugins"]
     return s
 
 
@@ -290,14 +300,18 @@ def settings_missing(repo):
 
 
 def is_switched(repo):
-    """A repo that gets the core from the plugin: no in-repo core, the plugin switched on in its settings."""
+    """A repo that gets the core from the plugin: no in-repo core, and its settings name the plugin's marketplace
+    (or, before 1.11.1, switch the plugin on)."""
     s = json.loads(read(os.path.join(repo, ".claude", "settings.json")) or "{}")
-    return not load_lock(repo)["files"] and (s.get("enabledPlugins") or {}).get(PLUGIN_ID) is True
+    return not load_lock(repo)["files"] and (plugin_source()["marketplace"] in (s.get("extraKnownMarketplaces") or {})
+                                             or (s.get("enabledPlugins") or {}).get(PLUGIN_ID) is True)
 
 
-def plugin_left_on(repo):
+def plugin_entry(repo):
+    """The plugin ids the project settings switch on or off (there should be none)."""
     s = json.loads(read(os.path.join(repo, ".claude", "settings.json")) or "{}")
-    return (s.get("enabledPlugins") or {}).get(PLUGIN_ID) is not False
+    e = s.get("enabledPlugins") or {}
+    return [k for k in (PLUGIN_ID,) + tuple(OLD_PLUGIN_IDS) if isinstance(e, dict) and k in e]
 
 
 def launch_entry(port, base=".claude/core/"):
@@ -389,6 +403,9 @@ def check_switched(repo):
     src = plugin_source()
     if src["marketplace"] not in (s.get("extraKnownMarketplaces") or {}):
         problems.append("settings  no extraKnownMarketplaces.%s: teammates do not get the plugin" % src["marketplace"])
+    for k in plugin_entry(repo):
+        problems.append("settings  enabledPlugins names %s: it overrides each person's plugin manager (install.py "
+                        "<repo> --write-settings removes it)" % k)
     left = [e for es in (s.get("hooks") or {}).values() for e in es if is_core_entry(e)]
     if left:
         problems.append("settings  %d core hook entr%s left: they run beside the plugin's (--switch-to-plugin)"
@@ -430,8 +447,9 @@ def check(repo):
         problems.append("version   installed %s, core %s: run install.py to update" % (lock.get("version"), version(CORE)))
     for c in settings_missing(repo):
         problems.append("settings  missing hook: " + c)
-    if plugin_left_on(repo):
-        problems.append('settings  the plugin is not switched off: "enabledPlugins": {"%s": false} (--write-settings)' % PLUGIN_ID)
+    for k in plugin_entry(repo):
+        problems.append("settings  enabledPlugins names %s: it overrides each person's plugin manager (--write-settings "
+                        "removes it)" % k)
     problems += permission_problems(repo, "--write-settings")
     if runtime_ignored(repo):
         problems.append(".gitignore ignores %s: teammates' Cursor would run no guard (rerun install.py)" % RUNTIME)
@@ -449,6 +467,16 @@ def check(repo):
 
 def install(repo, a):
     if is_switched(repo):
+        if a.write_settings:  # the only change made to a switched repo: drop the project plugin switch
+            sp = os.path.join(repo, ".claude", "settings.json")
+            cur = json.loads(read(sp) or "{}")
+            gone = plugin_entry(repo)
+            if gone and not a.dry_run:
+                write(sp, json.dumps(drop_plugin_entry(cur), indent=2) + "\n", repo_newline(repo))
+            print("settings.json: " + ("enabledPlugins %s removed%s" % (", ".join(gone), " (dry run)" if a.dry_run else "")
+                                       if gone else "no project enabledPlugins entry") + "; nothing else changed in "
+                  "a repo that gets the core from the plugin")
+            return 0
         sys.exit("This repo gets the core from the plugin (switched). Refresh its Cursor copy with: python %s %s"
                  % (os.path.join(CORE, "scripts", "cursor_sync.py").replace("\\", "/"), "(from the repo root)"))
     nl = repo_newline(repo)
@@ -611,11 +639,7 @@ def switched_settings(current, repo, src):
     apply_permissions(s, repo, switched=True)
     s.setdefault("extraKnownMarketplaces", {})[src["marketplace"]] = {"source": src["source"],
                                                                       "autoUpdate": bool(src.get("autoUpdate", True))}
-    plugins = s.setdefault("enabledPlugins", {})
-    for old in OLD_PLUGIN_IDS:
-        plugins.pop(old, None)
-    plugins[src.get("plugin") or PLUGIN_ID] = True
-    return s
+    return drop_plugin_entry(s)  # the marketplace brings the install prompt; each person's plugin manager decides
 
 
 def repo_texts(repo):
@@ -686,8 +710,8 @@ def switch_to_plugin(repo, a):
     sp = os.path.join(repo, ".claude", "settings.json")
     cur_s = json.loads(read(sp) or "{}")
     new_s = switched_settings(cur_s, repo, src)
-    plan.append("settings  core hooks removed, extraKnownMarketplaces.%s (%s, autoUpdate), enabledPlugins %s: true"
-                % (src["marketplace"], src["source"].get("url") or src["source"], src.get("plugin") or PLUGIN_ID))
+    plan.append("settings  core hooks removed, extraKnownMarketplaces.%s (%s, autoUpdate), no project enabledPlugins "
+                "entry (each person's plugin manager decides)" % (src["marketplace"], src["source"].get("url") or src["source"]))
     lp = os.path.join(repo, ".claude", "launch.json")
     cur_l = json.loads(read(lp) or "null")
     try:

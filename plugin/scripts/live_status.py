@@ -76,6 +76,9 @@ if __name__ == "__main__" and sys.argv[1:2] == ["hook"] and not project.has_proj
         if _ev in ("preToolUse", "subagentStart", None):
             print(json.dumps({"permission": "allow"}))
     sys.exit(0)
+if (__name__ == "__main__" and sys.argv[1:2] == ["hook"] and "--cursor" not in sys.argv and project.in_repo_copy()
+        and project.plugin_active()):
+    sys.exit(0)  # the repo's own copy steps aside: the plugin's live_status hook records this call
 import timing  # noqa: E402
 
 ROOT = project.repo_root()
