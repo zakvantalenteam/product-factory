@@ -241,6 +241,14 @@ animation:aurora 9s ease-in-out infinite alternate}
 .ans{color:var(--muted);margin-top:2px;white-space:pre-wrap}
 .dec{font-size:11px;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px;background:color-mix(in srgb,var(--you) 14%,var(--card));color:var(--you)}
 .k-route .tag,.k-decide .tag,.k-integrate .tag{background:color-mix(in srgb,var(--wrap) 16%,var(--card));color:color-mix(in srgb,var(--wrap) 55%,var(--text))}
+.extra{margin:0 0 14px;display:grid;gap:8px}
+.extra .fx{font-size:12px;color:var(--muted)}.extra .fx b{font-weight:500;color:var(--text)}
+.trun{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.trun h3{margin:0 0 6px;font-size:13px;font-weight:500}
+.trun table{width:100%;border-collapse:collapse;font-size:12px}.trun th{font-weight:400;color:var(--faint);text-align:left}
+.trun th,.trun td{padding:3px 8px 3px 0;border-top:1px solid var(--line);vertical-align:top}.trun tr:first-child th{border-top:0}
+.trun td.n{font-variant-numeric:tabular-nums}
+.chip.ok{--c:var(--test)}.chip.bad{--c:var(--fail)}
 .chip.warn{--c:var(--you)}
 .chip.quiet{--c:var(--muted)}
 .acard .lw{font-size:12px;font-weight:500;color:color-mix(in srgb,var(--a) 60%,var(--text))}
@@ -498,7 +506,7 @@ button.pi{cursor:pointer}
     <header class="top">
       <div class="kb" id="kb" aria-hidden="true"></div>
       <div class="who">
-        <div class="l1"><b id="tid"></b><span class="tt" id="ttl"></span><span class="risk" id="risk" hidden></span><span class="demo" id="demoTag" hidden>demo</span></div>
+        <div class="l1"><b id="tid"></b><span class="tt" id="ttl"></span><span class="risk" id="risk" hidden></span><span class="chip" id="req" hidden></span><span class="demo" id="demoTag" hidden>demo</span></div>
         <div class="l2"><span id="doing" aria-hidden="true"></span><span class="caret" aria-hidden="true"></span><span class="sr" id="doingSr" aria-live="polite"></span></div>
       </div>
       <div class="meta">
@@ -514,6 +522,7 @@ button.pi{cursor:pointer}
       <div class="stat"><span class="sub">Edits</span><b id="c-edit">0</b></div>
       <div class="stat"><span class="sub">Commands</span><b id="c-run">0</b></div>
     </section>
+    <section class="extra" id="extra" hidden aria-label="Fixes and test run"></section>
     <section id="gate" hidden></section>
     <section class="crew" id="crew" hidden aria-label="Team"></section>
     <ol class="tl" id="tl" aria-label="Stages"></ol>
@@ -628,8 +637,22 @@ function apply(d){
     if(["live","wait","fail"].includes(s.state)||li.classList.contains("open")||li.querySelector(".chips").children.length||d.events.some(e=>e.stage===s.k&&e.kind==="edit"))feed(s.k,!first)});
   const last=d.events.length?d.events[d.events.length-1].n:0;if(last>seen){lastChange=Date.now();beat()}seen=last;
   const n=d.counts||{},T=d.tally||{},tl=(T.lead||0)+(T.agents||0);$("#c-lead").textContent=tl?Math.round((T.lead||0)/tl*100)+"%":"-";count("#c-read",n.read||0);count("#c-edit",n.edit||0);count("#c-run",n.run||0);
-  gate();bodies();crew();tick();
+  extra(d);gate();bodies();crew();tick();
 }
+/* fix counts, requirements chip and test run card (1.12.0) */
+const FXK=["open","fixing","fixed","verified","reopened","wont-fix","later"];
+const fxText=f=>FXK.filter(k=>f[k]).map(k=>f[k]+" "+k).join(", ")||"none";
+function extra(d){const rq=$("#req"),r=d.req;rq.hidden=!r;
+  if(r){rq.className="chip "+({confirmed:"ok",ready:"warn",notready:"bad"}[r.state]||"quiet");
+    rq.textContent=r.state==="confirmed"?"Requirements ready":r.state==="ready"?"Requirements ready, not confirmed":"Requirements not ready";
+    rq.title=r.state==="confirmed"?"Confirmed by "+r.by+", "+r.date:"Definition of Ready verdict in spec.md"}
+  const box=$("#extra"),f=d.fixes,t=d.testrun;let h="";
+  if(f)h+='<div class="fx"><b>Fixes:</b> '+esc(fxText(f))+" · MUST open "+f.must_open+" · SHOULD "+f.should_open+"</div>";
+  if(t)h+='<div class="trun"><h3>Test run '+esc(t.run)+(t.done?" · done":" · running")+'</h3><table><tr><th>Ticket</th><th>Verdict</th><th>MUST open</th><th>SHOULD</th><th>Blocked</th><th>Fixes</th></tr>'+
+    t.tickets.map(x=>"<tr><td>"+esc(x.id)+(x.stale?' <span class="chip warn" title="Files changed since the run started">stale</span>':"")+'</td><td><span class="chip '+
+      ({"SIGNED-OFF":"ok",FAILED:"bad",BLOCKED:"warn"}[x.verdict]||"quiet")+'">'+esc(x.verdict)+'</span></td><td class="n">'+x.must+'</td><td class="n">'+x.should+'</td><td class="n">'+x.blocked+"</td><td>"+
+      (x.fixes?esc(fxText(x.fixes)):"-")+(x.note?'<div class="sub">'+esc(x.note)+"</div>":"")+"</td></tr>").join("")+"</table></div>";
+  box.hidden=!h;if(h!==box.dataset.h){box.innerHTML=h;box.dataset.h=h}}
 /* agent runs (1.5.0): one card per run inside its stage (the live-rolling prototype, variant B). A step comes as a
    plain imperative ("Read context.md", a Bash call's own description) and reads as "Reading ..." while it runs and
    "Read ..." once done; finished runs fold into their summary for people */

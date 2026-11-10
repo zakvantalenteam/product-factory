@@ -44,6 +44,8 @@ Triage every request first (`sdlc` skill), without asking which lane:
 - **Setup work**: the AI setup only (`.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md`, `setup_paths`) - done by the main session, no task; then `python .claude/core/scripts/cursor_sync.py`, and its `--check` must be clean.
 - **Task** (task mode): every other change to an existing product - a task in the work folder: `explorer`'s context pack first, a risk level from its evidence, only the agents it needs, a safety net set by the risk, and the QA sign-off before it closes.
 - **Product** (product mode): an idea, a PRD or "build a new product" - the `factory` skill, with a gate at each decision; never built straight from the document.
+- **Requirements**: "review the requirements", a ticket or document to check before any build - the `review-spec` skill: plain words, the Definition of Ready, one gate with the requester; no code.
+- **Test and fix**: "/test BLEN-1 BLEN-2", "retest", "fix BLEN-1" - the `test` skill (the QA team, a fix list at the end) and the sdlc fix loop; fixes never start by themselves.
 
 Hard rules (in a repo with `.claude/project.json` the hooks enforce most of them, in Claude and Cursor):
 - The main session is the Tech Lead: it triages, decides, briefs, routes, integrates and verifies, and never writes product code (everything outside the AI setup and the work folder). It stops the developer only for something to decide: gaps in the brief, decision cards D1-D8 and prototype picks.

@@ -19,6 +19,7 @@ Input: a commit range or the files, and the criteria list (`AC1..`, from `spec.m
 4. Neighbours (risk medium or high, from `triage.md`): for every area the change touches, the matching section of the project's `.claude/smoke.md` (sections name their paths) gives the neighbouring features to check as well. Each smoke item gets a row (`SMOKE <area>: <item>`) run the same way as a criterion; one that needs the app becomes a live-check step for the main session (NOT RUN). A broken smoke item is a FAIL: the change broke something else. No `smoke.md`, or no section for an area: say so in the file.
 5. Only a break of a criterion, a smoke item, an approved decision or a hard rule from AGENTS.md is a FAIL (MUST). Everything else is a LATER note, one line each. Do not reopen criteria that pass.
 6. Record: write the table to `verify.md` in the task folder (task mode); the lead copies the PASS/FAIL lines into `status.md` with `live_status.py stage <id> verify done --out`.
+7. A `/test` run of several tickets: check only your ticket's criteria and commits; a break you find names the ticket whose changed files it touches (`cross-ticket: <ids>` when unclear).
 
 ## Mode `system` (product mode)
 Read first: `status.md`, `decisions.md`, `questions.md`, `02-spec.md`, `04-stories.md`, `05-*` design files, and `python .claude/core/scripts/handoff_check.py <id>` when it exists (it does the mechanical cross-checks; you add the judgement checks and every break it cannot see).

@@ -441,6 +441,122 @@ def check_card(name, text):
     return p, plain_hints(name, human, sections(human))
 
 
+FIX_HEADER = "| ID | Sev | Title | Owner agent | Status |"
+FIX_STATUS = ("open", "fixing", "fixed", "verified", "reopened", "wont-fix", "later")
+FIX_OWNERS = ("backend-developer", "frontend-developer", "n8n-expert", "integration-engineer", "devops-engineer",
+              "qa-engineer", "dev-handoff")
+FIX_FIELDS = ("Ticket", "Found by", "Where", "Steps", "Expected", "Actual", "Evidence", "Suspected area", "Fix owner",
+              "Retest", "History")
+DOR_IDS = ["R%d" % n for n in range(1, 12)]
+
+
+def table_rows(body):
+    """[(header cells or None, rows)] is overkill here: the cells of every table line of a text, separators dropped."""
+    out = []
+    for line in body.split("\n"):
+        t = line.strip()
+        if t.startswith("|"):
+            cells = [c.strip() for c in t.strip("|").split("|")]
+            if not set("".join(cells)) <= set("-: "):
+                out.append(cells)
+    return out
+
+
+def check_fixlist(text, name="fix-list.md"):
+    """The fix list format (core/reference/qa/fix-list.md): header, Sev, Status, owner, a block per table row, the
+    lines of each block, and no SIGNED OFF while a MUST is still to fix."""
+    p = []
+    lines = [l for l in text.split("\n")]
+    head = next((l.strip() for l in lines if l.strip().startswith("|")), "")
+    if head != FIX_HEADER:
+        p.append("%s: the table header must be exactly \"%s\"" % (name, FIX_HEADER))
+    rows, in_table = [], False
+    for l in lines:
+        t = l.strip()
+        if t.startswith("|"):
+            in_table = True
+            cells = [c.strip() for c in t.strip("|").split("|")]
+            if t != head and not set("".join(cells)) <= set("-: "):
+                rows.append(cells)
+        elif in_table:
+            break
+    open_must = []
+    for c in rows:
+        if len(c) < 5:
+            p.append("%s: table row \"%s\" needs the 5 columns of the header" % (name, c[0] if c else ""))
+            continue
+        i, sev, status, owner = c[0], c[1], c[4].lower(), c[3]
+        if sev not in ("MUST", "SHOULD"):
+            p.append("%s: %s has Sev \"%s\" (MUST or SHOULD)" % (name, i, sev))
+        if status not in FIX_STATUS:
+            p.append("%s: %s has Status \"%s\" (%s)" % (name, i, c[4], ", ".join(FIX_STATUS)))
+        if owner not in FIX_OWNERS:
+            p.append("%s: %s has Owner agent \"%s\" (%s)" % (name, i, owner, ", ".join(FIX_OWNERS)))
+        if sev == "MUST" and status in ("open", "fixing", "fixed", "reopened"):
+            open_must.append(i)
+    blocks, cur, fence = {}, None, False
+    for l in lines:
+        if l.lstrip().startswith("```"):
+            fence = not fence
+        m = None if fence else re.match(r"^##\s+(F\d+)\b", l)
+        if m:
+            cur = m.group(1)
+            blocks[cur] = []
+        elif cur and not fence:
+            blocks[cur].append(l)
+    tids = [c[0] for c in rows if c]
+    for i in tids:
+        if i not in blocks:
+            p.append("%s: %s is in the table but has no \"## %s ...\" block" % (name, i, i))
+    for i in blocks:
+        if i not in tids:
+            p.append("%s: block %s is not in the table" % (name, i))
+    for i, body in blocks.items():
+        b = "\n".join(body)
+        for fld in FIX_FIELDS:
+            if not re.search(r"(?im)(?:^[\s>*-]*|\|\s*)%s\s*:" % re.escape(fld), b):
+                p.append("%s: %s has no \"%s:\" line" % (name, i, fld))
+        if re.search(r"(?im)(?:^[\s>*-]*|\|\s*)Steps\s*:", b) and not re.search(r"(?m)^\s*\d+\.\s+\S", b):
+            p.append("%s: %s Steps need numbered steps (1. 2. ...)" % (name, i))
+    if open_must and re.search(r"(?im)Verdict:\s*\**\s*SIGNED OFF\b", text):
+        p.append("%s: Verdict is SIGNED OFF but %s %s still to fix (open, fixing, fixed or reopened)"
+                 % (name, ", ".join(open_must), "is" if len(open_must) == 1 else "are"))
+    return p
+
+
+def check_dor(text, name="spec.md"):
+    """The Definition of Ready (core/reference/requirements/definition-of-ready.md) at the end of a spec."""
+    p = []
+    body = find(sections(text), "definition of ready")
+    if body is None:
+        return p
+    got = {}
+    for c in table_rows(body):
+        if re.match(r"^R\d+$", c[0]):
+            got[c[0]] = c
+    for i in DOR_IDS:
+        if i not in got:
+            p.append("%s: Definition of Ready has no row %s" % (name, i))
+    failed = []
+    for i, c in got.items():
+        res = c[2].lower() if len(c) > 2 else ""
+        note = c[3] if len(c) > 3 else ""
+        if res not in ("pass", "fail", "n/a"):
+            p.append("%s: Definition of Ready %s has Result \"%s\" (pass, fail or n/a)" % (name, i, res))
+        elif res in ("fail", "n/a") and not note.strip():
+            p.append("%s: Definition of Ready %s is %s: the Note column must say why" % (name, i, res))
+        if res == "fail":
+            failed.append(i)
+    v = re.search(r"(?im)^[\s>*_-]*Verdict:\s*\**\s*(NOT READY|READY)\b", body)
+    if not v:
+        p.append("%s: Definition of Ready has no \"Verdict: READY\" or \"Verdict: NOT READY\" line" % name)
+    elif v.group(1).upper() == "READY" and failed:
+        p.append("%s: Definition of Ready verdict is READY but %s fail%s" % (name, ", ".join(failed), "s" if len(failed) == 1 else ""))
+    if re.search(r"(?im)^[\s>*_-]*Requirements:\s*READY\b", text) and not (v and v.group(1).upper() == "READY"):
+        p.append("%s: the \"Requirements: READY\" line needs the Definition of Ready verdict READY" % name)
+    return p
+
+
 def check(folder, files=None):
     """(problems, hints) for the given files of a task folder. Unknown documents get hints only."""
     if not os.path.isdir(folder):
@@ -450,6 +566,8 @@ def check(folder, files=None):
                       + sorted(glob.glob(os.path.join(folder, "decisions", "D*.md"))) if os.path.isfile(f)]
     files = list(files) + [n for n in TASK_DOCS if os.path.isfile(os.path.join(folder, n))
                            and n not in [os.path.basename(f.replace("\\", "/")) for f in files]]
+    if os.path.isfile(os.path.join(folder, "fix-list.md")) and "fix-list.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
+        files = list(files) + ["fix-list.md"]
     reviews = review_docs()
     problems, hints = [], []
     for f in files:
@@ -463,8 +581,16 @@ def check(folder, files=None):
         known = True
         if base in BRIEF_DOCS:
             r = check_brief(text, base)
+        elif base == "fix-list.md":
+            r = check_fixlist(text, name), []
         elif base in SPEC_DOCS:
-            r = check_spec(text, read(os.path.join(folder, SPEC_DOCS[base])), folder, base)
+            dor = base not in PRODUCT_DOCS and find(sections(text), "definition of ready") is not None
+            if dor and not re.search(r"(?im)^[\s>*_-]*kind of work[\s*_]*:", text):
+                r = check_dor(text, base), []  # a requirements-only spec: the technical part comes after READY
+            else:
+                r = check_spec(text, read(os.path.join(folder, SPEC_DOCS[base])), folder, base)
+                if dor:
+                    r = r[0] + check_dor(text, base), r[1]
         elif base in DESIGN_DOCS:
             stories = read(os.path.join(folder, STORIES)) if base in PRODUCT_DOCS else None
             r = check_design(text, read(os.path.join(folder, DESIGN_DOCS[base])), base, stories, base in PRODUCT_DOCS)

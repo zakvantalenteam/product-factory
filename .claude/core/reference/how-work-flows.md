@@ -30,6 +30,21 @@ mode) give the steps.
 - `e2e-qa-expert` runs the journeys across roles. `qa-engineer` writes the tests and runs the API checks
   (`.claude/core/reference/qa/api-checklist.md`).
 - A checklist MUST fails Test, and no task closes without the sign-off.
+- `/test` (the `test` skill) runs the QA team on its own: one ticket, several in one run (`/test BLEN-1 BLEN-2`), or
+  `/test retest BLEN-1` for the fixed items. It works in any session, because the state lives in the work folder.
+  The sdlc Test stage uses the same skill. "Test later" leaves the task waiting at Test.
+- Fixes are never automatic. QA leaves `fix-list.md` (`.claude/core/reference/qa/fix-list.md`), and the developer
+  starts the fix loop with `fix BLEN-1` or `fix BLEN-1 F1 F3`: the items go to their owners, then a re-review, then
+  `/test retest`. A ticket closes only on SIGNED OFF.
+
+## Requirements
+- `/review-spec` (the `review-spec` skill) reviews requirements with spec-analyst, product-critic, ux-designer, the
+  domain experts the topic needs and qa-lead (testability). It writes plain words for product owners, analysts and
+  managers, and checks the Definition of Ready (`.claude/core/reference/requirements/definition-of-ready.md`). It
+  stops at one gate with the requester. It is read-only on code.
+- READY requirements (`Requirements: READY` in `spec.md`, a Jira comment, or a file the developer points to) skip the
+  business questions in sdlc. The technical agents add only the technical part, and any change to a criterion goes
+  back to the requester.
 
 ## The Tech Lead and the gates
 - The main session keeps triage, the gates and decision cards, quick live checks in the browser (the UI and E2E QA
@@ -55,8 +70,9 @@ Lead's decisions and routing on its card (with a chip when it edited product cod
 of the work. Open it with `python .claude/core/scripts/live_status.py open <id>`.
 
 ## Agents and skills
-- Flow skills: `sdlc` (triage, task mode), `factory` (product mode), `prototype`, `dev-handoff`, `commit-msg`,
-  `verify-push`, `live-check`.
+- Flow skills: `sdlc` (triage, task mode, fix loop), `factory` (product mode), `review-spec` (requirements team),
+  `test` (QA team), `prototype`, `dev-handoff`, `commit-msg`, `verify-push`, `live-check`. `review-spec` and `test`
+  are team leads: each run picks the agents it needs and starts them, in parallel where independent.
 - Agents: `explorer` (search), `spec-analyst`, `bug-investigator`, `product-critic`, `story-sizer`, `ux-designer`,
   `solution-architect`, `data-architect`, `security-architect`, `base-builder`, `backend-developer`,
   `frontend-developer`, `integration-engineer`, `devops-engineer`, `performance-engineer`, `code-reviewer`, `qa-lead`,
@@ -94,8 +110,8 @@ of the work. Open it with `python .claude/core/scripts/live_status.py open <id>`
 - Core files (`.claude/core/`, the core agents and skills listed in `.claude/core/core.lock`) are changed only in the
   core source and installed with its `install.py`; `python .claude/core/scripts/install.py . --check` lists hand
   edits.
-- All projects stay in sync: every project with the core (product-factory, Blend, TalentBox and any product made
-  since) and the product-factory plugin run the same core version; SkillsOS uses the plugin and gets no repo install.
+- All projects stay in sync: every project with the core (product-factory, Blend, TalentBox, SkillsOS and any
+  product made since) and the product-factory plugin run the same core version.
 - A change to the shared setup (an agent, skill, hook, script, rule or the flow) is made once in the core source
   (product-factory `core/`) and installed in every project in the same change: `python core/scripts/install.py <repo>
   --write-settings` from product-factory for each, then `install.py . --check` and `cursor_sync.py --check` clean in

@@ -555,6 +555,12 @@ def save(st):
     st["calls"] = {a: n for a in sorted(ags) if a != "main session" for n in [call_budget(a, mode_of(st))] if n}
     st["certs"] = {a: c for a in sorted(ags) if a != "main session" for c in [certs_of(a)] if c}
     st["now"] = now_rows(st)
+    for k, v in (("fixes", fix_counts(st["id"])), ("req", req_state(st["id"])),
+                 ("testrun", run_view(st["id"]) if st.get("kind") == "testrun" else None)):
+        if v is not None:
+            st[k] = v
+        else:
+            st.pop(k, None)
     d = path(st["id"])
     os.makedirs(d, exist_ok=True)
     write(os.path.join(d, "status.json"), json.dumps(st, indent=1))
@@ -767,7 +773,7 @@ def cmd_open(a):
             if serving():
                 break
             time.sleep(0.1)
-    url = page_url(a.id)
+    url = page_url(a.id)  # a task id or a test run name: ?task=<name> shows that card
     import webbrowser  # only for `open`: the hook runs on every tool call
     webbrowser.open(url)
     print("Live status: " + url + "  (in Cursor you can also open it with Simple Browser: Show)")
@@ -2152,6 +2158,14 @@ def cmd_hook(a):
             # also `L="python .claude/core/scripts/live_status.py"; $L init <id>`: the last existing task named wins
             ids = [m.group(1) for m in LIVE_ANY.finditer(cmd)
                    if not is_demo(m.group(1)) and os.path.isfile(path(m.group(1), "status.json"))]
+            cur = session_task(sid)
+            if ids and cur and load_run(cur) and not re.search(r"\binit\s+[\"']?[A-Za-z0-9._-]+", cmd):
+                ids = []  # a session bound to a test run keeps it while `stage`/`gate`/`ok` work on a ticket's own task
+            m = re.search(r"testrun\s+(?:ticket|check|done|refresh)\s+[\"']?(\d{4}-\d\d-\d\d-\d+)", cmd)
+            if not m and re.search(r"testrun\s+start\b", cmd) and data.get("hook_event_name") in ("PostToolUse", "postToolUse"):
+                m = re.search(r"Test run: (\d{4}-\d\d-\d\d-\d+)", str(data.get("tool_response") or ""))
+            if m and os.path.isfile(path(m.group(1), "status.json")):
+                ids.append(m.group(1))  # a test run: this session's hook events show on the run's card
             if ids:
                 os.makedirs(path(".sessions"), exist_ok=True)
                 write(path(".sessions", sid), ids[-1])
@@ -2200,6 +2214,348 @@ def session_edits(sid, clear=False):
         return out
     except OSError:
         return []
+
+
+# ---- fix lists, requirements state, test runs (1.12.0) ------------------------------------------
+
+FIX_STATES = ("open", "fixing", "fixed", "verified", "reopened", "wont-fix", "later")
+MUST_OPEN = ("open", "fixing", "fixed", "reopened")
+SHOULD_DONE = ("verified", "wont-fix", "later")
+VERDICTS = ("SIGNED-OFF", "FAILED", "BLOCKED", "RUNNING")
+
+
+def read_text(p):
+    try:
+        with open(p, encoding="utf-8-sig", errors="replace") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def fix_counts(tid):
+    """Counts of <work>/<tid>/fix-list.md's top table: per status, must_open (MUST rows still to fix), should_open
+    (SHOULD rows not verified, wont-fix or later) and total. None when the task has no fix list."""
+    text = read_text(path(tid, "fix-list.md"))
+    if text is None:
+        return None
+    out = {k: 0 for k in FIX_STATES}
+    out.update(must_open=0, should_open=0, total=0)
+    col = None
+    for line in text.splitlines():
+        t = line.strip()
+        if not t.startswith("|"):
+            if col is not None:
+                break  # the top table ended
+            continue
+        cells = [c.strip() for c in t.strip("|").split("|")]
+        if col is None:
+            low = [c.lower() for c in cells]
+            if "status" in low and "sev" in low:
+                col = (low.index("sev"), low.index("status"))
+            continue
+        if set("".join(cells)) <= set("-: ") or len(cells) <= max(col):
+            continue
+        sev, status = cells[col[0]].upper(), cells[col[1]].lower()
+        out["total"] += 1
+        if status in FIX_STATES:
+            out[status] += 1
+        if sev == "MUST" and status in MUST_OPEN:
+            out["must_open"] += 1
+        if sev == "SHOULD" and status not in SHOULD_DONE:
+            out["should_open"] += 1
+    return out
+
+
+def fix_line(c):
+    """"2 open, 1 fixed, 3 verified": the non-zero counts of a fix list."""
+    return ", ".join("%d %s" % (c[k], k) for k in FIX_STATES if c.get(k)) or "none"
+
+
+def req_state(tid):
+    """Requirements state of a task from spec.md: confirmed (the Requirements: READY line), ready (Definition of
+    Ready verdict READY, not confirmed), notready, or None when the spec has no such section."""
+    text = read_text(path(tid, "spec.md"))
+    if text is None:
+        return None
+    m = re.search(r"^[\s>*_-]*Requirements:\s*READY\s*\(\s*confirmed by\s+(.+?)\s*,\s*([^,()]+?)\s*\)", text, re.I | re.M)
+    if m:
+        return dict(state="confirmed", by=m.group(1), date=m.group(2))
+    sec = re.search(r"^##\s+Definition of Ready\s*$(.*?)(?=^##\s|\Z)", text, re.I | re.M | re.S)
+    v = sec and re.search(r"^[\s>*_-]*Verdict:\s*\**\s*(NOT READY|READY)\b", sec.group(1), re.I | re.M)
+    if not v:
+        return None
+    return dict(state="notready" if v.group(1).upper() == "NOT READY" else "ready")
+
+
+def norm_file(p):
+    p = str(p).strip().replace("\\", "/")
+    while p.startswith("./"):
+        p = p[2:]
+    if os.path.isabs(p):
+        try:
+            r = os.path.relpath(p, ROOT).replace("\\", "/")
+        except ValueError:
+            return p
+        p = r if not r.startswith("..") else p
+    return p
+
+
+def changed_files(tid):
+    """Files a ticket changed: the repo files its status.json recorded as edited, plus the backticked paths in the
+    bullets under "## Changed files" in qa-brief.md (repo-relative, sorted)."""
+    seen = set()
+    try:
+        for e in load(tid).get("events", []):
+            if e.get("kind") == "edit" and e.get("path") and not os.path.isabs(e["path"]):
+                seen.add(norm_file(e["path"]))
+    except (OSError, ValueError):
+        pass
+    on = False
+    for line in (read_text(path(tid, "qa-brief.md")) or "").splitlines():
+        if re.match(r"^##\s", line):
+            on = bool(re.match(r"^##\s+Changed files\s*$", line, re.I))
+        elif on and re.match(r"^\s*[-*]\s", line):
+            seen.update(norm_file(x) for x in re.findall(r"`([^`]+)`", line) if x.strip())
+    return sorted(seen)[:300]
+
+
+def fingerprint(files):
+    """(short sha1 over the sorted (path, content sha1) pairs, {path: content sha1 or "missing"})."""
+    import hashlib
+    hashes = {}
+    for f in sorted(set(files)):
+        try:
+            with open(os.path.join(ROOT, f), "rb") as fh:
+                hashes[f] = hashlib.sha1(fh.read()).hexdigest()
+        except OSError:
+            hashes[f] = "missing"
+    h = hashlib.sha1("".join("%s\0%s\n" % kv for kv in sorted(hashes.items())).encode("utf-8"))
+    return h.hexdigest()[:10], hashes
+
+
+def runs_dir():
+    return path("test-runs")
+
+
+def load_run(name):
+    try:
+        with open(os.path.join(runs_dir(), name + ".json"), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def save_run(r):
+    os.makedirs(runs_dir(), exist_ok=True)
+    write(os.path.join(runs_dir(), r["run"] + ".json"), json.dumps(r, indent=1))
+
+
+def ticket_counts(t):
+    """MUST open and SHOULD of a ticket row: as given with --must/--should, else from its fix-list.md."""
+    c = fix_counts(t["id"]) or {}
+    return (t["must"] if t.get("must") is not None else c.get("must_open", 0),
+            t["should"] if t.get("should") is not None else c.get("should_open", 0))
+
+
+def stale_of(t):
+    return fingerprint(list(t.get("hashes") or {}))[0] != t.get("fingerprint")
+
+
+def run_table(r):
+    rows = ["| Ticket | Verdict | MUST open | SHOULD | Blocked |", "|---|---|---|---|---|"]
+    for t in r["tickets"]:
+        m, s = ticket_counts(t)
+        rows.append("| %s | %s | %d | %d | %d |" % (t["id"], t["verdict"], m, s, t.get("blocked") or 0))
+    return rows
+
+
+def run_md(r, final=False):
+    out = ["# Test run %s" % r["run"], "", "Started %s%s. Tickets: %s." % (
+        r["started"], ", done " + r["done"] if r.get("done") else "", ", ".join(t["id"] for t in r["tickets"])), ""]
+    out += run_table(r)
+    stale = [t["id"] for t in r["tickets"] if stale_of(t)]
+    if final or stale:
+        out += ["", "Stale tickets (files changed since the run started): " + (", ".join(stale) or "none")]
+    notes = [t for t in r["tickets"] if t.get("note")]
+    if notes:
+        out += ["", "Notes"] + ["- %s: %s" % (t["id"], t["note"]) for t in notes]
+    return "\n".join(out) + "\n"
+
+
+def run_view(name):
+    """The run as the page shows it (the run card's status.json): rows with fresh fix counts and stale marks."""
+    r = load_run(name)
+    if not r:
+        return None
+    rows = []
+    for t in r["tickets"]:
+        m, s = ticket_counts(t)
+        rows.append(dict(id=t["id"], verdict=t["verdict"], must=m, should=s, blocked=t.get("blocked") or 0,
+                         note=t.get("note") or "", stale=stale_of(t), fp=t.get("fingerprint"),
+                         files=len(t.get("hashes") or {}), fixes=fix_counts(t["id"])))
+    return dict(run=r["run"], started=r["started"], done=r.get("done") or "", tickets=rows)
+
+
+def new_status(tid, title, **extra):
+    """A minimal task status at the Test stage (the stages before it skipped), so the page shows it."""
+    stages = [new_stage("task", k, n, k in ("spec", "design", "build", "review")) for k, n in MODES["task"]]
+    for s in stages:
+        if s["k"] == "test":
+            s["state"], s["start"], s["run"] = "live", now(), now()
+    return dict(id=tid, title=title, size="M", tool="claude", mode="task", root="", started=now(), seq=0, events=[],
+                counts={}, gate=None, stages=stages, **extra)
+
+
+def rebase(t):
+    """Take a ticket's baseline from the files that exist now (the ticket had none when the run started)."""
+    t["fingerprint"], t["hashes"] = fingerprint(changed_files(t["id"]))
+    t["empty"] = not t["hashes"]
+    return t["fingerprint"]
+
+
+def set_baselines(r):
+    """A ticket that had 0 files at the start gets its baseline once files exist (qa-lead writes qa-brief.md later):
+    the lines to print. Not stale: its baseline is the files as they are now."""
+    out = []
+    for t in r["tickets"]:
+        if t.get("empty") and not t.get("hashes") and changed_files(t["id"]):
+            fp = rebase(t)
+            out.append("%s: baseline set (%s, %d files)" % (t["id"], fp, len(t["hashes"])))
+    return out
+
+
+def cmd_fixes(a):
+    c = fix_counts(a.id)
+    if c is None:
+        print("%s: no fix-list.md in %s/%s" % (a.id, work_rel(), a.id))
+        return
+    print("Fixes %s: %s (%d total)" % (a.id, fix_line(c), c["total"]))
+    print("MUST open: %d, SHOULD: %d" % (c["must_open"], c["should_open"]))
+
+
+def cmd_testrun(a):
+    act = a.tr
+    if act == "start":
+        ids = list(dict.fromkeys(a.ids))
+        bad = [i for i in ids if not re.match(r"^[A-Za-z0-9._-]+$", i)]
+        if bad:
+            sys.exit("testrun start: bad ticket id %s" % ", ".join(bad))
+        out = []
+
+        def run():
+            day = datetime.now().strftime("%Y-%m-%d")
+            os.makedirs(runs_dir(), exist_ok=True)
+            n = 1
+            while os.path.exists(os.path.join(runs_dir(), "%s-%d.json" % (day, n))) or os.path.isdir(path("%s-%d" % (day, n))):
+                n += 1
+            name = "%s-%d" % (day, n)
+            r = dict(run=name, title=a.title or "", started=now(), done="", tickets=[])
+            for i in ids:
+                if not os.path.isfile(path(i, "status.json")):
+                    os.makedirs(path(i), exist_ok=True)
+                    st = new_status(i, i)
+                    add(st, "test", "note", "Test run %s started for this ticket" % name, "main session")
+                    save(st)
+                fp, hashes = fingerprint(changed_files(i))
+                r["tickets"].append(dict(id=i, fingerprint=fp, hashes=hashes, verdict="RUNNING", must=None, should=None,
+                                         blocked=0, note="", empty=not hashes))
+                out.append("%s  %s  %d files" % (i, fp, len(hashes)))
+            save_run(r)
+            write(os.path.join(runs_dir(), name + ".md"), run_md(r))
+            os.makedirs(path(name), exist_ok=True)
+            st = new_status(name, a.title or "Test run: " + ", ".join(ids), kind="testrun")
+            add(st, "test", "note", "Test run started: " + ", ".join(ids), "main session")
+            save(st)
+            return name
+        name = with_lock(run)
+        print("Test run: " + name)
+        for line in out:
+            print(line)
+        print("Live status: " + page_url(name))
+        return
+    r = load_run(a.run)
+    if not r:
+        sys.exit("testrun %s: no run %s in %s/test-runs" % (act, a.run, work_rel()))
+
+    def refresh(msg=None):
+        save_run(r)
+        write(os.path.join(runs_dir(), r["run"] + ".md"), run_md(r))
+        if os.path.isfile(path(r["run"], "status.json")):
+            st = load(r["run"])
+            if msg:
+                add(st, "test", "note", msg, "main session")
+            save(st)
+
+    if act == "ticket":
+        def run():
+            t = next((x for x in r["tickets"] if x["id"] == a.id), None)
+            if not t:
+                return "testrun ticket: %s is not in run %s (%s)" % (a.id, a.run, ", ".join(x["id"] for x in r["tickets"]))
+            for line in set_baselines(dict(tickets=[t])):
+                print(line)
+            t["verdict"] = a.verdict
+            for k in ("must", "should", "blocked"):
+                if getattr(a, k) is not None:
+                    t[k] = getattr(a, k)
+            if a.note:
+                t["note"] = a.note
+            refresh("%s: %s" % (a.id, a.verdict))
+            m, s = ticket_counts(t)
+            print("%s %s: %s, MUST open %d, SHOULD %d, blocked %d" % (a.run, a.id, t["verdict"], m, s, t.get("blocked") or 0))
+        err = with_lock(run)
+        if err:
+            sys.exit(err)
+    elif act == "refresh":
+        def run():
+            t = next((x for x in r["tickets"] if x["id"] == a.id), None)
+            if not t:
+                return "testrun refresh: %s is not in run %s (%s)" % (a.id, a.run, ", ".join(x["id"] for x in r["tickets"]))
+            fp = rebase(t)
+            refresh("%s: baseline refreshed" % a.id)
+            print("%s %s: baseline %s, %d files" % (a.run, a.id, fp, len(t["hashes"])))
+        err = with_lock(run)
+        if err:
+            sys.exit(err)
+    elif act == "check":
+        def base():
+            lines = set_baselines(r)
+            if lines:
+                refresh()
+            return lines
+        for line in with_lock(base):
+            print(line)
+        hit = 0
+        for t in r["tickets"]:
+            fp, cur = fingerprint(list(t.get("hashes") or {}))
+            if fp == t["fingerprint"]:
+                continue
+            hit += 1
+            print("%s changed since the run started:" % t["id"])
+            for f, h in sorted(cur.items()):
+                if h != t["hashes"].get(f):
+                    try:
+                        mt = datetime.fromtimestamp(os.path.getmtime(os.path.join(ROOT, f))).strftime("%Y-%m-%d %H:%M:%S")
+                    except OSError:
+                        mt = "missing"
+                    print("  %s  (modified %s)" % (f, mt))
+        if not hit:
+            print("No ticket of run %s changed since it started." % a.run)
+        sys.exit(1 if hit else 0)
+    elif act == "done":
+        def run():
+            r["done"] = now()
+            refresh("Test run done")
+            if os.path.isfile(path(r["run"], "status.json")):
+                st = load(r["run"])
+                s = stage_of(st, "test")
+                s["state"], s["end"] = "done", now()
+                save(st)
+            write(os.path.join(runs_dir(), r["run"] + ".md"), run_md(r, True))
+            print("\n".join(run_table(r)))
+            stale = [t["id"] for t in r["tickets"] if stale_of(t)]
+            if stale:
+                print("\nStale (files changed since the run started): " + ", ".join(stale))
+        with_lock(run)
 
 
 def main():
@@ -2296,6 +2652,29 @@ def main():
     p = sub.add_parser("quick")
     p.add_argument("text")
     p.set_defaults(fn=cmd_quick)
+    p = sub.add_parser("fixes", help="the counts of <work>/ID/fix-list.md")
+    p.add_argument("id")
+    p.set_defaults(fn=cmd_fixes)
+    p = sub.add_parser("testrun", help="a test run over several tickets: start, ticket, check, done")
+    tr = p.add_subparsers(dest="tr", required=True)
+    q = tr.add_parser("start")
+    q.add_argument("ids", nargs="+", metavar="ID")
+    q.add_argument("--title", default="")
+    q = tr.add_parser("ticket")
+    q.add_argument("run")
+    q.add_argument("id")
+    q.add_argument("--verdict", required=True, choices=list(VERDICTS))
+    q.add_argument("--must", type=int)
+    q.add_argument("--should", type=int)
+    q.add_argument("--blocked", type=int)
+    q.add_argument("--note", default="")
+    q = tr.add_parser("refresh")
+    q.add_argument("run")
+    q.add_argument("id")
+    for n in ("check", "done"):
+        q = tr.add_parser(n)
+        q.add_argument("run")
+    p.set_defaults(fn=cmd_testrun)
     for kind in ("decide", "integrate", "route"):
         p = sub.add_parser(kind)
         p.add_argument("id")
@@ -2307,7 +2686,10 @@ def main():
         p.add_argument("--stage", choices=stage_names)
         p.set_defaults(fn=cmd_lead, kind=kind)
     a = ap.parse_args()
-    if a.cmd not in ("init", "hook", "open", "serve", "quick") and not os.path.isfile(path(a.id, "status.json")):
+    if a.cmd == "fixes":
+        if not os.path.isdir(path(a.id)):
+            sys.exit("fixes: no task folder %s in %s" % (a.id, work_rel()))
+    elif a.cmd not in ("init", "hook", "open", "serve", "quick", "testrun") and not os.path.isfile(path(a.id, "status.json")):
         sys.exit("%s: no task %s in %s (start it with: %s init %s)" % (a.cmd, a.id, work_rel(), SCRIPT, a.id))
     a.fn(a)
 

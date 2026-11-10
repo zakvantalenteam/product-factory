@@ -13,7 +13,7 @@ Part of the `factory` skill (SKILL.md next to this file), read when its step com
   (`${CLAUDE_PLUGIN_ROOT}/reference/qa/api-checklist.md`) -> `07-test-report.md`; `ui-qa-expert` tests every screen of the
   story in the running app against `${CLAUDE_PLUGIN_ROOT}/reference/qa/ui-checklist.md` -> `07-qa-ui.md`; at the end of the
   build `e2e-qa-expert` runs the journeys across roles -> `07-qa-e2e.md`, and `qa-lead` (sign-off) merges every QA
-  result -> `07-qa-signoff.md`. A checklist MUST or NOT SIGNED OFF goes back to the developer agent; Review is not
+  result -> `07-qa-signoff.md`. A checklist MUST or a FAILED sign-off (with `07-fix-list.md`) goes back to the developer agent; Review is not
   done until the sign-off says SIGNED OFF. The app is started by the developer; with it down the QA rows are BLOCKED.
   At the end `performance-engineer` -> `07-performance.md`, `verifier` (system, build mode) ->
   `07-system-review.md`, `sf-expert` (review) when SF code changed, `sf-skills-expert` (review) when job profile or skills code changed.

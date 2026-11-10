@@ -59,6 +59,12 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | UI tests in the running app (the UI checklist per changed screen) | `qa-ui.md` | `07-qa-ui.md` | ui-qa-expert |
 | Journeys, charters and session notes | `qa-e2e.md` | `07-qa-e2e.md` | e2e-qa-expert |
 | QA sign-off (one verdict from every QA result) | `qa-signoff.md` | `07-qa-signoff.md` | qa-lead (`sign-off`) |
+| The request as it came (Jira text, pasted text or the document's words), saved unchanged | `request.md` (`/review-spec`), `ticket.md` (`/test`) | - | main session |
+| QA brief for a ticket with no task (ticket text, diff or commits, criteria to test, `## Changed files`) | `qa-brief.md` | - | qa-lead (`intake`, `/test`) |
+| Fix list (defects left by QA, their owners and status; format `${CLAUDE_PLUGIN_ROOT}/reference/qa/fix-list.md`) | `fix-list.md` | `07-fix-list.md` | qa-lead (`sign-off`, `retest`); statuses `fixing`, `fixed` by the main session in the fix loop |
+| Testability of each criterion | `testability.md` | - | qa-lead (`testability`, `/review-spec`) |
+| Requirements for people and the Definition of Ready (`${CLAUDE_PLUGIN_ROOT}/reference/requirements/definition-of-ready.md`) | `spec.md` (with `Requirements: READY (...)` once approved) | `02-spec.md` | spec-analyst (`requirements`, `/review-spec`) |
+| Test run across tickets (one table: ticket, verdict, MUST open, SHOULD, blocked) | `<work>/test-runs/<date>-<n>.md` | same | `live_status.py testrun` |
 | Verification | `verify.md` (the lead copies PASS/FAIL into `status.md`) | `05-design-review.md`, `07-system-review.md` | verifier |
 | Audit | - | `08-audit.md` | audit-expert |
 | Release | `release.md` | `09-release.md` | release-manager |

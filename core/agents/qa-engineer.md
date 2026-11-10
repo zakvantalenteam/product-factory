@@ -30,6 +30,7 @@ Read first: `context.md`, `safety.md` when it exists, `status.md`, `decisions.md
 2. App UP: run only `commands.test` with the named tests; it runs what the IDE already compiled. Never run the compile, package, install or clean commands (`guard.block_while_app_up` lists them). A new or changed test class that is not found: say so and ask the developer to build in the IDE.
 3. App DOWN: `commands.compile` then `commands.test` is fine. Servers are started by the developer, never by you.
 4. Scratch scripts and characterization runs go in the session scratchpad, never a test meant to stay.
+5. `/test` runs: every record, name and file your API checks create starts with the brief's `Test data prefix` (`QA-<ticket>-`); in a run of several tickets each failure names the ticket whose changed files it touches (`cross-ticket: <ids>` when unclear).
 
 Product QA facts: when `.claude/project.json` has `qa.facts`, read that file first (type list, test users, time zone); skip it when the key is missing. For Ask, new eval cases (list, count, attribute, repeat) go under `n8n_workflows/eval/`.
 

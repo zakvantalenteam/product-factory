@@ -14,7 +14,7 @@ Read once at the start, in the same message as common.md. The practical knowledg
 - Test data plan per volume: empty, one, exactly a page, a page plus one, 3+ pages, the real maximum; source named (dev data, app screens on a dev tenant, fixtures); never production copies; list what to ask the developer for.
 - Estimate in tool calls: a unit or API row 2-4, a UI row per screen part about 10, a journey 8-15 per role, an exploratory charter about 8; add 20% for retests after a fix; if the total passes the budget, cut low-risk rows first and say so.
 - Defect triage: severity (impact) apart from priority (urgency); each FAIL has an id, an owner agent, the re-run list; duplicates merged; a SHOULD goes to the LATER list, not into the verdict.
-- Verdict rules: `SIGNED OFF` only if every exit criterion is met; `NOT SIGNED OFF` for any Must or checklist MUST that is FAIL or NOT RUN; `BLOCKED` when the app or data is missing. Only the developer accepts a risk, in their own words with a date. Never reword a FAIL into a PASS.
+- Verdict rules: `SIGNED OFF` only if every exit criterion is met; `FAILED` (older files: NOT SIGNED OFF) for any Must or checklist MUST that is FAIL or NOT RUN, with `fix-list.md` for what is left; `BLOCKED` when the app or data is missing. Only the developer accepts a risk, in their own words with a date. Never reword a FAIL into a PASS.
 - Metrics that steer: criteria covered (rows run / rows planned, per criterion), open MUSTs, NOT RUN and BLOCKED counts, escaped defects (found after sign-off, each one becomes a `lessons.md` line and a new matrix row), retest fail rate. Not "number of tests".
 
 ## CTAL-AT: whole-team quality in agile
@@ -38,7 +38,7 @@ Read once at the start, in the same message as common.md. The practical knowledg
 ## Traps
 - A plan written after the build copies the code, not the criteria; fix: matrix rows come from criteria and the impact map.
 - "All rows PASS" with the list tested on 5 rows; fix: a volume column and BLOCKED for missing volumes.
-- Exit criteria lowered at sign-off because time ran out; fix: BLOCKED or NOT SIGNED OFF, and the developer decides.
+- Exit criteria lowered at sign-off because time ran out; fix: BLOCKED or FAILED, and the developer decides.
 - The sign-off counts tests, not risks; fix: report high-risk rows first and what was not tested.
 
 ## Numbers

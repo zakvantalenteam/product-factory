@@ -651,3 +651,32 @@ and never ships a change that breaks something else.
   Unreadable or missing: false, so the repo copy keeps guarding. Cursor is unaffected.
 - The plugin's SessionStart in a repo that carries the core: a short note to use `product-factory:<name>` agents and
   `/product-factory:<name>` skills, not the bare-named copies, and to update one side when the versions differ.
+
+## 35. 1.12.0 - a QA team on its own, a fix-list loop and a requirements team
+- Why (approved by the developer, 6 Nov): developers test at the end, several tickets at once or in another session;
+  fixes after QA are never automatic; requirement review is open to non-technical people. In the developer's words,
+  "these are skills, use necessary agents when people execute them, can be a group of agents": `test` and
+  `review-spec` are team leads that pick and start the agents each run needs, in parallel where independent, and do
+  none of their work themselves.
+- `test` skill: `/test ID`, `/test ID ID ...`, `/test retest ID`. Per ticket: entry check (app up, the served asset is
+  the new code, the unit suite passes; else BLOCKED), plan (test-plan.md reused when the fingerprint matches, or
+  qa-lead `intake` writes qa-brief.md from the ticket text and the diff), the QA experts in parallel, qa-lead sign-off.
+  Several tickets: one qa-lead each in parallel, test data prefixed `QA-<ticket>-`, one shared build, defects
+  attributed by changed files (else cross-ticket), browser checks that need another user queued one at a time (one
+  cookie store). Fingerprints at start; `testrun check` before sign-off lists rows that ran on old code. One summary
+  table per run in `<work>/test-runs/<date>-<n>.md`. The sdlc Test stage runs the same skill; "test later" keeps the
+  task at Test until SIGNED OFF or the developer accepts the risk in words.
+- Fix list (`reference/qa/fix-list.md`): qa-lead writes `fix-list.md` at sign-off (F1.., MUST or SHOULD, owner agent,
+  7 statuses, one block per defect with steps, evidence, suspected area and retest rows). The sdlc fix loop
+  (`skills/sdlc/fix-loop.md`): `fix ID [F1 F3]` groups items by owner, bug-investigator only for an unknown cause,
+  briefs the area agents, safety net, a re-review of the changed lines, items `fixed`, then `/test retest` flips them
+  to `verified` or `reopened`. A ticket closes only on SIGNED OFF; Jira bugs only on request.
+- `review-spec` skill: spec-analyst `requirements` leads, with product-critic, ux-designer (journeys), the domain
+  experts the topic needs and qa-lead `testability`. Plain words, the Definition of Ready
+  (`reference/requirements/definition-of-ready.md`, R1-R11, READY or NOT READY), one gate with the requester, then
+  `Requirements: READY (confirmed by <name>, <date>)` in spec.md, a Jira comment (asked first) and an offline HTML copy.
+  sdlc starts from READY requirements without the business questions. Read-only on code.
+- live_status: `testrun start|ticket|check|done` (a run card across tickets), `fixes ID` and fix counts on the task
+  card, a requirements chip. handoff_check: the fix list format and the Definition of Ready.
+- Triage gets the Requirements, Test and Fix lanes (sdlc and the AGENTS.md block, now 3.2 KB). SkillsOS is back on the
+  in-repo core (5 Nov), so "all projects in sync" names it again.
