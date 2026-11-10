@@ -34,6 +34,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | SuccessFactors job profiles and skills fit / fields | `sf-skills.md` | `02-sf-skills-fit.md`, `05-sf-skills-fields.md` | sf-skills-expert |
 | n8n workflows (today's flow, node plan, handoff) | `n8n.md` | `05-n8n.md` | n8n-expert |
 | Bug root cause | `spec.md` + `brief.md` | - | bug-investigator |
+| Fix proof (per bug or fix-list item: reproduction, proven root cause, regression test, regression ring, fix plan; `handoff_check.py <id> --fix`) | `fix-proof.md` | - | bug-investigator (`/fix`) |
 | Product review | `product-review.md` (large new feature only) | `03-product-review.md` | product-critic |
 | Journeys and screen inventory | `## Journeys and screens` in `ui.md` | `03-journeys.md` | ux-designer (`journeys`) |
 | Prototype | `prototype.html` | `P-options.md` + `.html`, `P-prototype.html` | main session (`prototype` skill) or ux-designer (`options`, `variants`) |
@@ -61,9 +62,10 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | QA sign-off (one verdict from every QA result) | `qa-signoff.md` | `07-qa-signoff.md` | qa-lead (`sign-off`) |
 | The request as it came (Jira text, pasted text or the document's words), saved unchanged | `request.md` (`/review-spec`), `ticket.md` (`/test`) | - | main session |
 | QA brief for a ticket with no task (ticket text, diff or commits, criteria to test, `## Changed files`) | `qa-brief.md` | - | qa-lead (`intake`, `/test`) |
-| Fix list (defects left by QA, their owners and status; format `${CLAUDE_PLUGIN_ROOT}/reference/qa/fix-list.md`) | `fix-list.md` | `07-fix-list.md` | qa-lead (`sign-off`, `retest`); statuses `fixing`, `fixed` by the main session in the fix loop |
+| Fix list (defects left by QA, their owners and status; format `${CLAUDE_PLUGIN_ROOT}/reference/qa/fix-list.md`) | `fix-list.md` | `07-fix-list.md` | qa-lead (`sign-off`, `retest`); statuses `fixing`, `fixed` by the main session in `/fix` |
 | Testability of each criterion | `testability.md` | - | qa-lead (`testability`, `/review-spec`) |
-| Requirements for people and the Definition of Ready (`${CLAUDE_PLUGIN_ROOT}/reference/requirements/definition-of-ready.md`) | `spec.md` (with `Requirements: READY (...)` once approved) | `02-spec.md` | spec-analyst (`requirements`, `/review-spec`) |
+| Requirements for people and the Definition of Ready (`${CLAUDE_PLUGIN_ROOT}/reference/requirements/definition-of-ready.md`) | `spec.md` (with `Requirements: READY (...)` once approved) | `02-spec.md` | spec-analyst (`requirements`, `/review-spec`; `dor`, `/develop`) |
+| Which skill has the ticket and the hand-off line (`skill`, `next`) | `status.json`, `status.md` (`Skill:`, `Next:`) | same | `live_status.py init --skill`, `skill`, `next`, `testrun ticket` |
 | Test run across tickets (one table: ticket, verdict, MUST open, SHOULD, blocked) | `<work>/test-runs/<date>-<n>.md` | same | `live_status.py testrun` |
 | Verification | `verify.md` (the lead copies PASS/FAIL into `status.md`) | `05-design-review.md`, `07-system-review.md` | verifier |
 | Audit | - | `08-audit.md` | audit-expert |

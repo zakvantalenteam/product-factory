@@ -12,16 +12,22 @@ Two modes, fixed at the first init:
 
   L = python .claude/core/scripts/live_status.py
   init ID [--title T] [--size S|M|L] [--mode task|product] [--root PATH] [--screen] [--tool claude|cursor]
+                  [--skill review-spec|develop|fix|test|factory]
                                      start or resume (binds this session to it); product mode starts with the
-                                     factory's default team; --root is the product root (product mode default:
+                                     factory's default team; --skill sets the flow skill the ticket is in (kept
+                                     when a re-init has none); --root is the product root (product mode default:
                                      products_root/ID); --screen keeps the prototype stage of a size S product
+  skill ID NAME                      the ticket's current flow skill (review-spec|develop|fix|test|factory); logged
+  next ID "TEXT" | --clear           the hand-off line for the developer, e.g. "/test BLEN-1"; shown on the page and
+                                     as `Next:` in status.md
   stage ID STAGE start|done|fail [--out TEXT] [--actor NAME]
   gate ID STAGE "QUESTION" [--file F]... [--open prototype.html] [--decision D2] [--skip-check REASON] [--by AGENT]
                                      wait for the developer; repeat --file to review a stage's documents in one
                                      gate (decisions/D2-*.md cards are recognised); spec/design documents must pass
                                      handoff_check.py first; prints the gate's full text for the chat
   chat ID                            the open gate's full text again (every document, then the question)
-  quick "TEXT"                       a quick fix done without a task (sdlc triage): logged in quick-fixes.md
+  quick "TEXT" [--skill develop|fix] [--id ID]
+                                     the small path of develop or fix done without a task: logged in quick-fixes.md
   ok ID STAGE [--note TEXT] [--decision D2 | --file F]   the developer approved all of the gate, or one card
                                      (product mode: the stage's gate G0..G4 is approved with the note as the words)
   changes ID STAGE "SUMMARY" [--decision D3]...   the developer asked for changes (to these cards)
@@ -460,6 +466,10 @@ def markdown(st):
         out.append("product_root: " + st["root"])
     if mode == "product":
         out.append("code_writes: " + ("open" if code_writes_open(st) else "closed"))
+    if st.get("skill"):
+        out.append("Skill: " + st["skill"])
+    if st.get("next"):
+        out.append("Next: " + st["next"])
     out.append("Risk: %s%s" % (timing.norm_risk(st.get("risk")) or timing.DEFAULT_RISK,
                               " (" + "; ".join(st["riskWhy"]) + ")" if st.get("riskWhy") else ""))
     out += ["", "| stage | state | evidence |", "|---|---|---|"]
@@ -719,6 +729,8 @@ def cmd_init(a):
             st = dict(id=a.id, title=a.title or a.id, size=size, tool=a.tool, mode=mode, root=root or "",
                       started=now(), seq=0, events=[], counts={}, gate=None,
                       stages=[new_stage(mode, k, n, k in skip) for k, n in MODES[mode]])
+            if getattr(a, "skill", ""):
+                st["skill"] = a.skill
             if getattr(a, "demo", False) and is_demo(a.id):
                 st["demo"] = True
             if mode == "product":
@@ -730,6 +742,8 @@ def cmd_init(a):
             if a.title:
                 st["title"] = a.title
             st["tool"] = a.tool
+            if getattr(a, "skill", ""):
+                st["skill"] = a.skill
             if a.root:
                 st["root"] = root
             if a.mode and a.mode.lower() != mode_of(st):
@@ -1369,12 +1383,43 @@ def cmd_chat(a):
     print(chat_text(a.id, g))
 
 
+SKILLS = ["review-spec", "develop", "fix", "test", "factory"]
+
+
+def cmd_skill(a):
+    def run():
+        st = load(a.id)
+        st["skill"] = a.name
+        add(st, current_stage(st), "note", "skill: " + a.name, "main session")
+        save(st)
+    with_lock(run)
+    print("%s: skill %s" % (a.id, a.name))
+
+
+def cmd_next(a):
+    if not a.clear and not (a.text or "").strip():
+        sys.exit('next: give the TEXT or --clear')
+
+    def run():
+        st = load(a.id)
+        if a.clear:
+            st.pop("next", None)
+            add(st, current_stage(st), "note", "next: cleared", "main session")
+        else:
+            st["next"] = " ".join(a.text.split())
+            add(st, current_stage(st), "note", "next: " + st["next"], "main session")
+        save(st)
+    with_lock(run)
+    print("%s: next %s" % (a.id, "cleared" if a.clear else a.text))
+
+
 def cmd_quick(a):
     """A quick fix done without a task (sdlc triage): one line in <work>/quick-fixes.md. The hook marks the
     session, so the stop check accepts the turn's edits while they stay within quick-fix limits."""
     os.makedirs(WORK, exist_ok=True)
     with open(path("quick-fixes.md"), "a", encoding="utf-8") as f:
-        f.write("- %s %s\n" % (now()[:16].replace("T", " "), " ".join(a.text.split())))
+        labels = "".join(" [%s]" % x for x in (getattr(a, "skill", "") or "", getattr(a, "id", "") or "") if x)
+        f.write("- %s%s %s\n" % (now()[:16].replace("T", " "), labels, " ".join(a.text.split())))
     print("Quick fix recorded.")
 
 
@@ -2455,6 +2500,12 @@ def cmd_testrun(a):
                     os.makedirs(path(i), exist_ok=True)
                     st = new_status(i, i)
                     add(st, "test", "note", "Test run %s started for this ticket" % name, "main session")
+                    st["skill"] = "test"
+                    save(st)
+                else:
+                    st = load(i)
+                    st["skill"] = "test"
+                    add(st, current_stage(st), "note", "skill: test", "main session")
                     save(st)
                 fp, hashes = fingerprint(changed_files(i))
                 r["tickets"].append(dict(id=i, fingerprint=fp, hashes=hashes, verdict="RUNNING", must=None, should=None,
@@ -2501,6 +2552,13 @@ def cmd_testrun(a):
                 t["note"] = a.note
             refresh("%s: %s" % (a.id, a.verdict))
             m, s = ticket_counts(t)
+            nxt = {"SIGNED-OFF": "commit message (commit-msg skill)", "FAILED": "/fix %s (MUST open %d)" % (a.id, m),
+                   "BLOCKED": "unblock: " + (t.get("note") or "")}.get(a.verdict)
+            if nxt and os.path.isfile(path(a.id, "status.json")):
+                tk = load(a.id)
+                tk["next"] = nxt
+                add(tk, "test", "note", "next: " + nxt, "main session")
+                save(tk)
             print("%s %s: %s, MUST open %d, SHOULD %d, blocked %d" % (a.run, a.id, t["verdict"], m, s, t.get("blocked") or 0))
         err = with_lock(run)
         if err:
@@ -2570,8 +2628,18 @@ def main():
     p.add_argument("--root", default="", help="the product root (product mode default: products_root/ID)")
     p.add_argument("--screen", action="store_true", help="product mode, size S: the change has a screen (keeps the prototype)")
     p.add_argument("--tool", default="claude", choices=["claude", "cursor"])
+    p.add_argument("--skill", default="", choices=[""] + SKILLS, help="the flow skill the ticket is in")
     p.add_argument("--demo", action="store_true", help=argparse.SUPPRESS)  # simulate.py: a demo-<scenario> replay
     p.set_defaults(fn=cmd_init)
+    p = sub.add_parser("skill")
+    p.add_argument("id")
+    p.add_argument("name", choices=SKILLS)
+    p.set_defaults(fn=cmd_skill)
+    p = sub.add_parser("next")
+    p.add_argument("id")
+    p.add_argument("text", nargs="?", default="")
+    p.add_argument("--clear", action="store_true")
+    p.set_defaults(fn=cmd_next)
     p = sub.add_parser("stage")
     p.add_argument("id")
     p.add_argument("stage", choices=stage_names)
@@ -2651,6 +2719,8 @@ def main():
     p.set_defaults(fn=cmd_chat)
     p = sub.add_parser("quick")
     p.add_argument("text")
+    p.add_argument("--skill", default="", choices=["", "develop", "fix"])
+    p.add_argument("--id", default="")
     p.set_defaults(fn=cmd_quick)
     p = sub.add_parser("fixes", help="the counts of <work>/ID/fix-list.md")
     p.add_argument("id")

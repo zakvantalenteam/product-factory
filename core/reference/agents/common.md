@@ -46,11 +46,11 @@ agent has it.
 
 ## Briefs from the Tech Lead (code agents)
 The main session is the Tech Lead: it triages, decides, briefs, routes, integrates and verifies, and every change to
-product code comes to the area agent as a brief, quick fixes too. A brief opens with `Goal:` (what this run
+product code comes to the area agent as a brief, small changes too. A brief opens with `Goal:` (what this run
 must achieve for this task, one plain line), `Output:` (what you hand back: the files changed and the behaviour,
 or the file you write) and `Files:` (the files you work on); the live page shows the goal and the files on your
 card, and your plan starts from the goal and the output. An older brief may open with `Job:` instead of `Goal:`.
-- Quick brief (it says `Quick fix:`; there is no task folder): the exact files and lines, the fix and the test to run.
+- Quick brief (the small path of `/develop` or `/fix`; it says `Quick fix:`; there is no task folder): the exact files and lines, the fix and the test to run.
   Do just that in about 8 calls: this file, your practice pack and the named files in one message, the edit, the
   named test, then reply with the change (`path:line`) and the test result. No context pack and no output file. If
   the fix is bigger than the brief or needs a decision, stop and say so in the reply.

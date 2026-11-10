@@ -1,6 +1,6 @@
 ---
 name: review-spec
-description: "Use when someone wants a requirement checked and made ready before any technical work - a Jira ticket, pasted text, a document (PRD, Word, PDF) or an idea - when they type /review-spec, or ask to review, refine or complete a requirement. Built for product owners, business analysts and managers: plain words, no code. Picks the group of agents the request needs (spec-analyst leads, with product-critic, ux-designer, domain experts and qa-lead for testability), writes the requirements with the Definition of Ready, and the requester approves them at one gate. Read-only on code; the technical flow (sdlc) starts from READY requirements."
+description: "Use when someone wants a requirement checked and made ready before any technical work - a Jira ticket, pasted text, a document (PRD, Word, PDF) or an idea - when they type /review-spec, or ask to review, refine or complete a requirement. Built for product owners, business analysts and managers: plain words, no code. Picks the group of agents the request needs (spec-analyst leads, with product-critic, ux-designer, domain experts and qa-lead for testability), writes the requirements with the Definition of Ready, and the requester approves them at one gate. Owns clear requirements only: ends with READY requirements, then /develop. Never code; a bug goes to /fix, testing to /test."
 ---
 # Requirement review (team lead playbook)
 
@@ -20,6 +20,8 @@ Paths: `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`)
 - No technical questions to the requester. A technical gap goes in the spec's technical appendix for the developer.
 - Talk in plain words: no file paths, class, table, endpoint or tool names. Explain a needed word the first time.
 - Nothing leaves this machine without the requester's yes: ask before posting to Jira.
+- One job, clear requirements: building goes to `/develop`, a bug to `/fix`, testing to `/test` (say whose in one
+  line and stop).
 
 ## 1. Read the request
 | Input | What you do |
@@ -35,7 +37,7 @@ Then:
 2. Save the request unchanged as `<work>/<id>/request.md`, with the source, the date and who asked at the top.
 3. The requester is the person who confirms the requirements (R11). If you do not know their name and role, ask
    once, with nothing else in that message.
-4. `live_status.py init <id> --title "<goal>" --mode task`, then `stage <id> spec start`. Show the live page as the
+4. `live_status.py init <id> --title "<goal>" --mode task --skill review-spec`, then `stage <id> spec start`. Show the live page as the
    `sdlc` skill says (section 6).
 
 ## 2. Pick the group
@@ -92,11 +94,13 @@ After each agent returns, read its file, not only its reply. Then `integrate <id
 2. Jira (a ticket and the connector): show the comment you will post (the approved `spec.md`) and ask
    "Post this to <key>?". Post only on a clear yes, then say where it went. Never change the ticket's fields or
    status.
-3. Tell them what happens next, in two lines: a developer starts the technical work from these requirements, and
-   any change to a criterion comes back to them as a question.
+3. `live_status.py next <id> "/develop <id>"`. Tell them what happens next, in two lines: a developer starts the
+   technical work from these requirements (`/develop <id>`), and any change to a criterion comes back to them as a
+   question.
 
 ## 6. After READY
-The `sdlc` skill starts the technical work from READY requirements. `spec-analyst` (`task`) adds only the technical
+The `develop` skill starts the technical work from READY requirements (its Definition of Ready check passes with no
+agent). `spec-analyst` (`task`) adds only the technical
 part (affected areas, kind of work, team, decision cards) and does not re-ask the business questions. A change to
 any criterion goes back to the requester as a question; after their answer the verdict and the `Requirements:` line
 are refreshed.

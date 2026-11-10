@@ -96,13 +96,14 @@ def prompt_context(sid, prompt):
         left = [s["k"] for s in st["stages"] if s["state"] in ("todo", "live", "fail", "wait")]
         return "Active %s in this session: %s (size %s), stages left: %s. Continue it with the %s skill." % (
             "product" if st.get("mode") == "product" else "task", tid, st.get("size", "?"),
-            ", ".join(left) or "none", "factory" if st.get("mode") == "product" else "sdlc")
+            ", ".join(left) or "none", "factory" if st.get("mode") == "product" else (st.get("skill") or "sdlc"))
     qf = CFG["quick_fix"]
-    return ("Triage each request first (sdlc skill): answer questions directly; route an obvious small change to "
-            "its area agent as a quick fix with a quick brief (up to ~%d lines in up to %d files, nothing to decide: "
-            "the files and lines, the fix, the test; then live_status.py quick \"<what>\"); changes to the AI setup "
-            "itself (.claude, .cursor, AGENTS.md) you do with no task; a new product from an idea or a PRD goes to the "
-            "factory skill; every other change is a task with just the agents it needs (%s). You are the Tech Lead: "
+    return ("Triage each request first (sdlc skill, the router): answer questions directly; requirements go to "
+            "review-spec, a feature or change to develop, a bug or fix-list items to fix, testing to test, a new product "
+            "to factory; changes to the AI setup itself (.claude, .cursor, AGENTS.md) you do with no task. develop and "
+            "fix have a small path for an obvious small change (up to ~%d lines in up to %d files, nothing to decide: "
+            "a quick brief to its area agent, then live_status.py quick \"<what>\"); everything else is a task with "
+            "just the agents it needs (%s). You are the Tech Lead: "
             "you decide and route, the agents write the product code." % (qf.get("max_lines", 30), qf.get("max_files", 3),
                                                                           agents_line()))
 
@@ -196,11 +197,11 @@ def stop_reason(sid):
             return None
         if quick:
             return ("This was more than a quick fix (" + (", ".join(big) if big else "%d files" % len(edits)) +
-                    "): start a task with the sdlc skill (triage card, then only the agents it needs).")
+                    "): take the full path of the develop or fix skill (a task, then only the agents it needs).")
         return ("You changed repo files (" + listed(edits) + ") without a task. If it is an obvious small fix (up to "
                 "~%d lines in up to %d files, nothing to decide: no tables, permissions, contracts or config), check "
-                "it against the hard rules, run its tests and record it: live_status.py quick \"<what>\". Otherwise "
-                "start a task with the sdlc skill. A throwaway edit you will revert: say so in one line." % (
+                "it against the hard rules, run its tests and record it: live_status.py quick \"<what>\" (the small "
+                "path of develop or fix). Otherwise start a task with the develop or fix skill. A throwaway edit you will revert: say so in one line." % (
                     int(CFG["quick_fix"].get("max_lines", 30)), max_files))
     st = ls.load(tid)
     out = scope_reason(tid, st)

@@ -20,7 +20,15 @@ Card layout: .claude/core/reference/review/decision-card.md. Hints are style poi
 .claude/core/reference/review/plain-english.md; they never block. Glossary words and code words come from
 `glossary` in .claude/project.json.
 
+  fix-proof.md   (bug-investigator in /fix) one `## <ID>` or `## F<n>` block per bug, each with:
+                 ### Reproduction (a numbered step), ### Root cause (`Proven: yes|no`; yes needs a `path:line` in
+                 backticks; no needs a ### What would prove it section and is always a problem: the bug stays open),
+                 ### Regression test (the test in backticks, and that it fails before the fix), ### Regression ring
+                 (a bullet, or a line "none: reason"), ### Fix plan (a bullet naming a file in backticks).
+
   python .claude/core/scripts/handoff_check.py ID [FILE ...]   (files relative to <work>/ID; default: all)
+  python .claude/core/scripts/handoff_check.py ID --fix [BLOCK ...]   only fix-proof.md, only these blocks (default all);
+                 prints OK or the problems per block
 Exit code 1 when there are problems.
 """
 import glob
@@ -557,6 +565,103 @@ def check_dor(text, name="spec.md"):
     return p
 
 
+def fix_blocks(text):
+    """[(block id, {lower-case ### heading: body})] for each `## <ID>` or `## F<n>` block of fix-proof.md."""
+    out, cur, sub, buf, fence = [], None, "", [], False
+
+    def close():
+        if cur is not None:
+            cur[1][sub] = "\n".join(buf)
+    for line in text.split("\n"):
+        if line.lstrip().startswith("```"):
+            fence = not fence
+        m = None if fence else re.match(r"^(#{2,6})\s+(.*?)\s*#*\s*$", line)
+        if m and len(m.group(1)) == 2:
+            close()
+            words = m.group(2).split()
+            cur, sub, buf = (words[0].strip("`:*") if words else "", {}), "", []
+            out.append(cur)
+        elif m and len(m.group(1)) >= 3 and cur is not None:
+            close()
+            sub, buf = m.group(2).strip().lower(), []
+        else:
+            buf.append(line)
+    close()
+    return out
+
+
+def check_fixproof(text, name="fix-proof.md", only=None):
+    """{block: [problems]} for fix-proof.md; only = the block ids to check (default all)."""
+    blocks = fix_blocks(text)
+    res = {}
+    if only:
+        for b in only:
+            if not any(x[0].lower() == b.lower() for x in blocks):
+                res[b] = ["%s: no block ## %s in %s" % (b, b, name)]
+    elif not blocks:
+        res[""] = ["%s: no bug blocks (## <ID> or ## F<n>, one per bug)" % name]
+    for bid, secs in blocks:
+        if only and bid.lower() not in [o.lower() for o in only]:
+            continue
+        pr = []
+
+        def sec(*w):
+            for k, v in secs.items():
+                if k and any(x in k for x in w):
+                    return v
+            return None
+        rp = sec("reproduction")
+        if rp is None:
+            pr.append("%s: no ### Reproduction section" % bid)
+        elif not re.search(r"(?m)^\s*\d+[.)]\s+\S", rp):
+            pr.append("%s: Reproduction has no numbered step" % bid)
+        rc = sec("root cause")
+        if rc is None:
+            pr.append("%s: no ### Root cause section" % bid)
+        else:
+            m = re.search(r"(?im)^[\s>*_-]*proven[\s*_]*:[\s*_]*(yes|no)\b", rc)
+            if not m:
+                pr.append('%s: Root cause has no line "Proven: yes" or "Proven: no"' % bid)
+            elif m.group(1).lower() == "yes":
+                if not re.search(r"`[^`\s]+:\d+(?:[-,]\d+)*`", rc):
+                    pr.append("%s: Root cause is Proven: yes but names no `path:line` in backticks" % bid)
+            else:
+                pr.append("%s: cause not proven - stays open, not fixed" % bid)
+                if sec("what would prove it") is None:
+                    pr.append("%s: Proven: no needs a ### What would prove it section" % bid)
+        rt = sec("regression test")
+        if rt is None:
+            pr.append("%s: no ### Regression test section" % bid)
+        else:
+            if not re.search(r"`[^`\n]+`", rt):
+                pr.append("%s: Regression test names no test in backticks (a class, method or test file)" % bid)
+            if not re.search(r"(?i)fails?\b.{0,40}\b(before|on today|on the current)|before\b.{0,40}\bfail", rt):
+                pr.append("%s: Regression test does not say it fails before the fix" % bid)
+        ring = sec("regression ring")
+        if ring is None:
+            pr.append("%s: no ### Regression ring section" % bid)
+        elif not (re.search(r"(?m)^\s*(?:[-*+]|\d+[.)])\s+\S", ring) or re.search(r"(?im)^\s*none\s*:\s*\S", ring)):
+            pr.append('%s: Regression ring has no bullet and no "none: reason" line' % bid)
+        fp = sec("fix plan")
+        if fp is None:
+            pr.append("%s: no ### Fix plan section" % bid)
+        elif not any(re.search(r"`[^`\n]+`", ln) for ln in fp.split("\n") if re.match(r"^\s*(?:[-*+]|\d+[.)])\s+", ln)):
+            pr.append("%s: Fix plan has no bullet naming a file in backticks" % bid)
+        res[bid] = pr
+    return res
+
+
+def fixproof_report(text, name="fix-proof.md", only=None):
+    """(problems, lines to print) for fix-proof.md."""
+    res = check_fixproof(text, name, only)
+    problems, lines = [], []
+    for b, pr in res.items():
+        problems += pr
+        lines.append("%s: %s" % (b or name, "OK" if not pr else "problems"))
+        lines += ["  PROBLEM " + x for x in pr]
+    return problems, lines
+
+
 def check(folder, files=None):
     """(problems, hints) for the given files of a task folder. Unknown documents get hints only."""
     if not os.path.isdir(folder):
@@ -568,6 +673,8 @@ def check(folder, files=None):
                            and n not in [os.path.basename(f.replace("\\", "/")) for f in files]]
     if os.path.isfile(os.path.join(folder, "fix-list.md")) and "fix-list.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
         files = list(files) + ["fix-list.md"]
+    if os.path.isfile(os.path.join(folder, "fix-proof.md")) and "fix-proof.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
+        files = list(files) + ["fix-proof.md"]
     reviews = review_docs()
     problems, hints = [], []
     for f in files:
@@ -579,7 +686,9 @@ def check(folder, files=None):
                 problems.append("%s: not found in the task folder" % name)
             continue
         known = True
-        if base in BRIEF_DOCS:
+        if base == "fix-proof.md":
+            r = fixproof_report(text, name)[0], []
+        elif base in BRIEF_DOCS:
             r = check_brief(text, base)
         elif base == "fix-list.md":
             r = check_fixlist(text, name), []
@@ -640,6 +749,15 @@ def main():
         print(__doc__)
         sys.exit(2)
     folder = os.path.join(WORK, sys.argv[1])
+    if "--fix" in sys.argv[2:]:
+        i = sys.argv.index("--fix")
+        text = read(os.path.join(folder, "fix-proof.md"))
+        if text is None:
+            print("PROBLEM fix-proof.md: not found in the task folder")
+            sys.exit(1)
+        problems, lines = fixproof_report(text, "fix-proof.md", sys.argv[i + 1:] or None)
+        print("\n".join(lines))
+        sys.exit(1 if problems else 0)
     problems, hints = check(folder, sys.argv[2:] or None)
     for x in problems:
         print("PROBLEM " + x)

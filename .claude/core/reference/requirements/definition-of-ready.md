@@ -1,7 +1,7 @@
 # Definition of Ready (requirements)
 
 The fixed checklist for requirements before any design or build. The `review-spec` skill applies it (spec-analyst
-mode `requirements` fills it, qa-lead checks testability); the requester approves the result at one gate. Written in
+mode `requirements` fills it, qa-lead checks testability), and `/develop` checks a ticket against it first (spec-analyst mode `dor`); the requester approves the result at one gate. Written in
 plain words for the people who asked for the work, no code terms (`path:line` only in the technical appendix).
 `handoff_check.py` checks it.
 

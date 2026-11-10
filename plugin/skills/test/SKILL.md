@@ -1,6 +1,6 @@
 ---
 name: test
-description: "Use when the developer types /test, wants one or several tickets tested (now, at the end of the work, or in a separate session), asks to retest fixes (/test retest <id>), or when the sdlc Test stage runs. QA team lead: checks the build is ready, starts the group of QA agents each ticket needs (in parallel where independent), and ends with a QA sign-off and a practical fix list per ticket. Never fixes anything; the developer starts the fixes."
+description: "Use when the developer types /test, wants one or several tickets tested (now, after /develop or /fix, or in a separate session), asks to retest fixes (/test retest <id>), or the sdlc triage routes testing here. Owns the quality sign-off: checks the build is ready, starts the group of QA agents each ticket needs (in parallel where independent), and ends SIGNED OFF (then offers the commit message) or with a practical fix list per ticket (then /fix). Never fixes anything and never builds features."
 ---
 # Test (QA team lead)
 
@@ -9,7 +9,8 @@ Paths: `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`)
 format is `${CLAUDE_PLUGIN_ROOT}/reference/qa/fix-list.md`. Several tickets in one run: also read
 [several-tickets.md](several-tickets.md) before step 3.
 
-You are the QA team lead of this run. Each run you pick the group of agents it needs and start them with the Agent
+You are the QA team lead of this run. Your one job is the sign-off: a bug or fix goes to `/fix`, a feature or change to
+`/develop`, requirements to `/review-spec` (say whose it is in one line). Each run you pick the group of agents it needs and start them with the Agent
 tool, every independent one in the same message. You never plan, test, sign off or fix yourself: `qa-lead` plans and
 signs off, the QA experts test, the area agents fix only when the developer says so. You run the scripts and the entry
 check, brief and start the agents, keep the live page current and report.
@@ -30,7 +31,8 @@ session reads the files and goes on from the first missing one.
    the fingerprints for the briefs. Show the live page on the run's card: `live_status.py open <RUN>`. A ticket made
    by an intake has no changed files yet: `testrun check` takes its baseline once `qa-brief.md` exists
    (`testrun refresh <RUN> <ID>` re-takes it on purpose).
-2. A ticket with an sdlc task (`<work>/<id>/triage.md` exists): also `stage <id> test start`.
+2. A ticket with a task (`<work>/<id>/triage.md` exists, from `/develop` or `/fix`): also `stage <id> test start`
+   (`testrun start` sets the task's skill to `test`).
 
 ## 2. Entry check (once per run: all tickets share one build)
 Read the repo's "Live check and verify notes" (in AGENTS.md, or the file AGENTS.md points to, for example
@@ -99,20 +101,25 @@ answer back. An expert that stops short: start it again for its NOT RUN rows onl
 2. `qa-lead` `sign-off` for every ticket, in one message: `qa-signoff.md` with the verdict SIGNED OFF, FAILED or
    BLOCKED and, when any defect is left, `fix-list.md` in the format file's layout.
 3. Per ticket: `testrun ticket <RUN> <ID> --verdict SIGNED-OFF|FAILED|BLOCKED --must <N> --should <N> --blocked <N>`
-   (open MUST and SHOULD items from the fix list, BLOCKED rows from the sign-off). A ticket with an sdlc task: also
-   `stage <id> test done` on SIGNED OFF, else `stage <id> test fail --out "<MUST ids>"`.
+   (open MUST and SHOULD items from the fix list, BLOCKED rows from the sign-off); it sets the ticket's `next`
+   (SIGNED OFF: the commit message; FAILED: `/fix <id>`). A ticket with a task: also `stage <id> test done` on
+   SIGNED OFF, else `stage <id> test fail --out "<MUST ids>"`.
 4. `live_status.py testrun done <RUN>`: it writes `<work>/test-runs/<RUN>.md` and prints the summary table.
 
-## 6. Report and the fix loop
+## 6. Report and hand-off
 In the chat:
 - The summary table `| Ticket | Verdict | MUST open | SHOULD | Blocked |` from `testrun done`.
 - Per ticket with a fix list: the counts from `live_status.py fixes <ID>` and each MUST item in one line (id, title,
   owner agent).
 - Intake questions still open, what is BLOCKED and what it needs, rows that ran on old code.
 
-Then tell the developer: fixes start only when they say so, with `fix <id>` (every open item) or `fix <id> F1 F3`
-(the sdlc fix loop), and `/test retest <id>` checks them. Never fix anything and never brief an area agent from this
-skill. Jira bugs only when the developer asks: ask before creating each one. A ticket closes only on SIGNED OFF.
+Then hand over:
+- FAILED: fixes start only when the developer says so, with `/fix <id>` (every open MUST item) or `/fix <id> F1 F3`
+  (the `fix` skill), and `/test retest <id>` checks them. Never fix anything and never brief an area agent from this
+  skill. Jira bugs only when the developer asks: ask before creating each one.
+- SIGNED OFF: a ticket with a task runs Verify, Release (when on the team) and Wrap-up as in the sdlc
+  [stages.md](../sdlc/stages.md) rows 6-8; then offer the commit message (the `commit-msg` skill; Claude desktop
+  app: a "Commit message" button). A ticket closes only on SIGNED OFF.
 
 ## Retest (`/test retest <id>`)
 1. `live_status.py fixes <id>`. No item is `fixed`: say so with the counts and stop.
@@ -123,7 +130,8 @@ skill. Jira bugs only when the developer asks: ask before creating each one. A t
    line; a new defect in the ring gets a new id. Then steps 5.3 to 6.
 
 ## sdlc link
-- The sdlc Test stage runs this skill for its task: the same plan, experts, sign-off and fix list (one code path).
+- `/develop` and `/fix` end ready for this skill (`next` on the live page); their tasks' Test stage is this skill: the
+  same plan, experts, sign-off and fix list (one code path).
 - "Test later": the task waits at Test and cannot wrap up until `qa-signoff.md` is SIGNED OFF or the developer accepts
   the risk in their own words.
 

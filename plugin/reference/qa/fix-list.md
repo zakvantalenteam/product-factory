@@ -2,7 +2,7 @@
 
 `qa-lead` writes `<work>/<id>/fix-list.md` at every sign-off that leaves a defect open, and updates it after each
 retest. It is the only list of what QA found for a ticket. Fixes are never automatic: the developer starts them with
-`fix <id>` or `fix <id> F1 F3` (sdlc fix loop), and `/test retest <id>` checks them. `handoff_check.py` checks this
+`/fix <id>` or `/fix <id> F1 F3` (the `fix` skill), and `/test retest <id>` checks them. `handoff_check.py` checks this
 format; the live page counts the statuses per ticket.
 
 ## Layout

@@ -46,5 +46,5 @@ code; the others sign off as usual.
 
 ## Summary
 One table across tickets (`| Ticket | Verdict | MUST open | SHOULD | Blocked |`), in the chat and in
-`<work>/test-runs/<run>.md` (`testrun done` writes it). Then the fix-list counts per ticket and the fix-loop lines
-from SKILL.md, step 6.
+`<work>/test-runs/<run>.md` (`testrun done` writes it). Then the fix-list counts per ticket and the hand-off
+lines from SKILL.md, step 6.

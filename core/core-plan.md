@@ -680,3 +680,26 @@ and never ships a change that breaks something else.
   card, a requirements chip. handoff_check: the fix list format and the Definition of Ready.
 - Triage gets the Requirements, Test and Fix lanes (sdlc and the AGENTS.md block, now 3.2 KB). SkillsOS is back on the
   in-repo core (5 Nov), so "all projects in sync" names it again.
+
+## 36. 1.13.0 - five flow skills, each with one job
+Zakvan: "they all should have clear responsibilities". Each flow skill owns one job, starts the agents its run needs,
+refuses another skill's job (it names the right one) and hands over through the work folder (`status.json`: stage,
+`skill`, `next`), so any session can pick a ticket up.
+- `review-spec` owns clear requirements: ends READY, `next` = `/develop <id>`.
+- `develop` (new, `skills/develop/SKILL.md`) owns features and changes (feature, ui, data, config, refactor,
+  performance): the Definition of Ready check first (spec-analyst mode `dor`; NOT READY: the developer answers on the
+  spot when they are the requester, else `/review-spec`), then the task flow (context pack, risk, the technical part,
+  Design with only the agents needed, the test plan, Build with the safety net, one code review). Ends ready for
+  `/test`. One ticket per run; a small path for a change within `quick_fix`.
+- `fix` (new, `skills/fix/SKILL.md`, replaces `skills/sdlc/fix-loop.md`) owns making something broken work again: a
+  bug ticket, fix-list items or several bugs. bug-investigator proves the cause first (`fix-proof.md`: reproduction,
+  `Proven: yes` at `path:line`, regression test, regression ring, fix plan; `handoff_check.py ID --fix`); an unproven
+  cause is never fixed. The owner writes the regression test first, then fixes; safety net; a re-review of the changed
+  lines; items `fixed`, `next` = `/test retest <id>`. Never changes scope (`/develop`). A small path for an obvious bug.
+- `test` owns the sign-off: SIGNED OFF (Verify, Release, Wrap-up, then the commit message offered) or a fix list
+  (`next` = `/fix <id>`, set by `testrun ticket`).
+- `sdlc` is the router and the one home of the shared rules (task start, team, briefing, safety net, live status,
+  gates and cards, stages, lessons). The Quick fix lane is gone: size sets depth inside `develop` and `fix`. `quick`
+  stays as the small path's record (the stop hook accepts it).
+- live_status: `init --skill`, `skill ID NAME`, `next ID "TEXT"`; a skill chip and the Next line on the page.
+  The stop hook names the task's skill when it sends a turn back.

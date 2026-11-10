@@ -127,7 +127,7 @@ def own_scenario(own):
     dfiles = [w for n in design for w in own[n]["writes"].split(", ") if w.endswith(".md") and not w.startswith("review-")] \
         or ["design.md"]
     rfiles = ["review.md"] + [w for n in review for w in own[n]["writes"].split(", ") if w.startswith("review-")]
-    steps = [dict(t="triage", why="sdlc 1: a change to the product that is more than a quick fix is a task."),
+    steps = [dict(t="triage", why="sdlc 1: a feature or change goes to develop; past the small path it is a task."),
              dict(t="context", min=3, why="sdlc 2.4: the pack also names this area's own rules and owners."),
              dict(t="risk", why="sdlc 2.5: a shared part with callers outside the change = medium."),
              dict(t="team", why="sdlc 3: a repo's own expert joins when the change touches its area, the same way a core expert does.")]
@@ -166,7 +166,7 @@ def own_scenario(own):
               dict(t="stage", stage="wrap", agents=["main session"], min=2, say="commit-msg.", why="You commit."),
               dict(t="end", say="Done: this repo's own agents worked inside the same flow, rules and gates as the core ones.")]
     return dict(id="own", label="This repo's own agents", group="Task", mode="task", size="M",
-                ask="A change in this repo's own area: " + when, lane="Task",
+                ask="A change in this repo's own area: " + when, lane="Develop",
                 laneWhy="A change in an area this repo has its own expert for.", risk="medium",
                 riskWhy=["the area has its own expert, rules and owners", "a shared part with callers outside the change (context.md)"],
                 context=dict(impact=[["area", "%s's area" % n, "the paths its agent file names", "sample"] for n in own],

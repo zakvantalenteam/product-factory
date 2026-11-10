@@ -506,8 +506,9 @@ button.pi{cursor:pointer}
     <header class="top">
       <div class="kb" id="kb" aria-hidden="true"></div>
       <div class="who">
-        <div class="l1"><b id="tid"></b><span class="tt" id="ttl"></span><span class="risk" id="risk" hidden></span><span class="chip" id="req" hidden></span><span class="demo" id="demoTag" hidden>demo</span></div>
+        <div class="l1"><b id="tid"></b><span class="tt" id="ttl"></span><span class="risk" id="risk" hidden></span><span class="chip quiet" id="skillChip" hidden></span><span class="chip" id="req" hidden></span><span class="demo" id="demoTag" hidden>demo</span></div>
         <div class="l2"><span id="doing" aria-hidden="true"></span><span class="caret" aria-hidden="true"></span><span class="sr" id="doingSr" aria-live="polite"></span></div>
+        <div class="extra" style="margin:2px 0 0"><div class="fx" id="nextLine" hidden></div></div>
       </div>
       <div class="meta">
         <div class="row1"><span class="pill" id="mode" hidden></span><span class="pill" id="code" hidden></span><span class="pill" id="size"></span><span class="pill" id="tool"></span><span class="pill" id="state"></span><button type="button" class="pill thm" id="thm" title="Light, or follow the computer's light/dark setting"></button></div>
@@ -613,6 +614,8 @@ function apply(d){
   const c=cur(d),ov=overall(d);document.body.dataset.ov=ov;
   document.documentElement.style.setProperty("--cur","var(--"+c.k+")");
   $("#tid").textContent=d.id;$("#ttl").textContent=d.title;
+  const sc=$("#skillChip");sc.hidden=!d.skill;sc.textContent=d.skill||"";sc.title="Current flow skill";
+  const nl=$("#nextLine");nl.hidden=!d.next;nl.innerHTML=d.next?"<b>Next:</b> "+esc(d.next):"";
   const rk=$("#risk"),rv=["low","medium","high"].includes(d.risk)?d.risk:"";rk.hidden=!rv;rk.className="risk "+rv;rk.textContent=rv+" risk";
   rk.title=rv?(d.riskWhy&&d.riskWhy.length?"Risk evidence: "+d.riskWhy.join("; "):"Risk "+rv):"";
   $("#size").textContent="Size "+d.size;$("#tool").textContent=d.tool==="cursor"?"Cursor":"Claude Code";

@@ -1,8 +1,25 @@
 # How work flows: the detail (agent core)
 
 The core block in `AGENTS.md` keeps the lanes and the hard rules. This file holds the rest. Read it before a Task or
-a Product, and whenever you need one of these details. The `sdlc` skill (task mode) and the `factory` skill (product
-mode) give the steps.
+a Product, and whenever you need one of these details. The `sdlc` skill routes each request to its skill and holds the shared
+rules; the `develop`, `fix`, `test` and `review-spec` skills (task mode) and the `factory` skill (product mode) give
+the steps.
+
+## The skills and the hand-off chain
+Each flow skill owns one job, starts the agents its run needs and refuses another skill's job (it names the right
+one). They hand over through the work folder: `<work>/<id>/status.json` holds the stage, the `skill` and a `next`
+line, so any session can pick a ticket up.
+
+| Skill | Owns | Ends with |
+|---|---|---|
+| `review-spec` | clear requirements, in plain words, with the Definition of Ready | READY requirements, then `/develop` |
+| `develop` | new features and changes (feature, ui, data, config, refactor, performance) | ready for `/test` (or "test later") |
+| `fix` | making something broken work again (bugs, fix-list items) | items fixed, then `/test retest` (a bug ticket: `/test`) |
+| `test` | the quality sign-off | SIGNED OFF, then the commit message; or a fix list, then `/fix` |
+| `sdlc` | the router and the shared rules (task start, team, briefing, safety net, live status, gates, stages, lessons) | the right skill |
+
+The chain: `/review-spec` -> `/develop` -> `/test` -> `/fix` -> `/test retest` -> SIGNED OFF -> commit message. Size
+never picks a skill: `develop` and `fix` have a small path for a change within `quick_fix` with nothing to decide.
 
 ## Task mode
 - A task lives in the work folder (`work_dir` in `.claude/project.json`). First `explorer` writes the context pack
@@ -12,7 +29,12 @@ mode) give the steps.
 - Build goes to the area agents: `backend-developer` for Java, `frontend-developer` for UI, `integration-engineer`,
   `n8n-expert` for workflows, `devops-engineer` for build and deploy files, `qa-engineer` for tests. Independent parts
   with no shared files run in parallel in one message.
-- A quick fix gets a quick brief: the exact files and lines, the fix, the test; about 8 calls, no context pack.
+- The small path of `develop` and `fix` gets a quick brief: the exact files and lines, the fix, the test; about 8
+  calls, no context pack.
+- `develop` checks the Definition of Ready first; a NOT READY ticket is answered on the spot by the developer when
+  they are the requester, otherwise it goes to `/review-spec`. `fix` never fixes without a proven cause
+  (`fix-proof.md`, checked by `handoff_check.py <id> --fix`), and every fix comes with a regression test that fails
+  before and passes after, plus the regression ring.
 
 ## Safety net
 - The risk sets the safety net, so nothing else breaks: compile and the full unit suite before and after, and every
@@ -32,10 +54,10 @@ mode) give the steps.
 - A checklist MUST fails Test, and no task closes without the sign-off.
 - `/test` (the `test` skill) runs the QA team on its own: one ticket, several in one run (`/test BLEN-1 BLEN-2`), or
   `/test retest BLEN-1` for the fixed items. It works in any session, because the state lives in the work folder.
-  The sdlc Test stage uses the same skill. "Test later" leaves the task waiting at Test.
+  `develop` and `fix` end ready for it. "Test later" leaves the task waiting at Test.
 - Fixes are never automatic. QA leaves `fix-list.md` (`${CLAUDE_PLUGIN_ROOT}/reference/qa/fix-list.md`), and the developer
-  starts the fix loop with `fix BLEN-1` or `fix BLEN-1 F1 F3`: the items go to their owners, then a re-review, then
-  `/test retest`. A ticket closes only on SIGNED OFF.
+  starts `/fix BLEN-1` or `/fix BLEN-1 F1 F3`: a proven cause, the fix by its owner, a re-review, then
+  `/test retest`. A ticket closes only on SIGNED OFF, and then `/test` offers the commit message.
 
 ## Requirements
 - `/review-spec` (the `review-spec` skill) reviews requirements with spec-analyst, product-critic, ux-designer, the
@@ -43,7 +65,7 @@ mode) give the steps.
   managers, and checks the Definition of Ready (`${CLAUDE_PLUGIN_ROOT}/reference/requirements/definition-of-ready.md`). It
   stops at one gate with the requester. It is read-only on code.
 - READY requirements (`Requirements: READY` in `spec.md`, a Jira comment, or a file the developer points to) skip the
-  business questions in sdlc. The technical agents add only the technical part, and any change to a criterion goes
+  business questions in `/develop`. The technical agents add only the technical part, and any change to a criterion goes
   back to the requester.
 
 ## The Tech Lead and the gates
@@ -70,9 +92,10 @@ Lead's decisions and routing on its card (with a chip when it edited product cod
 of the work. Open it with `python ${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py open <id>`.
 
 ## Agents and skills
-- Flow skills: `sdlc` (triage, task mode, fix loop), `factory` (product mode), `review-spec` (requirements team),
-  `test` (QA team), `prototype`, `dev-handoff`, `commit-msg`, `verify-push`, `live-check`. `review-spec` and `test`
-  are team leads: each run picks the agents it needs and starts them, in parallel where independent.
+- Flow skills: `sdlc` (the router and the shared rules), `review-spec` (requirements team), `develop` (features and
+  changes), `fix` (bugs and fix-list items), `test` (QA team), `factory` (product mode); helpers `prototype`,
+  `dev-handoff`, `commit-msg`, `verify-push`, `live-check`. The flow skills are team leads: each run picks the agents
+  it needs and starts them, in parallel where independent.
 - Agents: `explorer` (search), `spec-analyst`, `bug-investigator`, `product-critic`, `story-sizer`, `ux-designer`,
   `solution-architect`, `data-architect`, `security-architect`, `base-builder`, `backend-developer`,
   `frontend-developer`, `integration-engineer`, `devops-engineer`, `performance-engineer`, `code-reviewer`, `qa-lead`,
