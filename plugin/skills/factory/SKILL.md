@@ -31,7 +31,8 @@ Even on "just build it": say once what is skipped and the risk, then follow thei
 - After an agent returns, read its output (not just its summary), move its questions into `questions.md`, then
   route to another agent, answer from `decisions.md`, or hold for the gate.
 - Models: each agent's own `model:` line, so a brief needs no model override: Opus for the agents that decide
-  (spec, product review, design, review, audit, domain experts), Sonnet 5.5 for the ones that build and check. The
+  (spec, product review, design, review, audit, domain experts), Opus at high effort for every QA and dev agent, Sonnet
+  5.5 for the rest (explorer, release, sizing). The
   agents that decide have about 35 tool calls; `code-reviewer` works from a review pack in about 20; the others
   about 20 (`base-builder` 40); `maxTurns` is about 1.5 times that.
 - Your own decisions show on your card on the live page: `decide <slug> "<what>"` for a decision with no gate (a

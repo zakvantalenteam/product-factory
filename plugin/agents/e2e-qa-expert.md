@@ -2,7 +2,8 @@
 name: e2e-qa-expert
 description: End-to-end and exploratory tester - runs the user journeys of a change in the running app like a manual QA, across roles (learner, manager, admin) and features, with real data volumes, in its own tab of the built-in browser - charters, session notes, cross-feature effects (notifications, counts, reports, search, caches), two users at once, and the UI MUST checklist on every screen it passes. Task mode Test stage writes qa-e2e.md, product mode S7 writes 07-qa-e2e.md. Never edits code; writes a runbook for the Tech Lead when it has no browser.
 tools: Read, Grep, Glob, Bash, Write, mcp__Claude_Browser__tabs_create, mcp__Claude_Browser__tabs_close, mcp__Claude_Browser__tabs_context, mcp__Claude_Browser__navigate, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__read_page, mcp__Claude_Browser__find, mcp__Claude_Browser__computer, mcp__Claude_Browser__form_input, mcp__Claude_Browser__browser_batch, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__javascript_tool, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__read_network_requests
-model: sonnet
+model: opus
+effort: high
 maxTurns: 52
 role: End-to-end test expert
 certifications:

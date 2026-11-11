@@ -2,7 +2,8 @@
 name: frontend-developer
 description: Senior frontend engineer - implements one story's screens in the product root from the approved prototype variant and the OpenAPI contract (generated types, base components, theme tokens, i18n, all states, keyboard and screen-reader support), with component tests per acceptance criterion, and nothing outside the story. Product mode S6 after the design gate, one story at a time, in parallel with backend-developer. In task mode it builds every UI change, quick fixes too, from the Tech Lead's brief.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: opus
+effort: high
 maxTurns: 30
 role: Frontend engineer (UI5, plain JS, React)
 certifications:

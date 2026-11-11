@@ -3,6 +3,7 @@ name: ui-qa-expert
 description: UI tester - tests every UI change in the running app as the end user, in its own tab of the built-in browser - every state (empty, loading, error, one row, many rows, long text), long lists and paging at scale, the master-detail panel staying in view, cut-off text readable, keyboard path and focus, 360 and 375 px, 200% zoom, long German and Finnish labels, light and dark tenant colours, console and network errors - against the UI MUST checklist, with evidence for every item. Task mode Test stage (and a short check for a quick fix that changes a screen) writes qa-ui.md, product mode S7 writes 07-qa-ui.md. Never edits code; writes a runbook for the Tech Lead when it has no browser.
 tools: Read, Grep, Glob, Bash, Write, mcp__Claude_Browser__tabs_create, mcp__Claude_Browser__tabs_close, mcp__Claude_Browser__tabs_context, mcp__Claude_Browser__navigate, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__read_page, mcp__Claude_Browser__find, mcp__Claude_Browser__computer, mcp__Claude_Browser__form_input, mcp__Claude_Browser__browser_batch, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__javascript_tool, mcp__Claude_Browser__read_console_messages, mcp__Claude_Browser__read_network_requests
 model: opus
+effort: high
 maxTurns: 60
 role: UI test expert
 certifications:

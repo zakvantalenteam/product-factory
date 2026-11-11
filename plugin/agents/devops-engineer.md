@@ -2,7 +2,8 @@
 name: devops-engineer
 description: Build, deploy and operations expert - asks where and how a new product will run before its base is built (infra, 00-infra.md), environments and profiles, build and deploy files, security descriptors, service bindings, CI pipeline, health checks, logging and monitoring, secrets through bindings, deploy and rollback runbook. Checks the base is deployable (S1), plans environment changes (S5), applies the approved plan to build and deploy files (S6), writes the deploy plan (S9), or, in task mode, writes ops.md and applies every build, deploy and pipeline file change the Tech Lead routes to it. Never deploys, pushes or starts servers.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: opus
+effort: high
 maxTurns: 30
 role: Build, deploy and operations engineer
 certifications:

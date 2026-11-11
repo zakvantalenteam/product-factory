@@ -117,10 +117,10 @@ of the work. Open it with `python ${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py o
   Reviewers are read-only.
 - Models (each agent's `model:` line): Opus for the agents that decide (`solution-architect`, `security-architect`,
   `data-architect`, `ai-engineer`, `code-reviewer`, `ux-designer`, `spec-analyst`, `product-critic`,
-  `bug-investigator`, `audit-expert`, `performance-engineer`, `sf-expert`, `sf-skills-expert`, `n8n-expert`, `qa-lead`,
-  `ui-qa-expert`), Sonnet 5.5 for the ones that build and check (`backend-developer`, `frontend-developer`,
-  `integration-engineer`, `devops-engineer`, `base-builder`, `qa-engineer`, `e2e-qa-expert`, `verifier`, `explorer`,
-  `release-manager`, `story-sizer`). `maxTurns` is about 1.5 times the call budget. Cursor runs every agent on the
+  `bug-investigator`, `audit-expert`, `performance-engineer`, `sf-expert`, `sf-skills-expert`), Opus at high effort
+  (`effort: high`) for every QA and dev agent (`qa-lead`, `qa-engineer`, `ui-qa-expert`, `e2e-qa-expert`, `verifier`,
+  `backend-developer`, `frontend-developer`, `integration-engineer`, `devops-engineer`, `base-builder`, `n8n-expert`),
+  Sonnet 5.5 for the rest (`explorer`, `release-manager`, `story-sizer`). `maxTurns` is about 1.5 times the call budget. Cursor runs every agent on the
   session's model.
 
 ## Git, servers and secrets

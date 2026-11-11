@@ -111,20 +111,20 @@ agent's own `model:` line: Opus for the agents that decide, Sonnet 5.5 for the o
 |---|---|---|---|---|---|---|
 | `ai-engineer` | AI engineer (LLM features, retrieval, agents, evals, cost) | Opus | AWS Certified Generative AI Developer - Professional (AIP-C01)<br>Google Cloud Professional Machine Learning Engineer | SAP Certified - SAP Generative AI Developer (C_AIG) | 15/15 | 15/15 |
 | `audit-expert` | Go-live auditor | Opus | ISACA Certified Information Systems Auditor (CISA)<br>PECB Certified ISO/IEC 27001 Lead Auditor | - | - | - |
-| `backend-developer` | Backend engineer (Java 17, Spring Boot) | Sonnet 5.5 | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | - | 15/15 | 14/15 |
-| `base-builder` | Base project builder | Sonnet 5.5 | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
+| `backend-developer` | Backend engineer (Java 17, Spring Boot) | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | - | 15/15 | 14/15 |
+| `base-builder` | Base project builder | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>Spring Certified Professional (2V0-72.22) | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
 | `bug-investigator` | Root-cause investigator | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
 | `code-reviewer` | Code reviewer | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISC2 Certified Secure Software Lifecycle Professional (CSSLP) | - | 14/15 | 15/15 |
 | `data-architect` | Data architect | Opus | DAMA Certified Data Management Professional (CDMP Practitioner)<br>Google Cloud Professional Data Engineer<br>EDB Advanced for PostgreSQL | SAP Certified - Data Engineer - SAP HANA (C_HAMOD) | 15/15 | 15/15 |
-| `devops-engineer` | Build, deploy and operations engineer | Sonnet 5.5 | CNCF Certified Kubernetes Administrator (CKA)<br>AWS Certified DevOps Engineer - Professional (DOP-C02)<br>Google Cloud Professional Cloud DevOps Engineer | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
-| `e2e-qa-expert` | End-to-end test expert | Sonnet 5.5 | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Acceptance Testing (CT-AcT) | - | - | - |
+| `devops-engineer` | Build, deploy and operations engineer | Opus | CNCF Certified Kubernetes Administrator (CKA)<br>AWS Certified DevOps Engineer - Professional (DOP-C02)<br>Google Cloud Professional Cloud DevOps Engineer | SAP Certified - SAP Business AI Platform Administrator (C_ADBTP) | - | - |
+| `e2e-qa-expert` | End-to-end test expert | Opus | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Acceptance Testing (CT-AcT) | - | - | - |
 | `explorer` | Code search and impact analysis | Sonnet 5.5 | Oracle Certified Professional: Java SE 17 Developer (1Z0-829) | - | - | - |
-| `frontend-developer` | Frontend engineer (UI5, plain JS, React) | Sonnet 5.5 | IAAP Web Accessibility Specialist (WAS) | SAP Certified - SAP Fiori Application Developer (C_FIORD) | 15/15 | 15/15 |
-| `integration-engineer` | Integration engineer | Sonnet 5.5 | Salesforce Certified MuleSoft Platform Integration Architect | SAP Certified - Integration Developer (C_CPI) | - | - |
+| `frontend-developer` | Frontend engineer (UI5, plain JS, React) | Opus | IAAP Web Accessibility Specialist (WAS) | SAP Certified - SAP Fiori Application Developer (C_FIORD) | 15/15 | 15/15 |
+| `integration-engineer` | Integration engineer | Opus | Salesforce Certified MuleSoft Platform Integration Architect | SAP Certified - Integration Developer (C_CPI) | - | - |
 | `n8n-expert` | n8n workflow engineer | Opus | AWS Certified Generative AI Developer - Professional (AIP-C01) | - | - | - |
 | `performance-engineer` | Performance engineer | Opus | Oracle Certified Professional: Java SE 17 Developer (1Z0-829)<br>ISTQB Certified Tester Performance Testing (CT-PT) | - | - | - |
 | `product-critic` | Product reviewer | Opus | Pragmatic Institute Certified Product Manager<br>Scrum.org Professional Scrum Product Owner II (PSPO II)<br>ATD Certified Professional in Talent Development (CPTD) | - | - | - |
-| `qa-engineer` | Test engineer | Sonnet 5.5 | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)<br>ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0) | - | 14/15 | 15/15 |
+| `qa-engineer` | Test engineer | Opus | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0)<br>ISTQB Certified Tester Advanced Level Test Automation Engineering (CTAL-TAE v2.0) | - | 14/15 | 15/15 |
 | `qa-lead` | QA lead | Opus | ISTQB Certified Tester Advanced Level Test Management (CTAL-TM v3.0)<br>ISTQB Certified Tester Advanced Level Agile Tester (CTAL-AT v2.0) | SAP Certified - Solution Transformation Consultant with SAP Cloud ALM (C_STC) | - | - |
 | `release-manager` | Release manager | Sonnet 5.5 | ITIL Managing Professional (ITIL Version 5) | SAP Certified - Solution Transformation Consultant with SAP Cloud ALM (C_STC) | - | - |
 | `security-architect` | Security and privacy architect | Opus | ISC2 Certified Information Systems Security Professional (CISSP)<br>ISC2 Certified Cloud Security Professional (CCSP)<br>IAPP Certified Information Privacy Professional/Europe (CIPP/E) | - | 14/15 | 15/15 |
@@ -135,7 +135,7 @@ agent's own `model:` line: Opus for the agents that decide, Sonnet 5.5 for the o
 | `story-sizer` | Backlog and sizing (Scrum) | Sonnet 5.5 | Scrum.org Professional Scrum Master II (PSM II)<br>Scrum.org Professional Scrum Product Owner II (PSPO II) | SAP Certified - Project Manager - SAP Activate (C_ACT) | - | - |
 | `ui-qa-expert` | UI test expert | Opus | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Usability Testing (CT-UT)<br>IAAP Web Accessibility Specialist (WAS)<br>Nielsen Norman Group UX Certification | - | - | - |
 | `ux-designer` | UX and screen designer | Opus | Nielsen Norman Group UX Certification (Interaction Design specialty)<br>IAAP Certified Professional in Accessibility Core Competencies (CPACC) | - | 14/15 | 15/15 |
-| `verifier` | Independent verifier | Sonnet 5.5 | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
+| `verifier` | Independent verifier | Opus | ISTQB Certified Tester Advanced Level Test Analyst (CTAL-TA v4.0)<br>ISTQB Certified Tester Advanced Level Technical Test Analyst (CTAL-TTA v4.0) | - | - | - |
 | **Total (9 examined)** | | | | | **131/135** | **134/135** |
 <!-- certified-agents:end -->
 

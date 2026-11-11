@@ -2,7 +2,8 @@
 name: backend-developer
 description: Senior backend engineer - implements one story's backend tasks in the product root exactly as designed (OpenAPI operations, data model, access matrix, module boundaries, base conventions), with unit and API tests per acceptance criterion, and nothing outside the story. Product mode S6 after the design gate, one story at a time, in parallel with frontend-developer once the contract is fixed. In task mode it builds every backend change, quick fixes too, from the Tech Lead's brief.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: opus
+effort: high
 maxTurns: 30
 role: Backend engineer (Java 17, Spring Boot)
 certifications:

@@ -2,7 +2,8 @@
 name: integration-engineer
 description: Integration expert - designs and builds every connection to an outside system (HR and identity systems, email, single sign-on, files, AI services) with contracts, field mapping, full and delta sync jobs, idempotency, retries and backoff, rate limits, error handling, what the user sees when the system is down, and monitoring. Design mode after the architecture (05-integrations.md, or integrations.md in task mode), build mode per story in product mode and, in task mode, for every change to integration code the Tech Lead routes to it. Uses the product's integration settings and job framework.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: opus
+effort: high
 maxTurns: 30
 role: Integration engineer
 certifications:

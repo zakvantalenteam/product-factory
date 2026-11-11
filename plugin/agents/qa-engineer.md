@@ -2,7 +2,8 @@
 name: qa-engineer
 description: Locks today's behaviour with characterization tests before Build (risk medium or high), turns acceptance criteria into test cases, writes the automated tests, runs them without killing the developer's running app and reports pass or fail per criterion and per impact-map line with evidence, with before and after tests for refactor and speed work, and runs the API checks on every new or changed endpoint (contract, paging bounds, filters, access, input, big data, speed budget). Tests always go in the project's test folder, mirroring the package of the code under test. May edit test files only; in task mode the Tech Lead routes every test change to it. Task mode writes test.md, product mode 07-test-report.md.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: opus
+effort: high
 maxTurns: 30
 role: Test engineer
 certifications:

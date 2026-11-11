@@ -2,7 +2,8 @@
 name: verifier
 description: Read-only verification. Mode change checks that a change (uncommitted, pushed or pulled) meets its criteria and returns PASS or FAIL per criterion with evidence, after a push or for many criteria. Mode system (product) checks that the design documents agree with each other (design) and that the built product matches the approved design end to end (build). Only a broken criterion is a FAIL, the rest is LATER.
 tools: Read, Grep, Glob, Bash, Write
-model: sonnet
+model: opus
+effort: high
 maxTurns: 30
 role: Independent verifier
 certifications:

@@ -2,7 +2,8 @@
 name: base-builder
 description: Builds a brand-new product's base project from scratch exactly as the core base spec and manifest describe (platform shell, background jobs, integration settings, audit history on every table, theme manager, demo flow end to end), renamed for the new product; fixes every miss until the base checker prints 100 percent; then installs the core into the new product root. Product mode S1, used for every new product. Never copies a whole old repo.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: opus
+effort: high
 maxTurns: 60
 role: Base project builder
 certifications:
