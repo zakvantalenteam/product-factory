@@ -7,9 +7,9 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 |---|---|
 | Task or product folder (the lead gives it in the brief) | `<work>/<id>/`; `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`; product-factory: `work`) |
 | Project config | `.claude/project.json` (commands, protected paths, decision triggers, rules) |
-| Project facts and hard rules | `AGENTS.md`, `.claude/rules/*.md` (path rules), `.claude/review/checklist.md` (project checklist), `.claude/review/lessons.md` (one line per past mistake), `.claude/smoke.md` (neighbours to check per area) |
+| Project facts and hard rules | `AGENTS.md`, `.claude/rules/*.md` (path rules), `.claude/review/checklist.md` (project checklist), `.claude/review/lessons.md` (one line per past mistake, tagged by the stage that must catch it: `[review-spec R<n>]`, `[develop review]`, `[test <type>]`), `.claude/smoke.md` (neighbours to check per area) |
 | Domain facts for a domain expert | `.claude/experts/<sf|ai|n8n|...>.md` (where this repo uses the domain) |
-| Core reference | `.claude/core/reference/` (`review/`, `qa/` (the UI and API test checklists), `standards/`, `base/`, `platform-btp.md`) |
+| Core reference | `.claude/core/reference/` (`requirements/` (Definition of Ready, vague words, the requirements review and spec layout), `review/`, `qa/` (the UI and API test checklists, test types, acceptance tests), `standards/`, `base/`, `platform-btp.md`) |
 | Core scripts | `python .claude/core/scripts/<script>.py` |
 | Product root (product mode) | the `root` of the task (`live_status.py init <id> --mode product --root <path>`) |
 
@@ -34,7 +34,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | SuccessFactors job profiles and skills fit / fields | `sf-skills.md` | `02-sf-skills-fit.md`, `05-sf-skills-fields.md` | sf-skills-expert |
 | n8n workflows (today's flow, node plan, handoff) | `n8n.md` | `05-n8n.md` | n8n-expert |
 | Bug root cause | `spec.md` + `brief.md` | - | bug-investigator |
-| Fix proof (per bug or fix-list item: reproduction, proven root cause, regression test, regression ring, fix plan; `handoff_check.py <id> --fix`) | `fix-proof.md` | - | bug-investigator (`/fix`) |
+| Fix proof (per bug or fix-list item: reproduction, proven root cause, regression test, regression ring, fix plan, the `Should have been caught at:` escape line; `handoff_check.py <id> --fix`) | `fix-proof.md` | - | bug-investigator (`/fix`) |
 | Product review | `product-review.md` (large new feature only) | `03-product-review.md` | product-critic |
 | Journeys and screen inventory | `## Journeys and screens` in `ui.md` | `03-journeys.md` | ux-designer (`journeys`) |
 | Prototype | `prototype.html` | `P-options.md` + `.html`, `P-prototype.html` | main session (`prototype` skill) or ux-designer (`options`, `variants`) |
@@ -55,7 +55,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | Build log | `## Notes` in `status.md` | `06-build-log.md` | developers / main session |
 | Review and design packs | `review-pack.md` + `review-state.json`, `design-pack.md` (`review_pack.py`) | same | main session |
 | Code review | `review.md` (`review-<focus>.md` for extra passes) | `07-code-review.md` | code-reviewer |
-| Test plan (risks, matrix criterion x type x role x data volume, who tests what, test data, exit criteria) | `test-plan.md` | `05-test-plan.md` | qa-lead (`plan`) |
+| Test plan (risks, matrix criterion x type x role x data volume, `## Test types` with each type's rows or n/a and a reason (`.claude/core/reference/qa/test-types.md`), who tests what, test data, exit criteria) | `test-plan.md` | `05-test-plan.md` | qa-lead (`plan`) |
 | Tests and API checks | `test.md` | `07-test-report.md` (with `## Test plan` from S6) | qa-engineer |
 | UI tests in the running app (the UI checklist per changed screen) | `qa-ui.md` | `07-qa-ui.md` | ui-qa-expert |
 | Journeys, charters and session notes | `qa-e2e.md` | `07-qa-e2e.md` | e2e-qa-expert |
@@ -63,7 +63,10 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | The request as it came (Jira text, pasted text or the document's words), saved unchanged | `request.md` (`/review-spec`), `ticket.md` (`/test`) | - | main session |
 | QA brief for a ticket with no task (ticket text, diff or commits, criteria to test, `## Changed files`) | `qa-brief.md` | - | qa-lead (`intake`, `/test`) |
 | Fix list (defects left by QA, their owners and status; format `.claude/core/reference/qa/fix-list.md`) | `fix-list.md` | `07-fix-list.md` | qa-lead (`sign-off`, `retest`); statuses `fixing`, `fixed` by the main session in `/fix` |
-| Testability of each criterion | `testability.md` | - | qa-lead (`testability`, `/review-spec`) |
+| Requirements review of the draft (testability, vague words, contradictions, missing cases, assumptions, traceability; fills R10, R12-R16; `.claude/core/reference/requirements/requirements-review.md`) | `requirements-review.md` | - | qa-lead (`requirements-review`, `/review-spec`) |
+| Today vs asked (per criterion: what exists today, a conflict as a question, what else it touches; code there only) | `spec.md` `## Today vs asked` (path:line in the technical appendix) | - | spec-analyst (`requirements`), from explorer's `context.md` |
+| Acceptance tests written first (each seen failing before Build; criteria not automated with their QA owner; `.claude/core/reference/qa/acceptance-tests.md`) | `test.md` `## Acceptance tests`, `## Not automated` | - | qa-engineer (`acceptance`, `/develop`) |
+| Missed checks that belong in the core (from the `/fix` escape check) | `.claude/review/core-escapes.md` | same | main session (`/fix`) |
 | QA data map (per need: volume, find / create / ask, how, cleanup, status; `Approved:` line) | `.claude/qa/data-map.md` (committed, shared) | same | test-data-engineer (`learn`, `/test data`); `Approved:` by the main session on the developer's yes |
 | Seed and cleanup scripts, create log | `.claude/qa/seed/`, `.claude/qa/create-log.jsonl` | same | test-data-engineer |
 | Test data for a ticket (record ids per matrix row, ask list) | `data.md` | same | test-data-engineer (`top-up`, `/test`) |

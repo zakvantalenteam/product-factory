@@ -90,10 +90,11 @@ Start the experts each `test-plan.md` names under `## Who runs`, for every ticke
 
 | Expert | Mode | Tests | Writes |
 |---|---|---|---|
-| `qa-engineer` | `test` | unit tests and the API checks (AQ1-AQ10) | `test.md` |
+| `qa-engineer` | `test` | unit tests, the API checks (AQ1-AQ10), and the plan's AI answer quality and data upgrade rows | `test.md` |
 | `ui-qa-expert` | `ui` | the UI checklist on every changed screen part | `qa-ui.md` |
 | `e2e-qa-expert` | `journeys` | journeys across roles and features | `qa-e2e.md` |
 | `verifier` | `change` | the criteria against pushed or pulled code (a commit range) | `verify.md` |
+| `ai-engineer` | `review` | the AI answer quality rows and their eval result, when the plan has an AI change in scope (after `qa-engineer`) | `review-ai.md` |
 
 Brief each with the app URL, the role to sign in as, the plan rows it owns (its `S` smoke rows too), the ticket's
 `data.md` (the record ids per row), `Test data prefix: QA-<ID>-`, its

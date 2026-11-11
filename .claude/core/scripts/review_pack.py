@@ -422,9 +422,14 @@ def rule_files(c, files):
     return out
 
 
+# a lesson tagged for another stage (`[review-spec R<n>]`, `[test <type>]`) is read by spec-analyst or qa-lead, not
+# by the reviewer; untagged and `[develop review]` lines are the review's (sdlc skill, section 9)
+OTHER_STAGE = re.compile(r"^\s*-\s[^\[\]]{0,160}?\[(?:review-spec(?:\s+(?:dor\s+)?R\d+)?|test\s+[\w-]+)\]\s*:", re.I)
+
+
 def lesson_lines(c, files, areas):
     """lessons.md lines whose path tokens match a file, whose `###` area matches a matched section or rule file, or
-    that name a changed class."""
+    that name a changed class; lines tagged for another stage are left out."""
     text = c.cfg_file(".claude", "review", "lessons.md") or ""
     stems = {os.path.splitext(os.path.basename(f))[0] for f in files}
     stems = {s for s in stems if len(s) >= 6}
@@ -434,7 +439,7 @@ def lesson_lines(c, files, areas):
         if ln.startswith("### "):
             head = ln[4:]
             continue
-        if not ln.lstrip().startswith("- "):
+        if not ln.lstrip().startswith("- ") or OTHER_STAGE.match(ln):
             continue
         take = bool(words(head) & area_words) or "always" in head.lower() or any(s in ln for s in stems)
         if not take:

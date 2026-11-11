@@ -1,6 +1,6 @@
 ---
 name: review-spec
-description: "Use when someone wants a requirement checked and made ready before any technical work - a Jira ticket, pasted text, a document (PRD, Word, PDF) or an idea - when they type /review-spec, or ask to review, refine or complete a requirement. Built for product owners, business analysts and managers: plain words, no code. Picks the group of agents the request needs (spec-analyst leads, with product-critic, ux-designer, domain experts and qa-lead for testability), writes the requirements with the Definition of Ready and a size per ticket (story-sizer, with a split proposal when too big), and the requester approves them at one gate. Works without a code checkout (requirements only). Owns clear requirements only: ends with READY requirements, then /develop. Never code; a bug goes to /fix, testing to /test."
+description: "Use when someone wants a requirement checked and made ready before any technical work - a Jira ticket, pasted text, a document (PRD, Word, PDF) or an idea - when they type /review-spec, or ask to review, refine or complete a requirement. Built for product owners, business analysts and managers: plain words, no code. Picks the group of agents the request needs (spec-analyst writes; qa-lead checks the draft for vague words, contradictions and missing cases; product-critic, ux-designer and domain experts as needed; with code there, a today-vs-asked table), writes the requirements with the Definition of Ready and a size per ticket (story-sizer, with a split proposal when too big), and the requester approves them at one gate. Works without a code checkout (requirements only). Owns clear requirements only: ends with READY requirements, then /develop. Never code; a bug goes to /fix, testing to /test."
 ---
 # Requirement review (team lead playbook)
 
@@ -19,7 +19,8 @@ no code checkout), run the same flow with these changes:
   experts answer from their own knowledge and say what they could not check.
 - `spec.md`, the gate text and the handoff each say in one line: "The check of what exists today was skipped (no
   code here); the developer runs it at /develop." `story-sizer` sizes with Low confidence where the code would
-  decide.
+  decide. No `explorer` run and no `## Today vs asked` table.
+- The hand-off check takes the folder path: `handoff_check.py requirements/<id> spec.md`.
 
 Paths: `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`); scripts are
 `python ${CLAUDE_PLUGIN_ROOT}/scripts/<name>.py` (below just `live_status.py`); the checklist is
@@ -55,8 +56,9 @@ Then:
 ## 2. Pick the group
 | The request has | Agent (mode) | Writes in `<work>/<id>/` |
 |---|---|---|
-| always: it leads | `spec-analyst` (`requirements`, later `revise`) | `spec.md`, `questions.md` |
-| always: every criterion | `qa-lead` (`testability`) | `testability.md` |
+| code is there (`.claude/project.json`): first, what exists today | `explorer` (`context`) | `context.md` |
+| always: it writes | `spec-analyst` (`requirements`, later `revise`) | `spec.md`, `questions.md` |
+| always: it checks the draft (a separate reader) | `qa-lead` (`requirements-review`) | `requirements-review.md` |
 | always, after the merge: the size | `story-sizer` (`estimate`) | `estimate.md` |
 | a new feature, a changed journey, or a change many people will notice | `product-critic` (task) | `product-review.md` |
 | a screen people see, or steps across screens or roles | `ux-designer` (`journeys`) | `## Journeys and screens` in `ui.md` |
@@ -72,14 +74,22 @@ Then:
 ## 3. Run the group
 Brief each agent as the `sdlc` skill's briefing says (`Goal:`, `Output:` and `Files:` lines first), then the id, the
 mode, the files to read and this: "Review-spec run: the reader is <requester's role>, not a developer. Plain words, no
-code terms outside the technical appendix. There is no context.md: read `request.md`. Read code only to learn what
-exists today; change nothing. Write your output file first, then improve it. Stay within the tool-call budget in
-your agent file. Reply in 10 lines or fewer."
-1. Draft, in parallel: `spec-analyst` (`requirements`, draft) and the domain experts.
-2. Review the draft, in parallel: `qa-lead` (`testability`) and, when in the group, `product-critic` and
+code terms outside the technical appendix. Read `request.md` and `context.md` (what exists today); read more code
+only to compare a requirement with today's behaviour; change nothing. Write your output file first, then improve
+it. Stay within the tool-call budget in your agent file. Reply in 10 lines or fewer." Requirements only: no
+`context.md`, and the line "Requirements only: there is no code here; do not look for it." instead.
+0. Code is there: `explorer` (`context`) writes `context.md` from `request.md` (the goal, the screens and data it
+   names). Wait for it; every later agent reads it instead of exploring.
+1. Draft, in parallel: `spec-analyst` (`requirements`, draft; with `## Today vs asked` when `context.md` exists:
+   per criterion what exists now, any conflict as a question, and the other screens or data it touches) and the
+   domain experts.
+2. Review the draft, in parallel: `qa-lead` (`requirements-review`: testability, vague words, contradictions with
+   each other, other named tickets and today's behaviour, missing cases, assumptions and traceability; each finding
+   quotes the sentence and asks the requester one plain question) and, when in the group, `product-critic` and
    `ux-designer` (`journeys`; `variants` only on request).
 3. Merge: `spec-analyst` (`requirements`, merge) folds in the domain facts, the product issues, the journeys and the
-   testable rewrites, and fills the `## Definition of Ready` table and the `Verdict:` line.
+   review's rewrites and questions, copies its results into R10 and R12-R16, and fills the rest of the
+   `## Definition of Ready` table and the `Verdict:` line.
 4. Size: `story-sizer` (`estimate`) on the merged `spec.md`: points with a confidence per ticket and, when a ticket
    is 13 points or more (or 8 with Low confidence), a split proposal into smaller tickets that each deliver
    something. A changed criterion later re-runs it.
@@ -99,7 +109,8 @@ After each agent returns, read its file, not only its reply. Then `integrate <id
    - Approve on NOT READY: not possible yet. Say which items are still open; taking the recommended answers is
      one way to close them.
    - Answers or changes: `changes <id> spec "<their answers in short>"`, then `spec-analyst` (`revise`). When a
-     criterion changed: `qa-lead` (`testability`) on those criteria, then `spec-analyst` (`requirements`, merge)
+     criterion changed (or the spec has no R12 row yet, from before core 1.16: then on the whole spec):
+     `qa-lead` (`requirements-review`) on those criteria, then `spec-analyst` (`requirements`, merge)
      to refresh the table. Then gate again.
    - A question: answer it in plain words from the documents, `ask <id> "<question>" --answer "<short answer>"`,
      and keep the gate open.
@@ -124,5 +135,5 @@ are refreshed.
 
 ## Rules
 - The requester's answers are settled. An agent that disagrees writes a new question, never a silent change.
-- Ids: criteria `AC1..`, questions `Q1..`, assumptions `A1..`, Definition of Ready `R1..R11`.
+- Ids: criteria `AC1..`, questions `Q1..`, assumptions `A1..`, review findings `RR1..`, Definition of Ready `R1..R16`.
 - Replies to the requester: short, plain words, open items first; end with the verdict and their next step.

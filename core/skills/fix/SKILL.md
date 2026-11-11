@@ -49,7 +49,8 @@ writes `<work>/<id>/fix-proof.md`, one block per bug (`## <id>`) or item (`## F<
 - `### Root cause`: `Proven: yes` and the first wrong line as `path:line`;
 - `### Regression test`: its name and where it goes, failing on today's code;
 - `### Regression ring`: the siblings and variants that share the code (fix now or LATER);
-- `### Fix plan`: the smallest fix at the cause, one bullet per file.
+- `### Fix plan`: the smallest fix at the cause, one bullet per file;
+- `Should have been caught at: <stage> - <missing check>`: the escape line (section 4).
 
 A bug ticket also gets `brief.md` and `spec.md` as in stages.md row 1. Then `handoff_check.py <id> --fix [F1 F3]`.
 A block that fails, or says `Proven: no`, is never fixed. It stays open, with `### What would prove it`, a History
@@ -83,6 +84,18 @@ or high: the spec gate as sdlc section 7 before Build.
 - The lessons loop (sdlc section 9): every bug found in a change this flow made adds a line to
   `.claude/review/lessons.md`. A bug that reached a release also adds a line to `.claude/qa/smoke-inbox.md`
   (`- [ ] <date> <id>: smoke: add <area>: <item>`) so the smoke pack catches it next time.
+- Escape check, per proven block, from its `Should have been caught at:` line:
+  - `not catchable: ...`: nothing to record; say it in one line.
+  - This project's check: a lesson line with the stage tag in `.claude/review/lessons.md`
+    (`- <date> <id> [<stage>]: <the missing check as a rule> (<area or path glob>)`, for example
+    `[review-spec R14]`, `[develop review]`, `[test languages]`); a general code rule goes to
+    `.claude/review/checklist.md` instead, and a test the testers must remember to the QA facts' "Where the testers
+    find bugs" (`qa.facts`, when the project has one). spec-analyst, code-reviewer (through the review pack) and
+    qa-lead read the lines tagged for their stage.
+  - A check marked `(core)`: core files change only in the core source, so never edit them here. Add one line to
+    `.claude/review/core-escapes.md` (create it with the heading `# Core escapes (for the core owner)`):
+    `- [ ] <date> <id> <block>: [<stage>] <the missing check> - core file: <the core file it belongs in>`, and list
+    these lines under "Core escapes" in your hand-off reply for the core owner.
 
 ## Hotfix (`/fix --hotfix <ticket>`: something broken in production)
 The same proof-first flow with a smaller blast radius. It never deploys.
@@ -102,8 +115,8 @@ The same proof-first flow with a smaller blast radius. It never deploys.
    2 names them).
 8. `<work>/<id>/backport.md`: the commits or files to bring to the dev branch and any conflict to expect; the
    developer does the git.
-9. Finish `incident.md`: `## Cause` (plain words and `path:line`), `## Fix`, `## Prevention` (the test or check that
-   would have caught it). Add its lesson to `.claude/review/lessons.md`, one line under "Where testers find bugs" in
+9. Finish `incident.md`: `## Cause` (plain words and `path:line`), `## Fix`, `## Prevention` (the escape line: the
+   stage and the check that would have caught it; record it as section 4 says). Add its lesson to `.claude/review/lessons.md`, one line under "Where testers find bugs" in
    the QA facts file (`qa.facts`, when the project has one) and a `smoke: add` line to `.claude/qa/smoke-inbox.md`.
    Then `live_status.py next <id> "deploy <branch> (developer), then backport to dev"`.
 

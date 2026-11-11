@@ -37,6 +37,10 @@ never picks a skill: `develop` and `fix` have a small path for a change within `
   they are the requester, otherwise it goes to `/review-spec`. `fix` never fixes without a proven cause
   (`fix-proof.md`, checked by `handoff_check.py <id> --fix`), and every fix comes with a regression test that fails
   before and passes after, plus the regression ring.
+- `develop` writes the acceptance tests first: after the test plan and before Build, `qa-engineer` turns each
+  criterion into an automated test and sees it fail for the right reason (run with the project's safe test
+  command); Build is done when they pass. A criterion that cannot be automated goes to `ui-qa-expert` or
+  `e2e-qa-expert`, never skipped silently.
 
 ## Safety net
 - The risk sets the safety net, so nothing else breaks: compile and the full unit suite before and after, and every
@@ -44,10 +48,19 @@ never picks a skill: `develop` and `fix` have a small path for a change within `
   caller checked and the smoke list of each area touched (`.claude/smoke.md`).
 - The reviewer fails any change with a MUST from the review checklists. Every review MUST adds a line to
   `.claude/review/lessons.md`.
+- Escape check: every bug `/fix` proves names the stage that should have caught it (a Definition of Ready item, the
+  code review, a test type, or "not catchable: new information") and the missing check. A project check becomes a
+  lesson tagged for that stage (`[review-spec R<n>]`, `[develop review]`, `[test <type>]`), read by spec-analyst,
+  code-reviewer and qa-lead; a check that belongs in the core goes to `.claude/review/core-escapes.md` for the core
+  owner, because core files change only in the core source.
 
 ## QA
 - QA signs off every task that changes code. `qa-lead` plans the tests at Design (a risk-based matrix of criterion,
-  test type, role and data volume) and signs off at Test.
+  test type, role and data volume) and signs off at Test. The plan covers every test type of
+  `.claude/core/reference/qa/test-types.md` or says why one does not apply: besides unit, API, UI, journeys,
+  accessibility, speed and security also AI answer quality (the project's eval set, judge and abuse cases, with
+  `ai-engineer` reviewing an AI change), languages and long labels, data upgrade on existing rows, and browsers and
+  devices. The project's QA facts say where its eval set, languages and browsers are.
 - `ui-qa-expert` tests every UI change in the running app against the UI checklist
   (`.claude/core/reference/qa/ui-checklist.md`: every state, paging at scale, the detail in view, cut-off text
   readable, keyboard, 360 px, 200% zoom, long labels, tenant colours, console and network).
@@ -72,10 +85,17 @@ never picks a skill: `develop` and `fix` have a small path for a change within `
   `/test retest`. A ticket closes only on SIGNED OFF, and then `/test` offers the commit message.
 
 ## Requirements
-- `/review-spec` (the `review-spec` skill) reviews requirements with spec-analyst, product-critic, ux-designer, the
-  domain experts the topic needs and qa-lead (testability). It writes plain words for product owners, analysts and
-  managers, and checks the Definition of Ready (`.claude/core/reference/requirements/definition-of-ready.md`). It
-  stops at one gate with the requester. It is read-only on code.
+- `/review-spec` (the `review-spec` skill) reviews requirements with spec-analyst, product-critic, ux-designer and
+  the domain experts the topic needs. It writes plain words for product owners, analysts and managers, and checks
+  the Definition of Ready (`.claude/core/reference/requirements/definition-of-ready.md`, R1-R16). It stops at one
+  gate with the requester. It is read-only on code.
+- Writer and checker are separate: spec-analyst writes the draft, and qa-lead (`requirements-review`) checks it for
+  testability, vague words, contradictions, missing behaviour (create, change, remove, cancel, states, limits,
+  duplicates, two people at once), unconfirmed assumptions and criteria that serve no goal. Each finding quotes the
+  sentence and asks the requester one plain question. `handoff_check.py` flags vague words in the requirement part.
+- With code there (`.claude/project.json`), `explorer` writes the context pack first and the spec gets a "Today vs
+  asked" table per criterion: what exists today, any conflict (each one a question) and the other screens or data it
+  touches.
 - READY requirements (`Requirements: READY` in `spec.md`, a Jira comment, or a file the developer points to) skip the
   business questions in `/develop`. The technical agents add only the technical part, and any change to a criterion goes
   back to the requester.

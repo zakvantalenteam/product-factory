@@ -43,7 +43,13 @@ One block per bug (`## <id>`) or item (`## F<n>`): `### Reproduction` (numbered 
 `### Root cause` (`Proven: yes` and the first wrong line as `path:line` in backticks, or `Proven: no` with `### What
 would prove it`); `### Regression test` (its name in backticks, where it goes in the test folder, and that it fails
 on today's code); `### Regression ring` (bullets: each sibling or variant sharing the code, `path:line`, fix now or
-LATER; or `none: <why>`); `### Fix plan` (one bullet per file in backticks: the smallest change at the cause).
+LATER; or `none: <why>`); `### Fix plan` (one bullet per file in backticks: the smallest change at the cause); and
+the escape line, last: `Should have been caught at: <stage> - <the missing check, one line>`. The stage is
+`review-spec R<n>` (the Definition of Ready item that would have asked for it), `develop review` (a code review
+check), `test <type>` (a test type of `.claude/core/reference/qa/test-types.md`, for example `test languages`), or
+`not catchable: new information` (with what was new). Add `(core)` at the end when the missing check would apply
+to any product (a Definition of Ready item, a core checklist item, a test type), else it is this project's check.
+Read `.claude/review/lessons.md` first: a repeat names the lesson it repeats.
 
 ## Before you hand over
 Run `python .claude/core/scripts/handoff_check.py <id> --fix` (and `<id> brief.md spec.md` in mode `spec`) and fix

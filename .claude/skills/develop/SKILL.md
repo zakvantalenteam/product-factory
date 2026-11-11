@@ -1,6 +1,6 @@
 ---
 name: develop
-description: "(repo copy - with the plugin on use /product-factory:develop) Use when the developer types /develop, asks to build a feature or change existing behaviour (kind of work feature, ui, data, config, refactor, performance), or the sdlc triage routes a feature or change here. Owns building new behaviour: the Definition of Ready check first, then the context pack, the risk from evidence, the technical spec, Design with only the agents needed (cards, gates, prototype), the test plan, Build by the area agents with the safety net and one code review. Ends ready for /test. Never signs off its own work, never fixes bugs (/fix), never reviews requirements for a requester (/review-spec)."
+description: "(repo copy - with the plugin on use /product-factory:develop) Use when the developer types /develop, asks to build a feature or change existing behaviour (kind of work feature, ui, data, config, refactor, performance), or the sdlc triage routes a feature or change here. Owns building new behaviour: the Definition of Ready check first, then the context pack, the risk from evidence, the technical spec, Design with only the agents needed (cards, gates, prototype), the test plan, the acceptance tests written first and seen failing, Build by the area agents until they pass, with the safety net and one code review. Ends ready for /test. Never signs off its own work, never fixes bugs (/fix), never reviews requirements for a requester (/review-spec)."
 ---
 # Develop (features and changes)
 
@@ -71,12 +71,25 @@ experts the change needs (`data-architect`, `security-architect`, `ux-designer` 
 for `test-plan.md`, and `qa-engineer` (mode `characterize`) at risk medium or high. Decision cards D2-D8 and the gates
 by risk as sdlc section 7. With `plan`: stop here and tell the developer `/develop <id>` builds it.
 
-## 5. Build
-The area agents from your build briefs (briefing.md), in parallel where their files do not overlap, after the
-"before" steps of safety-net.md; you integrate and run the "after" steps. Anything the approved cards do not cover
-needs a change card, never a silent change.
+## 5. Acceptance tests first (after the test plan, before Build)
+1. `qa-engineer` (mode `acceptance`) writes the automated acceptance tests from the criteria in `spec.md`, in the
+   project's test folder, and runs them with the project's safe test command (`app.status` first; never a command
+   that kills the running app). Each must fail first, for the right reason; the result goes in `test.md`
+   `## Acceptance tests` (`.claude/core/reference/qa/acceptance-tests.md`).
+2. A criterion that cannot be automated (visual only, or it needs the running app) goes under `## Not automated`
+   with `ui-qa-expert` or `e2e-qa-expert` as its owner; `qa-lead`'s plan gets a row for each. None is skipped
+   silently.
+3. `handoff_check.py <id> test.md` passes before Build starts. A test that passed before Build, or that needs the
+   developer to build in the IDE first, is settled here.
 
-## 6. Review and hand-off
+## 6. Build
+The area agents from your build briefs (briefing.md), in parallel where their files do not overlap, after the
+"before" steps of safety-net.md; you integrate and run the "after" steps. Each build brief names the acceptance
+tests its criteria own; the agent never edits them (a test it thinks is wrong goes to `questions.md` for
+`qa-engineer`). Build is done when every acceptance test passes (the counts in `safety.md` `## After build`).
+Anything the approved cards do not cover needs a change card, never a silent change.
+
+## 7. Review and hand-off
 1. `review_pack.py <id>`, then one `code-reviewer` run (`focus: all`). A MUST goes back to the same area agent with
    the exact findings; a re-review reads the delta pack. `stage <id> review done` on PASS.
 2. `live_status.py next <id> "/test <id>"` and tell the developer, with the stage table: "/test <id> now, or test
@@ -91,8 +104,8 @@ Up to `quick_fix` in `.claude/project.json` (about 30 lines in up to 3 files), c
 permission, contract, config, dependency or other owner's file):
 1. Say the goal and what done looks like in one line (that is the Definition of Ready here); anything unclear takes
    the full path.
-2. No context pack: a quick brief (`Quick fix:` line, briefing.md) to the area agent, which makes the change and runs
-   its test.
+2. No context pack: a quick brief (`Quick fix:` line, briefing.md) to the area agent, which writes the test for the
+   goal first, sees it fail, makes the change and sees it pass.
 3. Self-check: the diff against the hard rules in AGENTS.md and `.claude/rules/`; a screen change also gets
    `ui-qa-expert` (mode `quick`).
 4. `live_status.py quick "<what changed and why>" --skill develop` (`--id <id>` with a ticket). Past the limits,

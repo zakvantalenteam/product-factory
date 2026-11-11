@@ -42,7 +42,7 @@ Triage every request first (`sdlc` skill, the router) without asking which lane;
 - **Answer**: questions, "discuss", "explain" - answer directly (big searches: `explorer`); "plan", "review this" and "don't change" change no code.
 - **Setup work**: the AI setup only (`.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md`, `setup_paths`) - done by the main session, no task; then `python .claude/core/scripts/cursor_sync.py` (`--check` clean).
 - **Requirements** (`/review-spec`): a ticket or document for an existing product - plain words, Definition of Ready, a size, one gate with the requester; no code. Ends READY, then `/develop`.
-- **Feature or change** (`/develop`): the Definition of Ready, `explorer`'s context pack, risk from evidence, only the agents needed, the safety net, one code review. Ends ready for `/test`.
+- **Feature or change** (`/develop`): the Definition of Ready, `explorer`'s context pack, risk from evidence, only the agents needed, acceptance tests first, the safety net, one code review. Ends ready for `/test`.
 - **Bug** (`/fix`, `/fix BLEN-1 F1 F3`; `/fix --hotfix BLEN-1` in production): a proven root cause first, the fix with a regression test, a re-review. Ends with `/test retest`.
 - **Test** (`/test BLEN-1 BLEN-2`, `/test retest BLEN-1`, `/test data`, `/test smoke`): the QA team, test data and the smoke pack; ends SIGNED OFF (then the commit message) or with a fix list (then `/fix`). Fixes never start by themselves.
 - **Release** (`/release OCT2026`): sign-offs, the deploy plan, smoke P1 on the release candidate, release notes, a go/no-go gate; never deploys.

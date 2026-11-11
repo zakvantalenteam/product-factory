@@ -132,7 +132,8 @@ DEFAULTS = {
     "checks": [],
     "experts": [],
     "expert_docs": {},
-    "glossary": {"code_words": "", "words": []},
+    # vague_words: extra words for the Definition of Ready R12 check (handoff_check.py), added to the core list
+    "glossary": {"code_words": "", "words": [], "vague_words": []},
     "impact": {
         "code": ["**/*.java", "**/*.ts", "**/*.tsx", "**/*.js"],
         "clients": ["**/*.js", "**/*.ts", "**/*.tsx", "**/*.html"],

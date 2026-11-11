@@ -26,7 +26,22 @@ Card layout: .claude/core/reference/review/decision-card.md. Hints are style poi
                  ### Regression test (the test in backticks, and that it fails before the fix), ### Regression ring
                  (a bullet, or a line "none: reason"), ### Fix plan (a bullet naming a file in backticks).
 
-  python .claude/core/scripts/handoff_check.py ID [FILE ...]   (files relative to <work>/ID; default: all)
+  spec.md        with a ## Definition of Ready (review-spec, /develop dor): rows R1-R16 (R1-R11 on a spec made READY
+                 before core 1.16), each pass, fail or n/a with a note; the vague words of R12
+                 (.claude/core/reference/requirements/vague-words.md plus glossary.vague_words in project.json) in
+                 the requirement part, above ## Technical appendix (quoted text, code, comments, questions, the
+                 glossary and the table are skipped); in a review-spec task with context.md a ## Today vs asked
+                 table (| AC | Today | Asked | Conflict | Also touches |, a Q<n> per conflict, plain words).
+  fix-proof.md   also a line "Should have been caught at: <review-spec R<n> | develop review | test <type>> -
+                 <the missing check>" or "not catchable: <why>" per block (the /fix escape check).
+  test.md        with ## Acceptance tests (/develop, tests first): | AC | Test | Before build | Why it fails |
+                 After build |, each test in backticks and seen FAIL before Build with a reason, none FAIL after;
+                 ## Not automated | AC | Why | Owner | (ui-qa-expert or e2e-qa-expert); every AC of spec.md in one.
+  test-plan.md   ## Test types names every type of .claude/core/reference/qa/test-types.md with rows or
+                 "n/a: reason" (a plan without the section gets a hint).
+
+  python .claude/core/scripts/handoff_check.py ID [FILE ...]   (files relative to <work>/ID; default: all; ID may
+                 also be a folder path, for example requirements/<id> in a folder with no .claude/project.json)
   python .claude/core/scripts/handoff_check.py ID --fix [BLOCK ...]   only fix-proof.md, only these blocks (default all);
                  prints OK or the problems per block
   python .claude/core/scripts/handoff_check.py ID data.md   a ticket's test data (test-data-engineer; also in the default
@@ -466,7 +481,8 @@ FIX_OWNERS = ("backend-developer", "frontend-developer", "n8n-expert", "integrat
               "qa-engineer", "dev-handoff")
 FIX_FIELDS = ("Ticket", "Found by", "Where", "Steps", "Expected", "Actual", "Evidence", "Suspected area", "Fix owner",
               "Retest", "History")
-DOR_IDS = ["R%d" % n for n in range(1, 12)]
+DOR_IDS = ["R%d" % n for n in range(1, 17)]
+DOR_OLD = ["R%d" % n for n in range(1, 12)]  # a spec made READY before R12-R16 existed keeps its R1-R11 table
 
 
 def table_rows(body):
@@ -553,7 +569,8 @@ def check_dor(text, name="spec.md"):
     for c in table_rows(body):
         if re.match(r"^R\d+$", c[0]):
             got[c[0]] = c
-    for i in DOR_IDS:
+    settled = re.search(r"(?im)^[\s>*_-]*Requirements:\s*READY\b", text) and not any(i in got for i in DOR_IDS[11:])
+    for i in (DOR_OLD if settled else DOR_IDS):
         if i not in got:
             p.append("%s: Definition of Ready has no row %s" % (name, i))
     failed = []
@@ -574,6 +591,225 @@ def check_dor(text, name="spec.md"):
     if re.search(r"(?im)^[\s>*_-]*Requirements:\s*READY\b", text) and not (v and v.group(1).upper() == "READY"):
         p.append("%s: the \"Requirements: READY\" line needs the Definition of Ready verdict READY" % name)
     return p
+
+
+# ---- R12 vague words (core/reference/requirements/vague-words.md + glossary.vague_words) ----------------------
+VAGUE_FILE = project.core_path("reference/requirements/vague-words.md")
+# headings of a requirements spec that are not requirements: questions, glossary, answers, the table, technical parts
+VAGUE_SKIP = ("open questions", "smaller points", "gaps i found", "words used here", "glossary", "confirmed answers",
+              "questions and answers", "confirmed by", "changes in revision", "definition of ready", "technical",
+              "affected areas", "who will work", "not needed", "decisions", "lesson")
+VAGUE_META = re.compile(r"(?i)^\s*[>*_-]*\s*(source|requester|requirements|size)\s*[*_]*\s*:")
+# quoted text and inline code: the requester's own words, a question that quotes a word, a name in code
+QUOTED = re.compile('``[^`\n]*``|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”|„[^“”\n]*[“”]|'
+                    '«[^»\n]*»|‘[^’\n]*’')
+ESCAPE = re.compile(r"(?i)(review-spec\s+(?:dor\s+)?R\d+|develop review|test [\w-]+)\s*[-:–—]\s*\S"
+                    r"|not catchable\s*:\s*\S")
+
+
+def vague_words():
+    """The core list (first column of the table under "The core list") plus the project's glossary.vague_words."""
+    out = []
+    try:
+        with open(VAGUE_FILE, encoding="utf-8", errors="replace") as f:
+            body = f.read().split("## The core list", 1)[-1]
+    except OSError:
+        body = ""
+    for c in table_rows(body):
+        if c and c[0].lower() not in ("word", "words"):
+            out += [re.sub(r"\(.*?\)", "", w).strip(" *`") for w in c[0].split(",")]
+    extra = (CFG.get("glossary") or {}).get("vague_words") or []
+    if isinstance(extra, str):
+        extra = _words_file(extra)
+    out += [w.strip() for w in extra if isinstance(w, str)]
+    seen, words = set(), []
+    for w in out:
+        if w and w.lower() not in seen:
+            seen.add(w.lower())
+            words.append(w)
+    return words
+
+
+def vague_pattern(word):
+    w = re.escape(word.lower().rstrip("."))
+    w = w.replace(r"\ ", r"\s+").replace(" ", r"\s+").replace(r"\/", "/").replace("/", r"\s*/\s*")
+    tail = r"\.?" if word.endswith(".") else ""
+    return re.compile(r"(?<![\w-])" + w + tail + r"(?![\w-])", re.I)
+
+
+def vague_due(text):
+    """A requirements spec gets the vague-word check unless it was made READY before R12 existed."""
+    dor = find(sections(text), "definition of ready") or ""
+    return bool(re.search(r"(?m)^\s*\|\s*R1[2-6]\s*\|", dor)
+                or not re.search(r"(?im)^[\s>*_-]*Requirements:\s*READY\b", text))
+
+
+def requirement_lines(text):
+    """[(line number, heading, line)] of the requirement part of a spec: above the technical appendix, outside the
+    question, glossary, answer and Definition of Ready sections, with quoted text, code and comments blanked."""
+    text = re.sub(r"<!--.*?-->", lambda m: re.sub(r"[^\n]", " ", m.group(0)), text, flags=re.S)
+    out, head, skip, fence = [], "", False, False
+    for n, line in enumerate(text.split("\n"), 1):
+        if line.lstrip().startswith(("```", "~~~")):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        m = re.match(r"^(#{1,6})\s+(.*?)\s*#*\s*$", line)
+        if m:
+            if len(m.group(1)) == 1:
+                continue
+            head = m.group(2).strip()
+            if "technical appendix" in head.lower():
+                break
+            skip = any(w in head.lower() for w in VAGUE_SKIP)
+            continue
+        if skip or line.lstrip().startswith(">") or VAGUE_META.match(line):
+            continue
+        out.append((n, head, QUOTED.sub(" ", line)))
+    return out
+
+
+def should_ok(line, m):
+    """'should' that is a priority label or part of a question, not a requirement."""
+    if line.rstrip().endswith("?"):
+        return True
+    before, after = line[:m.start()], line[m.end():]
+    if re.search(r"\(\s*\**$", before) and re.match(r"\**\s*\)", after):
+        return True
+    if re.search(r"(?i)priority\s*[:=-]?\s*\**\s*$", before):
+        return True
+    if re.match(r"^\s*(?:[-*+]|\d+[.)])?\s*\**$", before) and re.match(r"\**\s*:", after):
+        return True
+    if line.strip().startswith("|"):
+        cell = before.rsplit("|", 1)[-1] + m.group(0) + after.split("|", 1)[0]
+        if cell.strip(" *_").lower() in ("should", "should have"):
+            return True
+    return False
+
+
+def check_vague(text, name="spec.md"):
+    """R12: one PROBLEM per vague word and section in the requirement part (the line numbers listed)."""
+    hits = {}
+    pats = [(w, vague_pattern(w)) for w in vague_words()]
+    for n, head, line in requirement_lines(text):
+        for w, pat in pats:
+            for m in pat.finditer(line):
+                if re.search(r"(?i)\bhow\s+$", line[:m.start()]):
+                    continue  # a label such as "how fast"
+                if re.match(r"\s*\([^)\n]*\d[^)\n]*\)", line[m.end():]):
+                    continue  # defined on the spot: fast (within 2 seconds)
+                if w.lower() == "should" and should_ok(line, m):
+                    continue
+                hits.setdefault((head or "the top", w), []).append(n)
+                break
+    p = []
+    for (head, w), lines in hits.items():
+        p.append('%s: vague word "%s" in %s (line %s): replace it with a number or a concrete example, or quote it in '
+                 'a question to the requester (R12, vague-words.md)' % (name, w, head, ", ".join(map(str, lines[:6]))))
+    return p
+
+
+def check_today(text, name="spec.md"):
+    """review-spec with code there (context.md): a ## Today vs asked table, a Q per conflict, no code terms in it."""
+    secs = sections(text)
+    body = find(secs, "today vs asked")
+    if body is None:
+        return ["%s: code is here (context.md) but \"## Today vs asked\" is missing: per criterion what exists today, "
+                "any conflict as a question, and what else it touches" % name]
+    p = []
+    rows = [c for c in table_rows(body) if c and re.match(r"^(AC\d+|in scope)", c[0], re.I)]
+    if not rows:
+        p.append("%s: \"Today vs asked\" has no row (one per criterion: | AC | Today | Asked | Conflict | Also touches |)" % name)
+    qs = ids("Q", find(secs, "open questions") or "") | ids("Q", find(secs, "confirmed answers") or "")
+    for c in rows:
+        conflict = c[3] if len(c) > 3 else ""
+        if len(c) < 5:
+            p.append("%s: Today vs asked %s needs 5 cells (AC, Today, Asked, Conflict, Also touches)" % (name, c[0]))
+        if conflict and not re.match(r"(?i)^\s*(none|no|-|n/a)\b", conflict):
+            named = ids("Q", conflict)
+            if not named:
+                p.append("%s: Today vs asked %s has a conflict but names no question Q<n>" % (name, c[0]))
+            for q in sorted(named - qs):
+                p.append("%s: Today vs asked %s names Q%d, which is not under Open questions or Confirmed answers"
+                         % (name, c[0], q))
+        if CODEY.search(" ".join(c[1:])):
+            p.append("%s: Today vs asked %s has code terms; keep plain words here and put path:line in the technical "
+                     "appendix" % (name, c[0]))
+    return p
+
+
+# ---- /develop acceptance tests first (test.md) and the plan's test types (test-plan.md) ------------------------
+TEST_TYPES = ("unit", "api", "ui", "e2e", "exploratory", "accessibility", "speed", "security", "ai-quality",
+              "languages", "data-upgrade", "browsers", "smoke")
+TYPE_WORDS = {"unit": "unit", "api": "api", "ui": "ui", "e2e": "e2e|journeys?", "exploratory": "exploratory",
+              "accessibility": "accessibility", "speed": "speed", "security": "security",
+              "ai-quality": "ai-quality|ai answer quality", "languages": "languages|long labels",
+              "data-upgrade": "data-upgrade|data upgrade|migration", "browsers": "browsers|devices", "smoke": "smoke"}
+NOT_AUTO_OWNERS = ("ui-qa-expert", "e2e-qa-expert")
+
+
+def check_acceptance(text, spec, name="test.md"):
+    """test.md from /develop: every criterion has an acceptance test seen failing before Build, or a Not automated
+    row with its owner. A test.md without ## Acceptance tests (older tasks, /fix) is not checked."""
+    secs = sections(text)
+    acc = find(secs, "acceptance tests")
+    if acc is None:
+        return []
+    p, seen = [], set()
+    for c in table_rows(acc):
+        m = re.match(r"^AC(\d+)", c[0]) if c else None
+        if not m:
+            continue
+        a = "AC" + m.group(1)
+        seen.add(int(m.group(1)))
+        before = (c[2] if len(c) > 2 else "").upper()
+        why = c[3] if len(c) > 3 else ""
+        after = (c[4] if len(c) > 4 else "").upper()
+        if not re.search(r"`[^`]+`", c[1] if len(c) > 1 else ""):
+            p.append("%s: acceptance test %s names no test in backticks" % (name, a))
+        if "PASS" in before:
+            p.append("%s: acceptance test %s passes before Build: it tests nothing new (fix the test, or say the "
+                     "behaviour already exists)" % (name, a))
+        elif "FAIL" not in before:
+            p.append("%s: acceptance test %s was not seen failing before Build (Before build: FAIL, run with the safe "
+                     "test command)" % (name, a))
+        elif not why.strip():
+            p.append("%s: acceptance test %s fails but does not say why (the right reason: the missing behaviour)"
+                     % (name, a))
+        if "FAIL" in after:
+            p.append("%s: acceptance test %s still fails after Build: Build is not done" % (name, a))
+    for c in table_rows(find(secs, "not automated") or ""):
+        m = re.match(r"^AC(\d+)", c[0]) if c else None
+        if not m:
+            continue
+        seen.add(int(m.group(1)))
+        owner = (c[2] if len(c) > 2 else "").lower()
+        if not (c[1] if len(c) > 1 else "").strip():
+            p.append("%s: Not automated AC%s does not say why" % (name, m.group(1)))
+        if not any(o in owner for o in NOT_AUTO_OWNERS):
+            p.append("%s: Not automated AC%s needs its owner: ui-qa-expert or e2e-qa-expert" % (name, m.group(1)))
+    if spec is not None:
+        for n in sorted(ids("AC", find(sections(spec), "acceptance criteria") or "") - seen):
+            p.append("%s: AC%d has no acceptance test and no Not automated row (never skipped silently)" % (name, n))
+    return p
+
+
+def check_test_types(text, name="test-plan.md"):
+    """test-plan.md: ## Test types names every type of core/reference/qa/test-types.md, with rows or n/a: reason.
+    A plan without the section (written before core 1.16) gets a hint only."""
+    body = find(sections(text), "test types")
+    if body is None:
+        return [], ["%s: no \"## Test types\" section (each type with its rows or n/a: reason; test-types.md)" % name]
+    p, lines = [], body.lower().split("\n")
+    for ty in TEST_TYPES:
+        pat = re.compile(r"(?<![\w-])(?:%s)(?![\w-])" % TYPE_WORDS[ty])
+        line = next((ln for ln in lines if pat.search(ln)), None)
+        if line is None:
+            p.append("%s: Test types does not name %s (rows, or n/a: reason)" % (name, ty))
+        elif re.search(r"\bn/a\b", line) and not re.search(r"\bn/a\b\s*[:(\-–]\s*\w", line):
+            p.append("%s: Test types %s is n/a without a reason" % (name, ty))
+    return p, []
 
 
 def fix_blocks(text):
@@ -601,8 +837,9 @@ def fix_blocks(text):
     return out
 
 
-def check_fixproof(text, name="fix-proof.md", only=None):
-    """{block: [problems]} for fix-proof.md; only = the block ids to check (default all)."""
+def check_fixproof(text, name="fix-proof.md", only=None, escape=True):
+    """{block: [problems]} for fix-proof.md; only = the block ids to check (default all); escape: the escape line
+    is a problem (the /fix proof step, --fix), else the caller reports it as a hint (older blocks, other gates)."""
     blocks = fix_blocks(text)
     res = {}
     if only:
@@ -658,13 +895,26 @@ def check_fixproof(text, name="fix-proof.md", only=None):
             pr.append("%s: no ### Fix plan section" % bid)
         elif not any(re.search(r"`[^`\n]+`", ln) for ln in fp.split("\n") if re.match(r"^\s*(?:[-*+]|\d+[.)])\s+", ln)):
             pr.append("%s: Fix plan has no bullet naming a file in backticks" % bid)
+        if escape:
+            pr += escape_problems(bid, secs)
         res[bid] = pr
     return res
 
 
-def fixproof_report(text, name="fix-proof.md", only=None):
+def escape_problems(bid, secs):
+    """The /fix escape check: one line naming the stage that should have caught the bug and the missing check."""
+    esc = re.search(r"(?im)^[\s>*_-]*should have been caught at[\s*_]*:[\s*_]*(.+)$", "\n".join(secs.values()))
+    if esc is None:
+        return ['%s: no line "Should have been caught at: <stage> - <missing check>" (escape check)' % bid]
+    if not ESCAPE.match(esc.group(1).strip().strip("`*")):
+        return ["%s: Should have been caught at names no stage (review-spec R<n>, develop review, test <type>, "
+                "or not catchable: <why>) and the missing check" % bid]
+    return []
+
+
+def fixproof_report(text, name="fix-proof.md", only=None, escape=True):
     """(problems, lines to print) for fix-proof.md."""
-    res = check_fixproof(text, name, only)
+    res = check_fixproof(text, name, only, escape)
     problems, lines = [], []
     for b, pr in res.items():
         problems += pr
@@ -848,8 +1098,9 @@ def check(folder, files=None):
         files = list(files) + ["fix-list.md"]
     if os.path.isfile(os.path.join(folder, "fix-proof.md")) and "fix-proof.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
         files = list(files) + ["fix-proof.md"]
-    if os.path.isfile(os.path.join(folder, "data.md")) and "data.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
-        files = list(files) + ["data.md"]
+    for extra in ("data.md", "test.md", "test-plan.md"):
+        if os.path.isfile(os.path.join(folder, extra)) and extra not in [os.path.basename(f.replace("\\", "/")) for f in files]:
+            files = list(files) + [extra]
     reviews = review_docs()
     problems, hints = [], []
     for f in files:
@@ -862,21 +1113,31 @@ def check(folder, files=None):
             continue
         known = True
         if base == "fix-proof.md":
-            r = fixproof_report(text, name)[0], []
+            r = fixproof_report(text, name, escape=False)[0], [name + ": " + h for b, s in fix_blocks(text)
+                                                                for h in escape_problems(b, s)]
         elif base in BRIEF_DOCS:
             r = check_brief(text, base)
         elif base == "fix-list.md":
             r = check_fixlist(text, name), []
         elif base == "data.md":
             r = check_datamd(text, os.path.basename(folder.rstrip("/\\")), name), []
+        elif base == "test.md":
+            known = find(sections(text), "acceptance tests") is not None
+            r = check_acceptance(text, read(os.path.join(folder, "spec.md")), name), []
+        elif base == "test-plan.md":
+            r = check_test_types(text, name)
         elif base in SPEC_DOCS:
             dor = base not in PRODUCT_DOCS and find(sections(text), "definition of ready") is not None
             if dor and not re.search(r"(?im)^[\s>*_-]*kind of work[\s*_]*:", text):
                 r = check_dor(text, base), []  # a requirements-only spec: the technical part comes after READY
+                if status(folder).get("skill") == "review-spec" and os.path.isfile(os.path.join(folder, "context.md")):
+                    r = r[0] + check_today(text, base), r[1]
             else:
                 r = check_spec(text, read(os.path.join(folder, SPEC_DOCS[base])), folder, base)
                 if dor:
                     r = r[0] + check_dor(text, base), r[1]
+            if dor and vague_due(text):
+                r = r[0] + check_vague(text, base), r[1]
         elif base in DESIGN_DOCS:
             stories = read(os.path.join(folder, STORIES)) if base in PRODUCT_DOCS else None
             r = check_design(text, read(os.path.join(folder, DESIGN_DOCS[base])), base, stories, base in PRODUCT_DOCS)
@@ -929,6 +1190,8 @@ def main():
         if flag in sys.argv[1:]:
             standalone(flag)
     folder = os.path.join(WORK, sys.argv[1])
+    if not os.path.isdir(folder) and os.path.isdir(sys.argv[1]):
+        folder = os.path.abspath(sys.argv[1])  # a folder path: requirements only (requirements/<id>, no project.json)
     if "--fix" in sys.argv[2:]:
         i = sys.argv.index("--fix")
         text = read(os.path.join(folder, "fix-proof.md"))

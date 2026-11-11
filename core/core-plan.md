@@ -768,3 +768,33 @@ skill twice, and releases, production fixes and status for managers had no lane.
   works with no `.claude/project.json` (requirements only, `requirements/<id>/`, the code check skipped and said so).
 - Repo root: README "Start here by role" and `ONBOARDING.md` (install, first command per role, where things land,
   approvals).
+
+## 40. 1.16.0 - requirements checked properly, tests first, more QA types, learning from missed bugs
+Why: in the last 12 task folders per repo QA barely ran (ui-qa-expert 2 runs; e2e-qa-expert, test-data-engineer and
+verifier none), `/review-spec` agents only read code to learn what exists, the Definition of Ready checked only that
+parts were present, spec-analyst graded its own draft, qa-lead's test types had no AI answer quality, languages,
+data upgrade or browsers, and lessons came only from review MUSTs.
+- Definition of Ready R12-R16: clear (no vague words, a glossary), consistent (within the text, other named tickets,
+  today's behaviour), complete behaviour (create, change, remove, cancel, states and who moves them, limits,
+  duplicates, two people at once), assumptions as `A<n>`, traceable to the goal. Specs made READY before keep R1-R11.
+- Writer and checker apart: qa-lead's `testability` mode became `requirements-review` (`requirements-review.md`,
+  method in `reference/requirements/requirements-review.md`); each finding quotes the sentence and asks one plain
+  question; its results fill R10 and R12-R16. spec-analyst writes and merges; its review-spec layout moved to
+  `reference/requirements/requirements-spec.md` (the agent file got smaller). `dor` applies R12-R16 to the request
+  as given, quoting each criterion.
+- `handoff_check.py`: vague words in the requirement part of `spec.md` are PROBLEM lines (core list
+  `reference/requirements/vague-words.md` plus `glossary.vague_words`); quoted text, code, comments, questions, the
+  glossary, the table and the technical appendix are skipped. It takes a folder path for requirements-only runs.
+- With code there, `/review-spec` runs `explorer` (`context`) first and the spec gets `## Today vs asked` per
+  criterion (plain words; path:line in the appendix; each conflict a question; checked by handoff_check).
+- `/develop`: acceptance tests first (qa-engineer `acceptance`, `reference/qa/acceptance-tests.md`): written from the
+  criteria after the test plan, run with the safe test command, each seen failing for the right reason; Build is done
+  when they pass; criteria that cannot be automated go to ui-qa-expert or e2e-qa-expert (`## Not automated`).
+- qa-lead's plan has `## Test types` (`reference/qa/test-types.md`): AI answer quality (eval set, judge, abuse cases
+  from the QA facts; ai-engineer reviews an AI change), languages and long labels, data upgrade on existing rows,
+  browsers and devices, each n/a with a reason when it does not apply. The product-specific eval path left
+  qa-engineer.
+- `/fix` escape check: bug-investigator adds `Should have been caught at: <stage> - <missing check>` (`(core)` when it
+  applies to any product) to each block; `/fix` records a project check as a lesson tagged `[review-spec R<n>]`,
+  `[develop review]` or `[test <type>]` (or the checklist, or the QA facts) and a core check in
+  `.claude/review/core-escapes.md` for the core owner. The review pack leaves out lessons tagged for other stages.
