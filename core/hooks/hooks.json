@@ -91,6 +91,21 @@
     ]
    }
   ],
+  "SessionEnd": [
+   {
+    "hooks": [
+     {
+      "type": "command",
+      "command": "python",
+      "timeout": 5,
+      "args": [
+       "${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py",
+       "hook"
+      ]
+     }
+    ]
+   }
+  ],
   "Stop": [
    {
     "hooks": [

@@ -12,12 +12,12 @@ Two modes, fixed at the first init:
 
   L = python .claude/core/scripts/live_status.py
   init ID [--title T] [--size S|M|L] [--mode task|product] [--root PATH] [--screen] [--tool claude|cursor]
-                  [--skill review-spec|develop|fix|test|factory]
+                  [--skill review-spec|develop|fix|test|release|factory]
                                      start or resume (binds this session to it); product mode starts with the
                                      factory's default team; --skill sets the flow skill the ticket is in (kept
                                      when a re-init has none); --root is the product root (product mode default:
                                      products_root/ID); --screen keeps the prototype stage of a size S product
-  skill ID NAME                      the ticket's current flow skill (review-spec|develop|fix|test|factory); logged
+  skill ID NAME                      the ticket's current flow skill (review-spec|develop|fix|test|release|factory); logged
   next ID "TEXT" | --clear           the hand-off line for the developer, e.g. "/test BLEN-1"; shown on the page and
                                      as `Next:` in status.md
   data ID ready|partial|missing|blocked [--note TEXT] [--asks N]
@@ -29,6 +29,13 @@ Two modes, fixed at the first init:
           [--smoke-pass N --smoke-fail N] | refresh RUN ID | check RUN | done RUN
                                      a test run over several tickets; the done table ends with Data and Smoke
   stage ID STAGE start|done|fail [--out TEXT] [--actor NAME]
+                                     task mode: a stage that ran before starts its next round when another stage
+                                     ran since ("Build (fix round 2)", "Test (retest)"); a start closes the
+                                     earlier live stages with no agent at work
+  repair ID [--dry-run]              a task from before 1.14.1: each run back in its agent's home stage (a resumed
+                                     agent in its earlier run's stage), rounds numbered, runs with no finish
+                                     signal stopped, stage states from the runs; prints the grouping before and
+                                     after; keeps status.json.bak first
   gate ID STAGE "QUESTION" [--file F]... [--open prototype.html] [--decision D2] [--skip-check REASON] [--by AGENT]
                                      wait for the developer; repeat --file to review a stage's documents in one
                                      gate (decisions/D2-*.md cards are recognised); spec/design documents must pass
@@ -51,7 +58,15 @@ Two modes, fixed at the first init:
   expert ID STAGE "EXPERT" start|done|skip [--out TEXT]   one expert's status (agents are tracked by the hook)
   code ID open|closed                product mode: open or close code writes in the product root by hand (a live
                                      base stage and an approved G3 open them; base start and G3 clear the hand value)
-  hook [--cursor]                    stdin: hook JSON; records activity for the session's task
+  hook [--cursor]                    stdin: hook JSON; records activity for the session's task; a finished agent
+                                     run keeps its tokens (tok in/out/cache write/cache read, model) read once from
+                                     its transcript, and the page shows tokens and an estimated cost (costs in
+                                     project.json, prices per million tokens; runs from before 1.15.0 show nothing)
+  share ID [--out PATH]              one offline HTML snapshot of a task for a product owner, QA or manager: stages,
+                                     who did what, decisions, open questions, QA result, tokens and cost estimate
+                                     (default <work>/ID/share.html; no file contents, commands or secrets)
+  share --all [--out PATH]           one overview of all open tasks (default <work>/share-all.html), with the tasks
+                                     finished in the last 7 days in a second table
   open [ID]                          serve <work> on 127.0.0.1:<live_port> if needed and open the page
   serve [--port N]                   the page server (what `open` starts): <work> plus /_file?p=<path>, read-only,
                                      so the page can open the files the agents changed (repo and product roots)
@@ -72,7 +87,8 @@ import os
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+import html
 
 sys.dont_write_bytecode = True
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -167,6 +183,13 @@ AGENT_STAGE = {"spec-analyst": "spec", "bug-investigator": "spec", "solution-arc
                "sf-expert": "design", "sf-skills-expert": "design", "ai-engineer": "design", "n8n-expert": "design", "code-reviewer": "review", "qa-engineer": "test",
                "ui-qa-expert": "test", "e2e-qa-expert": "test", "test-data-engineer": "test",
                "verifier": "verify", "release-manager": "release"}
+# task mode: the home stage of every core agent, whatever stage the task is in when it starts (1.14.1)
+BUILDERS = ("backend-developer", "frontend-developer", "integration-engineer", "devops-engineer", "base-builder")
+HOME = dict(AGENT_STAGE, **dict.fromkeys(BUILDERS, "build"),
+            **{"performance-engineer": "spec", "product-critic": "spec", "story-sizer": "spec"})
+# a domain expert's stage from its job: the first of these words anywhere in it, else Design
+JOB_WORDS = (("build", r"fix|build|implement|apply"), ("review", r"review|re-?check"), ("test", r"test|retest|smoke"),
+             ("verify", r"verif"), ("design", r"design|plan|card\b|architect"), ("spec", r"spec\b|requirement|root cause"))
 # product mode: the factory's default team (AGENTS.md flow table, core names); domain rows only when configured
 PRODUCT_TEAM = [
     ("intake", "main session", "triage card and plan (00-intake.md)"),
@@ -268,6 +291,27 @@ def call_budget(agent, mode):
             CALLS[key] = int(m.group(1)) if m else 0
             break
     return CALLS[key]
+
+
+TURNS = {}
+
+
+def run_limit(agent):
+    """Minutes a live run may go without a tool call before it counts as stopped with no finish signal: two per
+    turn of the agent's maxTurns, between 30 and 180 (60 when its file names none)."""
+    key = canon(agent).lower()
+    if key not in TURNS:
+        TURNS[key] = 60
+        for d in (os.path.join(ROOT, ".claude", "agents"), os.path.join(_HERE, "..", "agents")):
+            try:
+                with open(os.path.join(d, key + ".md"), encoding="utf-8") as f:
+                    m = re.search(r"(?m)^maxTurns:\s*(\d+)", f.read(4000))
+            except OSError:
+                continue
+            if m:
+                TURNS[key] = max(30, min(180, 2 * int(m.group(1))))
+            break
+    return TURNS[key]
 
 
 CERTS = {}
@@ -568,6 +612,8 @@ def now_rows(st):
 
 
 def save(st):
+    if not st.get("demo"):
+        sweep_stale(st)
     st["updated"] = now()
     st["project"] = CFG.get("name") or ""
     st["teams"] = teams_table(mode_of(st))
@@ -579,6 +625,7 @@ def save(st):
     ags = {r["agent"] for r in (st.get("plan") or {}).get("rows", []) + (st.get("runs") or [])} |         {b["agent"] for b in st.get("bg") or []}
     st["calls"] = {a: n for a in sorted(ags) if a != "main session" for n in [call_budget(a, mode_of(st))] if n}
     st["certs"] = {a: c for a in sorted(ags) if a != "main session" for c in [certs_of(a)] if c}
+    task_tokens(st)
     st["now"] = now_rows(st)
     for k, v in (("fixes", fix_counts(st["id"])), ("req", req_state(st["id"])),
                  ("testrun", run_view(st["id"]) if st.get("kind") == "testrun" else None)):
@@ -742,6 +789,8 @@ def cmd_init(a):
             skip = set(SKIP[mode].get(size, set()))
             if mode == "product" and a.screen:
                 skip.discard("prototype")
+            if mode == "task" and getattr(a, "skill", "") == "release":
+                skip = (skip | RELEASE_SKIP) - {"test", "release", "wrap"}
             st = dict(id=a.id, title=a.title or a.id, size=size, tool=a.tool, mode=mode, root=root or "",
                       started=now(), seq=0, events=[], counts={}, gate=None,
                       stages=[new_stage(mode, k, n, k in skip) for k, n in MODES[mode]])
@@ -1014,11 +1063,9 @@ def close_rows(st, stage):
     finish_runs(st, stage)
 
 
-STAGE_WORD = re.compile(r"^\W*(spec|design|build|review|test|verify|release)\b", re.I)
-
-
 def agent_stage(st, name, cur, job=""):
-    """The stage an agent works in: the current one when the team plans it there, else its first open row."""
+    """The stage an agent works in: the current one when the team plans it there, else its next open row, else
+    (task mode) its home stage, also when its rows are finished."""
     rows = (st.get("plan") or {}).get("rows", [])
     if not rows:
         if mode_of(st) == "product":
@@ -1026,22 +1073,111 @@ def agent_stage(st, name, cur, job=""):
             if cur in owns:
                 return cur
             return next((s["k"] for s in st["stages"] if s["k"] in owns and s["state"] not in ("done", "skip")), None)
-        # a domain expert works in the stage its job names ("Build card 2: ..."), else its own, else the one that runs
-        k = (STAGE_WORD.match(job or "") or [None, ""])[1].lower()
-        if (name in DOMAIN_CORE or name in experts_list()) and \
-                any(s["k"] == k and s["state"] not in ("done", "skip") for s in st["stages"]):
-            return k
-        if name == "qa-lead":  # the test plan at Design, the sign-off at Test
-            return "test" if re.search(r"(?i)sign.?off", job or "") or cur in ("review", "test", "verify") else "design"
-        if name in AGENT_STAGE:
-            return AGENT_STAGE[name]
-        if name not in experts_list():
-            return None
-        return cur if cur != "spec" and stage_of(st, cur)["state"] in ("live", "fail") else "design"
+        return home_stage(st, name, job, cur)
     if team_rows(st, cur, name, ("todo", "live")):
         return cur
-    # not on the team (or all its rows finished): log it in the current stage, never reopen a finished one
-    return next((r["stage"] for r in rows if r["agent"].lower() == name.lower() and r["state"] in ("todo", "live")), None)
+    # its next open row; off the team (or all its rows finished): its home stage (task mode), else the current one
+    return next((r["stage"] for r in rows if r["agent"].lower() == name.lower() and r["state"] in ("todo", "live")), None) \
+        or (home_stage(st, name, job, cur) if mode_of(st) == "task" else None)
+
+
+def job_stage(job):
+    """The stage a job names: the first stage word anywhere in it ("Independently review ..." -> review)."""
+    best = None
+    for k, pat in JOB_WORDS:
+        m = re.search(r"(?i)\b(?:%s)" % pat, job or "")
+        if m and (best is None or m.start() < best[0]):
+            best = (m.start(), k)
+    return best[1] if best else None
+
+
+def home_stage(st, name, job="", cur=""):
+    """Task mode: the stage an agent's work belongs to, whatever stage the task is in when it starts. Builders
+    build, code-reviewer reviews, the QA agents test (qa-lead plans at Design until Test starts, qa-engineer locks
+    today's behaviour at Design), verifier verifies, domain experts work where their job's stage word says (else
+    Design). None for an agent with no home (the run goes to the current stage)."""
+    n = canon(name).lower()
+    keys = {s["k"]: s for s in st["stages"]}
+    if n == "qa-lead":
+        if re.search(r"(?i)sign.?off|retest|smoke|merge", job or ""):
+            k = "test"
+        elif re.search(r"(?i)\bplan|testab|intake", job or ""):
+            k = "design" if (keys.get("test") or {}).get("state") in ("todo", "skip", None) else "test"
+        else:
+            k = "test" if cur in ("review", "test", "verify") else "design"
+    elif n == "qa-engineer" and re.search(r"(?i)characteri|lock today|before build", job or ""):
+        k = "design"
+    elif n == "explorer":
+        k = "spec" if re.search(r"(?i)context", job or "") else None
+    elif n in DOMAIN_CORE or n in [e.lower() for e in experts_list()]:
+        k = job_stage(job) or "design"
+    else:
+        k = HOME.get(n)
+    return k if k in keys else None
+
+
+def act_of(s):
+    """When work last entered a stage (a run or `stage start`)."""
+    return s.get("act") or s.get("run") or s.get("start") or ""
+
+
+def round_label(st, k, n):
+    """Round 2 and later: "fix round 2" on the fix skill, "retest" for Test, else "round 2"."""
+    if n < 2:
+        return ""
+    if k == "test":
+        return "retest" if n == 2 else "retest %d" % (n - 1)
+    return ("fix round %d" if st.get("skill") == "fix" else "round %d") % n
+
+
+def bump_round(st, s):
+    """Task mode: a stage that already ran starts a new round when another stage ran since its last work (a MUST
+    sent back to Build, the re-review after the fix, the retest)."""
+    mine = act_of(s)
+    if mode_of(st) != "task" or not mine:
+        return False
+    if not any(act_of(x) > mine for x in st["stages"] if x["k"] not in (s["k"], "wrap")):
+        return False
+    s["round"] = s.get("round", 1) + 1
+    s["rl"] = round_label(st, s["k"], s["round"])
+    return True
+
+
+def close_earlier(st, k):
+    """Task mode: one stage is live at a time. A stage that starts closes the earlier live ones that have no live
+    run (a stage with an agent still at work stays open beside it: the parallel stages the flow allows). The QA
+    sign-off stage stays open until its sign-off says SIGNED OFF."""
+    if mode_of(st) != "task":
+        return []
+    keys = [s["k"] for s in st["stages"]]
+    busy = {r["stage"] for r in st.get("runs") or [] if r["state"] == "live"}
+    shut = []
+    for s in st["stages"][:keys.index(k)]:
+        if s["state"] == "live" and s["k"] not in busy and not signoff_issue(st, st["id"], s["k"]):
+            s["state"], s["end"] = "done", now()
+            for r in team_rows(st, s["k"], None, ("live",)):
+                r["state"], r["end"] = "done", now()
+            shut.append(s["k"])
+            add(st, s["k"], "done", s["name"] + " closed: " + sname(st, k) + " started", "main session")
+    return shut
+
+
+def enter_stage(st, k, actor):
+    """Work enters a stage (an agent's run starts in it): a new round when it ran before and another stage ran
+    since, live again when it was not, and the earlier live stages with nothing at work close. True when it was
+    not live."""
+    s = stage_of(st, k)
+    bumped = bump_round(st, s)
+    fresh = s["state"] != "live"
+    if fresh:
+        reopen(s)
+        s["state"], s["run"], s["actor"] = "live", now(), actor
+        s.setdefault("start", s["run"])
+    s["act"] = now()
+    close_earlier(st, k)
+    if fresh or bumped:
+        add(st, k, "start", s["name"] + (" (%s)" % s["rl"] if s.get("rl") and bumped else "") + " started", actor)
+    return fresh or bumped
 
 
 def cmd_plan(a):
@@ -1211,10 +1347,15 @@ def cmd_stage(a):
         name = sname(st, a.stage)
         actor = canon(a.actor) if a.actor else ""
         if a.action == "start":
+            bumped = bump_round(st, s)
             reopen(s)
             s["state"], s["run"] = "live", now()
             s.setdefault("start", s["run"])
+            s["act"] = s["run"]
             s["actor"] = actor or s.get("actor") or ACTOR[mode_of(st)][a.stage]
+            close_earlier(st, a.stage)
+            if bumped:
+                name += " (%s)" % s["rl"]
             mine = team_rows(st, a.stage)
             if mine and all(r["state"] in ("done", "skip") for r in mine):  # a new round of this stage
                 for r in mine:
@@ -1246,6 +1387,114 @@ def cmd_stage(a):
     if err:
         print(err)
         sys.exit(2)
+
+
+def grouping(st):
+    """The page's grouping in plain lines: each stage with its state, round and runs."""
+    out = []
+    for s in st["stages"]:
+        R = [r for r in st.get("runs") or [] if r["stage"] == s["k"]]
+        if not R and s["state"] in ("todo", "skip"):
+            continue
+        rl = " (%s)" % s["rl"] if s.get("round", 1) > 1 and s.get("rl") else ""
+        runs = ", ".join("%s %s%s%s" % (r["id"], r["agent"], " r%d" % r["round"] if r.get("round", 1) > 1 else "",
+                                       "" if r["state"] == "done" else " [%s]" % r["state"]) for r in R)
+        out.append("  %s%s: %s%s" % (s["name"], rl, s["state"], " - " + runs if runs else ""))
+    return out
+
+
+def repair(st):
+    """Re-attributes a task's runs as 1.14.1 records them: each run in its agent's home stage (a resumed agent,
+    same agent id, in the stage of its earlier run; an agent with no home keeps its stage), the rounds numbered in
+    time order, runs with no finish signal stopped, and the stage states rebuilt from the runs."""
+    sweep_stale(st)
+    keys = [s["k"] for s in st["stages"]]
+    rows = (st.get("plan") or {}).get("rows", [])
+    sim = dict(st, stages=[dict(k=k, state="todo", name=s["name"]) for k, s in zip(keys, st["stages"])])
+    acts, rounds, by_aid, cur = {}, {}, {}, keys[0]
+    for r in sorted(st.get("runs") or [], key=lambda x: x.get("start") or ""):
+        if r.get("aid") and r["aid"] in by_aid:
+            k = by_aid[r["aid"]]
+        elif rows and any(x["stage"] == r["stage"] and x["agent"].lower() == r["agent"].lower() for x in rows):
+            k = r["stage"]  # planned there
+        else:
+            k = home_stage(sim, r["agent"], r.get("job") or "", cur) or r["stage"]
+        if k not in keys:
+            k = r["stage"]
+        t = r.get("start") or ""
+        if acts.get(k) and any(v > acts[k] for x, v in acts.items() if x not in (k, "wrap")):
+            rounds[k] = rounds.get(k, 1) + 1
+        acts[k], cur = t, k
+        r["stage"] = k
+        n = rounds.get(k, 1)
+        if n > 1:
+            r["round"], r["rl"] = n, round_label(st, k, n)
+        else:
+            r.pop("round", None)
+            r.pop("rl", None)
+        if r.get("aid"):
+            by_aid.setdefault(r["aid"], k)
+        next(x for x in sim["stages"] if x["k"] == k)["state"] = "done"
+    by_id = {r["id"]: r for r in st.get("runs") or []}
+    for e in st.get("events") or []:
+        if e.get("run") in by_id:
+            e["stage"] = by_id[e["run"]]["stage"]
+    ran = [k for k in keys if k in acts]
+    last = keys.index(ran[-1]) if ran else -1
+    for i, s in enumerate(st["stages"]):
+        R = [r for r in st.get("runs") or [] if r["stage"] == s["k"]]
+        n = rounds.get(s["k"], 1)
+        if n > 1:
+            s["round"], s["rl"] = n, round_label(st, s["k"], n)
+        else:
+            s.pop("round", None)
+            s.pop("rl", None)
+        if R:
+            s["act"] = acts[s["k"]]
+            s.setdefault("start", min(r.get("start") or "" for r in R))
+            if any(r["state"] == "live" for r in R):
+                s["state"] = "live"
+                s.pop("end", None)
+            elif s["state"] not in ("fail", "wait"):
+                s["state"] = "done"
+                s["end"] = max((r.get("end") or r.get("start") or "") for r in R)
+        elif s["state"] == "live":
+            if i < last:
+                s["state"], s["end"] = "done", s.get("end") or now()
+            else:  # opened only by a run that belongs elsewhere: it never really started
+                s["state"] = "todo"
+                for f in ("start", "run", "end", "act", "idle_s", "actor"):
+                    s.pop(f, None)
+    live = {r.get("aid") for r in st.get("runs") or [] if r["state"] == "live" and r.get("aid")}
+    agents = {r["agent"] for r in st.get("runs") or [] if r["state"] == "live"}
+    if st.get("bg"):
+        st["bg"] = [b for b in st["bg"] if (b.get("aid") in live) or (not b.get("aid") and b["agent"] in agents)]
+    return st
+
+
+def cmd_repair(a):
+    out = {}
+
+    def run():
+        st = load(a.id)
+        out["before"] = grouping(st)
+        if mode_of(st) != "task":
+            return "repair: %s is a product; only task mode is re-attributed" % a.id
+        raw = json.dumps(st, indent=1)
+        repair(st)
+        out["after"] = grouping(st)
+        if a.dry:
+            return None
+        write(path(a.id, "status.json.bak"), raw)
+        add(st, current_stage(st), "note", "Stages repaired: runs back in their home stages (live_status.py repair)",
+            "main session")
+        save(st)
+    err = with_lock(run)
+    if err:
+        print(err)
+        sys.exit(2)
+    print("Before:\n" + "\n".join(out.get("before") or ["  (no runs)"]))
+    print("After%s:\n" % (" (dry run, nothing written)" if a.dry else "") + "\n".join(out.get("after") or ["  (no runs)"]))
 
 
 def cmd_code(a):
@@ -1399,7 +1648,8 @@ def cmd_chat(a):
     print(chat_text(a.id, g))
 
 
-SKILLS = ["review-spec", "develop", "fix", "test", "factory"]
+SKILLS = ["review-spec", "develop", "fix", "test", "release", "factory"]
+RELEASE_SKIP = {"spec", "design", "build", "review", "verify"}  # a /release task: Test (smoke), Release, Wrap-up
 
 
 def cmd_skill(a):
@@ -1801,8 +2051,61 @@ def new_run(st, agent, expert, stage, job="", use="", aid="", output=""):
         r["aid"] = aid
     if output:
         r["output"] = output
+    if agent != "main session":
+        r["lim"] = run_limit(agent)
+    if HOOK["sid"]:
+        r["sid"] = HOOK["sid"]
+    rd = next((s.get("round", 1) for s in st["stages"] if s["k"] == stage), 1)
+    if rd > 1:
+        r["round"], r["rl"] = rd, round_label(st, stage, rd)
+    old = (st.get("runs") or [])[:-(KEEP_RUNS - 1)]
+    if old:  # a run that leaves the list keeps its tokens in the task total
+        st["tmOld"] = st.get("tmOld") or {}
+        for x in old:
+            add_tm(st["tmOld"], x.get("tm"))
     st["runs"] = (st.get("runs") or [])[-(KEEP_RUNS - 1):] + [r]
     return r
+
+
+HOOK = {"sid": ""}  # the session behind the hook call being recorded (runs keep it for SessionEnd)
+STALE_WHY = "stopped (no finish signal)"
+
+
+def last_act(r):
+    """When a run last did something: its last step, else its start."""
+    return ((r.get("steps") or [[None]])[-1][0]) or r.get("start") or ""
+
+
+def stop_runs(st, runs, why=STALE_WHY):
+    """Runs that will never send a finish signal (their session ended, or nothing for longer than their limit) stop:
+    they no longer count as working, hold no stage open and drop out of the background list flow_check waits on."""
+    gone = set()
+    for r in runs:
+        r["state"], r["end"], r["why"] = "stopped", last_act(r) or now(), why
+        gone.add(r.get("aid") or "")
+        add(st, r["stage"], "agent", r["expert"] + " " + why, r["expert"], run=r["id"])
+    if st.get("bg"):
+        st["bg"] = [b for b in st["bg"] if not (b.get("aid") and b["aid"] in gone)
+                    and not any(not b.get("aid") and b["agent"] == r["agent"] for r in runs)]
+    return len(runs)
+
+
+def sweep_stale(st, at=None):
+    """Live runs past their limit with no tool call (`lim` minutes, from the agent's maxTurns) are stopped."""
+    out = []
+    for r in st.get("runs") or []:
+        if r["state"] != "live" or r.get("agent") == "main session":
+            continue
+        lim = r.get("lim") or run_limit(r.get("agent") or "")
+        if timing.gap_s(last_act(r), at or now()) > lim * 60:
+            out.append(r)
+    if not out:
+        return 0
+    stop_runs(st, out)
+    top = [s["k"] for s in st["stages"] if s["state"] in ("live", "wait")]
+    if top:  # a stage only those runs held open closes behind the one the task is in now
+        close_earlier(st, top[-1])
+    return len(out)
 
 
 def find_run(st, aid="", use="", name="", oldest=False):
@@ -2097,7 +2400,15 @@ def on_tool(tid, data, sid=""):
         except ValueError:
             inp = {}
     pre = event in ("PreToolUse", "preToolUse")
+    HOOK["sid"] = sid
     st = load(tid)
+    if event in ("SessionEnd", "sessionEnd"):
+        # the session ended: its runs that never sent a finish signal stop with it
+        mine = [r for r in st.get("runs") or [] if r["state"] == "live" and sid and r.get("sid") == sid]
+        if mine:
+            stop_runs(st, mine)
+            save(st)
+        return
     cur = current_stage(st)
     if event in ("SubagentStart", "subagentStart"):
         # Cursor: a subagent starts in its own conversation; its tool calls are recorded under this task's run
@@ -2110,7 +2421,10 @@ def on_tool(tid, data, sid=""):
                 run["aid"] = aid
             else:
                 job = job_of(data.get("description") or data.get("task") or "")
-                new_run(st, name, ex, agent_stage(st, name, cur, job) or cur, job, aid=aid)
+                k = agent_stage(st, name, cur, job)
+                if k:
+                    enter_stage(st, k, ex)
+                new_run(st, name, ex, k or cur, job, aid=aid)
             os.makedirs(path(".sessions"), exist_ok=True)
             write(path(".sessions", aid), tid)
             save(st)
@@ -2128,6 +2442,7 @@ def on_tool(tid, data, sid=""):
         run = find_run(st, aid, "", name, oldest=not aid) or \
             next((x for x in reversed(st.get("runs") or []) if aid and x.get("aid") == aid), None)
         if run:
+            set_tokens(run, data, aid=aid)
             finish_run(st, run, *stop_state(data), reply=reply_text(data), again=True)
         if r:
             r["state"], r["end"] = "done", now()
@@ -2147,19 +2462,14 @@ def on_tool(tid, data, sid=""):
         rid = isinstance(resp, dict) and str(resp.get("agentId") or resp.get("agent_id") or "")
         job, files, output = brief_of(inp)
         if pre and stage:
-            s = stage_of(st, stage)
             r = mark_expert(st, stage, name, "live", hint)
             if r and use:  # the launch's result names the run (agentId): its tool calls then show on this row
                 st["launch"] = dict(list((st.get("launch") or {}).items())[-9:] + [(use, r["expert"])])
-            route(st, stage, r["expert"] if r else name, job, files, output)
-            new_run(st, name, r["expert"] if r else name, stage, job or (r or {}).get("why", ""), use, output=output)
-            if s["state"] == "live":  # another expert of a stage that is already running
-                add(st, stage, "agent", (r["expert"] if r else name) + " started", r["expert"] if r else name)
-            else:
-                reopen(s)
-                s["state"], s["run"], s["actor"] = "live", now(), name
-                s.setdefault("start", s["run"])
-                add(st, stage, "start", s["name"] + " started", r["expert"] if r else name)
+            ex = r["expert"] if r else name
+            if not enter_stage(st, stage, ex):  # another expert of a stage that is already running
+                add(st, stage, "agent", ex + " started", ex)
+            route(st, stage, ex, job, files, output)
+            new_run(st, name, ex, stage, job or (r or {}).get("why", ""), use, output=output)
         elif pre:
             route(st, cur, name, job, files, output)
             new_run(st, name, name, cur, job, use, output=output)
@@ -2179,12 +2489,14 @@ def on_tool(tid, data, sid=""):
         else:
             run = find_run(st, "", use, name)  # a foreground agent is back: its run stops with its result
             if run:
+                set_tokens(run, data, resp, aid=(isinstance(resp, dict) and str(resp.get("agentId") or resp.get("agent_id") or "")) or "")
                 finish_run(st, run, *stop_state(resp), reply=reply_text(resp))
             if stage and team_rows(st, stage):
                 # planned team: the stage ends with `stage done`, not when its first expert finishes
                 r = mark_expert(st, stage, name, "done", hint)
                 add(st, stage, "agent", (r["expert"] if r else name) + " finished", r["expert"] if r else name)
-            elif stage and stage_of(st, stage)["state"] == "live":
+            elif stage and stage_of(st, stage)["state"] == "live" and \
+                    not any(x["state"] == "live" and x["stage"] == stage for x in st.get("runs") or []):
                 s = stage_of(st, stage)
                 s["state"], s["end"] = "done", now()
                 add(st, stage, "done", name + " finished", name)
@@ -2207,14 +2519,22 @@ def on_tool(tid, data, sid=""):
         extra["aid"] = aid[-8:]  # two runs of one agent stay apart on the page
     if actor != "main session":
         run = find_run(st, aid, "", actor)
-        if run is None and aid:  # launched before this hook saw it
-            run = new_run(st, base_agent(actor), actor, cur, aid=aid)
+        if run is None and aid:
+            # resumed (SendMessage to the same agent id): it goes on in the stage of its earlier run; launched
+            # before this hook saw it: its home stage
+            prev = next((x for x in reversed(st.get("runs") or []) if x.get("aid") == aid), None)
+            k = prev["stage"] if prev else (home_stage(st, base_agent(actor), "", cur) if mode_of(st) == "task" else None)
+            if k and any(s["k"] == k for s in st["stages"]):
+                enter_stage(st, k, actor)
+            job = ("Continued: " + re.sub(r"^(Continued: )+", "", prev["job"]))[:120] if prev and prev.get("job") else ""
+            run = new_run(st, base_agent(actor), actor, k or cur, job, aid=aid)
         if run is not None:
             if aid:
                 run["aid"] = aid
             tp = tool_path(inp)
             run_step(st, run, kind, text, extra, os.path.join(ROOT, tp) if tp else "")
             extra["run"] = run["id"]
+            cur = run["stage"]  # an agent's step shows in the stage its run belongs to
     add(st, cur, kind, text, actor, **extra)
     save(st)
 
@@ -2672,6 +2992,339 @@ def cmd_testrun(a):
         with_lock(run)
 
 
+# ---- tokens and cost (1.15.0) ------------------------------------------------------------------
+
+def family(model):
+    """opus, sonnet or haiku from a model id (claude-opus-5-5 ...); "" when unknown."""
+    m = str(model or "").lower()
+    return next((f for f in ("opus", "sonnet", "haiku") if f in m), "")
+
+
+def usage_of_file(p, limit=3.0, cap=60 * 1024 * 1024):
+    """Tokens per model from a Claude Code transcript (jsonl, read once as a stream, capped in time and size).
+    Each assistant line has message.model and message.usage; a message can be written several times while it
+    streams, so the last line per message id counts. Only numbers are read, never the text."""
+    by, t0, n = {}, time.time(), 0
+    with open(p, "rb") as f:
+        for raw in f:
+            n += len(raw)
+            if n > cap or time.time() - t0 > limit:
+                break
+            if b'"usage"' not in raw:
+                continue
+            try:
+                d = json.loads(raw)
+                m = d.get("message")
+                u = m.get("usage")
+                if d.get("type") != "assistant" or not isinstance(u, dict):
+                    continue
+                by[m.get("id") or d.get("uuid") or len(by)] = (str(m.get("model") or ""), u)
+            except (ValueError, AttributeError):
+                continue
+    tm = {}
+    for model, u in by.values():
+        if not model or model.startswith("<"):
+            continue
+        t = tm.setdefault(model, {"in": 0, "out": 0, "cw": 0, "cr": 0})
+        for k, f in (("in", "input_tokens"), ("out", "output_tokens"), ("cw", "cache_creation_input_tokens"),
+                     ("cr", "cache_read_input_tokens")):
+            t[k] += int(u.get(f) or 0)
+    return tm
+
+
+def transcript_of(data, aid=""):
+    """The agent's transcript file: agent_transcript_path, else <session>/subagents/agent-<agent id>.jsonl next to
+    the session transcript_path."""
+    p = str(data.get("agent_transcript_path") or "")
+    if not p:
+        tp = str(data.get("transcript_path") or "")
+        aid = re.sub(r"[^A-Za-z0-9_-]", "", aid or str(data.get("agent_id") or ""))[:80]
+        if tp and aid:
+            p = os.path.join(os.path.splitext(tp)[0], "subagents", "agent-" + aid + ".jsonl")
+    return p if p.lower().endswith(".jsonl") and os.path.isfile(p) else ""
+
+
+def set_tokens(run, data, resp=None, aid=""):
+    """Store the run's tokens: `tm` per model, `tok` the sum, `model` the one that wrote most. Fails silently."""
+    try:
+        tm = {}
+        p = transcript_of(data, aid)
+        if p:
+            tm = usage_of_file(p)
+        u = resp.get("usage") if isinstance(resp, dict) else None
+        if not tm and isinstance(u, dict) and u.get("output_tokens") is not None:  # an Agent result that carries usage
+            tm = {str(resp.get("model") or "unknown"): {"in": int(u.get("input_tokens") or 0), "out": int(u.get("output_tokens") or 0),
+                                                         "cw": int(u.get("cache_creation_input_tokens") or 0),
+                                                         "cr": int(u.get("cache_read_input_tokens") or 0)}}
+        if tm:
+            run["tm"] = tm
+            run["tok"] = {k: sum(t[k] for t in tm.values()) for k in ("in", "out", "cw", "cr")}
+            run["model"] = max(tm, key=lambda m: tm[m]["out"])
+    except Exception:
+        pass
+
+
+def cost_of(tm):
+    """USD of {model: {in,out,cw,cr}} from CFG["costs"] (per million tokens); models of no known family add nothing."""
+    c, usd = CFG.get("costs") or {}, 0.0
+    for model, t in (tm or {}).items():
+        pr = c.get(family(model))
+        if isinstance(pr, dict):
+            usd += sum(t.get(k, 0) * float(pr.get(k) or 0) for k in ("in", "out", "cw", "cr")) / 1e6
+    return usd
+
+
+def add_tm(a, b):
+    for m, t in (b or {}).items():
+        x = a.setdefault(m, {"in": 0, "out": 0, "cw": 0, "cr": 0})
+        for k in x:
+            x[k] += t.get(k, 0)
+
+
+def task_tokens(st):
+    """Per-task total: every run's tokens (plus the runs trimmed from the list) and the estimated cost."""
+    tm = {}
+    add_tm(tm, st.get("tmOld"))
+    for r in st.get("runs") or []:
+        r.pop("cost", None)
+        if r.get("tm"):
+            add_tm(tm, r["tm"])
+            r["cost"] = round(cost_of(r["tm"]), 4)
+    if not tm:
+        st.pop("tok", None)
+        st.pop("cost", None)
+        return
+    st["tok"] = {k: sum(t[k] for t in tm.values()) for k in ("in", "out", "cw", "cr")}
+    c = CFG.get("costs") or {}
+    st["cost"] = {"usd": round(cost_of(tm), 4), "cur": c.get("currency") or "USD", "as_of": c.get("as_of") or "", "estimate": True}
+
+
+def ktok(n):
+    n = int(n or 0)
+    if n < 1000:
+        return str(n)
+    if n < 100000:
+        return "%.1fk" % (n / 1000.0)
+    if n < 1000000:
+        return "%dk" % round(n / 1000.0)
+    return "%.1fM" % (n / 1e6)
+
+
+def tok_text(tok, cost=None):
+    """"48k tokens, about $0.92 (estimate)" for the share pages (the live page builds the same line)."""
+    if not tok:
+        return ""
+    s = "%s tokens" % ktok(sum(tok.values()))
+    if cost is not None:
+        s += ", about %s%.2f (estimate)" % ("$" if (CFG.get("costs") or {}).get("currency", "USD") == "USD" else "", cost)
+    return s
+
+
+# ---- share snapshots (1.15.0) ------------------------------------------------------------------
+
+def safe(text, n=240):
+    """Text taken from the status for a share page: a line that looks like a credential or a secret file is hidden."""
+    t = " ".join(str(text or "").split())
+    if not t:
+        return ""
+    if SECRETISH.search(t) or secret_command(t):
+        return "(hidden: looks like a secret)"
+    return t[:n]
+
+
+def verdict_of(st):
+    """The first line under `## Verdict` of the task's QA sign-off, or ""."""
+    text = read_text(path(st["id"], SIGNOFF[mode_of(st)][1])) or read_text(path(st["id"], "qa-signoff.md")) or ""
+    m = re.search(r"^#{1,3}\s*Verdict\s*\n(.*?)(?=^#{1,3}\s|\Z)", text, re.M | re.S | re.I)
+    for line in (m.group(1) if m else "").splitlines():
+        line = re.sub(r"[*_`>#|]", "", line).strip()
+        if line:
+            return safe(line, 160)
+    return ""
+
+
+def stage_label(st, s):
+    return s["name"] + (" (%s)" % s["rl"] if s.get("rl") else "")
+
+
+def cur_label(st):
+    k = current_stage(st)
+    s = next((x for x in st["stages"] if x["k"] == k), None)
+    return stage_label(st, s) if s else k
+
+
+def is_finished(st):
+    live = [s for s in st["stages"] if s["state"] != "skip"]
+    return bool(live) and all(s["state"] == "done" for s in live)
+
+
+def when(t):
+    return str(t or "").replace("T", " ")[:16]
+
+
+STATE_WORDS = {"todo": "not started", "live": "working", "done": "done", "skip": "not needed", "wait": "waiting for you",
+               "fail": "failed", "stopped": "stopped", "failed": "failed"}
+
+SHARE_CSS = """
+:root{--bg:#f6f7f8;--card:#fff;--text:#22272b;--muted:#68727a;--line:#dde1e4;--tint:#eef1f3;--ok:#2f6b4a;--warn:#8a6414;--bad:#9a3b36}
+@media (prefers-color-scheme:dark){:root{--bg:#171a1c;--card:#1f2326;--text:#dfe3e6;--muted:#9099a0;--line:#30363a;--tint:#262b2e;--ok:#7fc29a;--warn:#d4ae5a;--bad:#e08c86}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:400 13px/1.45 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:16px;font-weight:500;margin:0 0 2px}h2{font-size:13px;font-weight:500;margin:16px 0 6px;color:var(--muted)}
+b{font-weight:500}.muted{color:var(--muted)}.snap{margin:0 0 10px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin:0 0 6px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line)}
+th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-weight:400}
+th{background:var(--tint);color:var(--muted);font-weight:500}td.n,th.n{text-align:right;white-space:nowrap}
+ul{margin:3px 0 0 16px;padding:0}li{margin:1px 0}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:2px 10px}.kv div:nth-child(odd){color:var(--muted)}
+@media (max-width:600px){.kv{grid-template-columns:1fr}}
+@media print{body{background:#fff;color:#000}.card,table{border-color:#999;background:#fff}th{background:#eee}main{max-width:none;padding:0}
+.muted,.snap,h2,.kv div:nth-child(odd){color:#444}tr,.card{break-inside:avoid}}
+"""
+
+
+def page(title, body):
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            "<title>%s</title><style>%s</style></head><body><main>%s</main></body></html>\n" % (html.escape(title), SHARE_CSS, body))
+
+
+def tone(state):
+    return {"done": "ok", "live": "warn", "wait": "warn", "fail": "bad", "failed": "bad", "stopped": "warn"}.get(state, "")
+
+
+def kv_card(rows):
+    e = html.escape
+    return '<div class="card kv">' + "".join("<div>%s</div><div>%s</div>" % (e(k), e(v)) for k, v in rows) + "</div>"
+
+
+def ul(items, empty):
+    e = html.escape
+    return "<ul>%s</ul>" % "".join("<li>%s</li>" % e(x) for x in items) if items else '<p class="muted">%s</p>' % e(empty)
+
+
+def share_task(st):
+    e = html.escape
+    tid = st["id"]
+    o = ["<h1>%s %s</h1>" % (e(tid), e(safe(st.get("title"), 120))),
+         '<p class="snap">Snapshot at %s; not live.</p>' % e(datetime.now().strftime("%Y-%m-%d %H:%M"))]
+    kv = [("Ticket", tid), ("Kind of work", st.get("skill") or "not set"), ("Where it is now", cur_label(st)),
+          ("Size and risk", "%s, risk %s" % (st.get("size", "?"), timing.norm_risk(st.get("risk")) or timing.DEFAULT_RISK))]
+    if st.get("tok"):
+        kv.append(("Tokens (estimate)", tok_text(st["tok"], (st.get("cost") or {}).get("usd"))))
+    o.append(kv_card(kv))
+    o.append("<h2>Stages</h2><table><tr><th>Stage</th><th>State</th><th>Started</th><th>Finished</th></tr>")
+    for s in st["stages"]:
+        o.append('<tr><td>%s</td><td class="%s">%s</td><td>%s</td><td>%s</td></tr>' % (
+            e(stage_label(st, s)), tone(s["state"]), e(STATE_WORDS.get(s["state"], s["state"])), e(when(s.get("start"))), e(when(s.get("end")))))
+    o.append("</table>")
+    runs = [r for r in st.get("runs") or [] if r.get("agent") != "main session"]
+    o.append("<h2>Who did what</h2>")
+    if not runs:
+        o.append('<p class="muted">No agent has run yet.</p>')
+    for r in runs:
+        head = "%s, %s" % (r.get("expert") or r.get("agent"), sname(st, r.get("stage")) + (" (%s)" % r["rl"] if r.get("rl") else ""))
+        li = "".join("<li>%s</li>" % e(safe(x)) for x in (r.get("summary") or [])[:6])
+        o.append('<div class="card"><b>%s</b> <span class="%s">%s</span><div class="muted">%s</div>%s%s</div>' % (
+            e(head), tone(r.get("state", "")), e(STATE_WORDS.get(r.get("state", ""), r.get("state", ""))),
+            e(safe(r.get("job"), 200)), ("<ul>%s</ul>" % li) if li else "",
+            ('<div class="muted">%s</div>' % e(tok_text(r["tok"], r.get("cost")))) if r.get("tok") else ""))
+    o.append("<h2>Decisions</h2>")
+    dec = ["Decision card %s, %s: %s" % (k, safe(v.get("title"), 80), v.get("state", "open")) for k, v in sorted((st.get("decisions") or {}).items())]
+    dec += ["Gate %s (%s): %s%s" % (g, GATE_NAMES.get(g, ""), v.get("state", "open"), ' - "%s"' % safe(v["words"], 160) if v.get("words") else "")
+            for g, v in sorted((st.get("gates") or {}).items())]
+    dec += ["%s, %s: %s" % (when(ev.get("t")), sname(st, ev.get("stage")), safe(ev.get("text")))
+            for ev in [x for x in st.get("events") or [] if x.get("kind") in ("ok", "changes")][-12:]]
+    o.append(ul(dec, "No decisions recorded."))
+    o.append("<h2>Open questions</h2>")
+    qs, d = [], st.get("data") or {}
+    if st.get("gate"):
+        qs.append("Waiting for the developer (%s): %s" % (sname(st, st["gate"].get("stage")), safe(st["gate"].get("question"), 400)))
+    if st.get("next"):
+        qs.append("Next step: " + safe(st["next"], 200))
+    if d.get("asks"):
+        qs.append("%d test data request%s still to answer%s" % (d["asks"], "" if d["asks"] == 1 else "s", ": " + safe(d["note"], 160) if d.get("note") else ""))
+    o.append(ul(qs, "Nothing is waiting for an answer."))
+    o.append("<h2>Quality check</h2>")
+    qa = [("QA sign-off", verdict_of(st) or "no sign-off yet")]
+    if st.get("fixes") is not None:
+        c = st["fixes"]
+        qa.append(("Fix list", "%s; MUST still open %d, SHOULD open %d" % (fix_line(c), c.get("must_open", 0), c.get("should_open", 0))))
+    if d:
+        qa.append(("Test data", "%s%s" % (d.get("state", "?"), " (%d asks)" % d["asks"] if d.get("asks") else "")))
+    k = st.get("smoke")
+    if k:
+        qa.append(("Smoke tests", "%d pass, %d fail, %d blocked (P1 fail %d)" % (k.get("pass") or 0, k.get("fail") or 0, k.get("blocked") or 0, k.get("p1_fail") or 0)))
+    o.append(kv_card(qa))
+    o.append("<h2>Tokens and cost</h2>")
+    if st.get("tok"):
+        t, c = st["tok"], st.get("cost") or {}
+        o.append('<div class="card">%s<div class="muted">New input %s, output %s, cache write %s, cache read %s. The cost is an estimate from list prices (%s, as of %s), not an invoice. Runs from before 1.15.0 show nothing.</div></div>' % (
+            e(tok_text(t, c.get("usd"))), ktok(t["in"]), ktok(t["out"]), ktok(t["cw"]), ktok(t["cr"]), e(str(c.get("cur") or "USD")), e(str(c.get("as_of") or "?"))))
+    else:
+        o.append('<p class="muted">No token numbers were recorded for this task.</p>')
+    return page("%s %s" % (tid, safe(st.get("title"), 80)), "".join(o))
+
+
+def share_all(sts):
+    e = html.escape
+    now_dt = datetime.now().astimezone()
+    openl = [s for s in sts if not is_finished(s)]
+
+    def updated(st):
+        try:
+            return datetime.fromisoformat(st.get("updated") or "")
+        except ValueError:
+            return now_dt - timedelta(days=99)
+    recent = [s for s in sts if is_finished(s) and updated(s) >= now_dt - timedelta(days=7)]
+
+    def row(st, fin):
+        ws = sorted({r.get("expert") or r.get("agent") for r in st.get("runs") or [] if r.get("state") == "live"})
+        fx = st.get("fixes")
+        cells = [e(st["id"]) + '<div class="muted">%s</div>' % e(safe(st.get("title"), 80)), e(st.get("skill") or "-"),
+                 "finished" if fin else e(cur_label(st))]
+        if not fin:
+            cells.append(e(", ".join(ws) or "nobody right now"))
+        cells += [e(when(st.get("updated"))), e(verdict_of(st) or "-"), e(fix_line(fx) if fx else "-"),
+                  e(ktok(sum(st["tok"].values()))) if st.get("tok") else "-",
+                  e("$%.2f" % st["cost"]["usd"]) if st.get("cost") else "-"]
+        return "<tr>" + "".join("<td>%s</td>" % c for c in cells) + "</tr>"
+    head = "<th>Task</th><th>Skill</th><th>Stage</th>%s<th>Last update</th><th>QA verdict</th><th>Fixes</th><th>Tokens</th><th>Cost (est.)</th>"
+    o = ["<h1>Open work</h1>", '<p class="snap">Snapshot at %s; not live. Cost is an estimate from list prices.</p>' % e(now_dt.strftime("%Y-%m-%d %H:%M")),
+         "<h2>Open (%d)</h2>" % len(openl)]
+    o.append("<table><tr>%s</tr>%s</table>" % (head % "<th>Working now</th>", "".join(row(s, False) for s in openl)) if openl
+             else '<p class="muted">Nothing is open.</p>')
+    o.append("<h2>Finished in the last 7 days (%d)</h2>" % len(recent))
+    o.append("<table><tr>%s</tr>%s</table>" % (head % "", "".join(row(s, True) for s in recent)) if recent
+             else '<p class="muted">Nothing finished in the last 7 days.</p>')
+    return page("Open work", "".join(o))
+
+
+def cmd_share(a):
+    """One offline HTML page for people who never open the code: a task (share ID) or all open tasks (share --all)."""
+    if a.all:
+        sts = []
+        for tid in tasks():
+            if is_demo(tid):
+                continue
+            try:
+                st = load(tid)
+            except (OSError, ValueError):
+                continue
+            if st.get("kind") != "testrun" and st.get("stages"):
+                sts.append(st)
+        out, text = a.out or path("share-all.html"), share_all(sts)
+    else:
+        if not a.id or not os.path.isfile(path(a.id, "status.json")):
+            sys.exit("share: give a task id (or --all); no task %s in %s" % (a.id, work_rel()))
+        out, text = a.out or path(a.id, "share.html"), share_task(load(a.id))
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    write(out, text)
+    print(out)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -2687,6 +3340,11 @@ def main():
     p.add_argument("--skill", default="", choices=[""] + SKILLS, help="the flow skill the ticket is in")
     p.add_argument("--demo", action="store_true", help=argparse.SUPPRESS)  # simulate.py: a demo-<scenario> replay
     p.set_defaults(fn=cmd_init)
+    p = sub.add_parser("share", help="an offline HTML snapshot of a task (or all open tasks) for people who never open the code")
+    p.add_argument("id", nargs="?", default="")
+    p.add_argument("--all", action="store_true", help="one overview of all open tasks")
+    p.add_argument("--out", default="", help="where to write the file")
+    p.set_defaults(fn=cmd_share)
     p = sub.add_parser("skill")
     p.add_argument("id")
     p.add_argument("name", choices=SKILLS)
@@ -2716,6 +3374,10 @@ def main():
     p.add_argument("--out", default="")
     p.add_argument("--actor", default="")
     p.set_defaults(fn=cmd_stage)
+    p = sub.add_parser("repair", help="re-attribute a task's runs to their home stages (tasks from before 1.14.1)")
+    p.add_argument("id")
+    p.add_argument("--dry-run", dest="dry", action="store_true")
+    p.set_defaults(fn=cmd_repair)
     p = sub.add_parser("gate")
     p.add_argument("id")
     p.add_argument("stage", choices=stage_names)
@@ -2831,7 +3493,7 @@ def main():
     if a.cmd == "fixes":
         if not os.path.isdir(path(a.id)):
             sys.exit("fixes: no task folder %s in %s" % (a.id, work_rel()))
-    elif a.cmd not in ("init", "hook", "open", "serve", "quick", "testrun") and not os.path.isfile(path(a.id, "status.json")):
+    elif a.cmd not in ("init", "hook", "open", "serve", "quick", "testrun", "share") and not os.path.isfile(path(a.id, "status.json")):
         sys.exit("%s: no task %s in %s (start it with: %s init %s)" % (a.cmd, a.id, work_rel(), SCRIPT, a.id))
     a.fn(a)
 

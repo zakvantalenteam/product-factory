@@ -11,6 +11,8 @@ The usual task is: `qa-lead` at Design (test plan), the area agents at Build (yo
 | A bug whose cause is not obvious | `bug-investigator` (Spec) |
 | Something slow | `performance-engineer` (Spec, Design, Verify) |
 | A large new feature: is it a good product? | `product-critic` (Spec), `story-sizer` when it splits into several stories |
+| A production incident (`/fix --hotfix`) | `bug-investigator` (Spec, mode `hotfix`), the area agent, `code-reviewer` (risk first), the QA retest |
+| A release branch's go or no-go (`/release`) | `qa-lead` (`release`), `devops-engineer` (`deploy-plan`), the smoke run, `release-manager` (`release`) |
 | A new approach, or a change across layers | `solution-architect` (Design) |
 | Table or entity changes (D2) | `data-architect` (Design) |
 | New roles, permissions, personal data or outside access (D4) | `security-architect` (Design); a small permission change: `solution-architect` |

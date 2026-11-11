@@ -363,7 +363,7 @@ dialog.fv::backdrop{background:rgba(16,18,28,.38)}
 .acard{border:1px solid color-mix(in srgb,var(--a) 30%,var(--card));border-radius:10px;background:var(--card);padding:8px 10px;min-width:0}
 .acard.plan{border-style:dashed;opacity:.7}
 .acard .ah{display:flex;gap:8px;align-items:center;min-width:0}
-.acard .job{font-size:12px;color:var(--muted);margin:1px 0 0}
+.acard .job{font-size:12px;color:var(--muted);margin:1px 0 0}.acard .job .rd{font-weight:500;color:var(--text)}
 .acard .roll{margin-top:4px}
 .upn{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted);font-style:italic}
 .upn::before{content:"\2192";font-style:normal;color:var(--faint)}
@@ -607,8 +607,11 @@ function feed(k,animate){
 }
 function count(id,v){const el=$(id),old=+el.textContent||0;if(old===v)return;el.textContent=v;el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump")}
 
+/* a live run past its limit with no step (lim minutes, from its agent's maxTurns) never sent a finish signal */
+function staleRuns(d){(d.runs||[]).forEach(r=>{const t=(r.steps&&r.steps.length?r.steps[r.steps.length-1][0]:r.start);
+  if(r.state==="live"&&r.agent!=="main session"&&t&&ms(t)>(r.lim||120)*60000){r.state="stopped";r.why="stopped (no finish signal)";r.end=t}})}
 function apply(d){
-  const first=!D||D.id!==d.id||D.stages.length!==d.stages.length,prev=first?null:D;
+  staleRuns(d);const first=!D||D.id!==d.id||D.stages.length!==d.stages.length,prev=first?null:D;
   if(first){buildRows(d);seen=0;gateKey=null;bodyKey={};LAST={}}
   D=d;$("#idle").hidden=true;$("#app").hidden=false;$("#demoTag").hidden=!(demo||d.demo);
   const c=cur(d),ov=overall(d);document.body.dataset.ov=ov;
@@ -634,6 +637,7 @@ function apply(d){
     ev&&ms(ev.t)<90000&&ev.kind!=="gate"?(ev.actor&&ev.actor!=="you"?DN(ev.actor)+": ":"")+(TOOLK.includes(ev.kind)?ing(ev.text)+"\u2026":ev.text):DN(c.actor||ACTOR[c.k])+" "+(VERB[c.k]||"is working"),!first&&ov==="live");
   d.stages.forEach(s=>{const li=rows[s.k],was=prev?(prev.stages.find(x=>x.k===s.k)||{}).state:null;
     li.className="row s-"+s.k+" "+s.state+(li.classList.contains("open")?" open":"");
+    li.querySelector(".nm").textContent=(s.name||NAMES[s.k]||s.k)+(s.rl&&s.round>1?" ("+s.rl+")":"");
     if(was&&was!=="done"&&s.state==="done"){li.classList.add("just");setTimeout(()=>li.classList.remove("just"),1700)}
     const ex=((d.plan&&d.plan.rows)||[]).filter(r=>r.stage===s.k),lv=ex.filter(r=>r.state==="live");
     li.querySelector(".whoa").textContent=s.state==="live"?"":s.state==="skip"?"skipped for this size":ex.length?(lv.length?lv:ex).map(r=>DN(r.expert)).join(", "):DN(s.actor||ACTOR[s.k]);
@@ -647,12 +651,15 @@ function apply(d){
 }
 /* fix counts, requirements chip and test run card (1.12.0) */
 const FXK=["open","fixing","fixed","verified","reopened","wont-fix","later"];
+const kt=n=>n<1e3?""+n:n<1e5?(n/1e3).toFixed(1)+"k":n<1e6?Math.round(n/1e3)+"k":(n/1e6).toFixed(1)+"M";
+const tokTxt=(t,c)=>{const n=(t.in||0)+(t.out||0)+(t.cw||0)+(t.cr||0);return kt(n)+" tokens"+(c&&c.usd!=null?", about "+(c.cur&&c.cur!=="USD"?c.cur+" ":"$")+(c.usd||0).toFixed(2)+" (estimate)":" (estimate)")};
 const fxText=f=>FXK.filter(k=>f[k]).map(k=>f[k]+" "+k).join(", ")||"none";
 function extra(d){const rq=$("#req"),r=d.req;rq.hidden=!r;
   if(r){rq.className="chip "+({confirmed:"ok",ready:"warn",notready:"bad"}[r.state]||"quiet");
     rq.textContent=r.state==="confirmed"?"Requirements ready":r.state==="ready"?"Requirements ready, not confirmed":"Requirements not ready";
     rq.title=r.state==="confirmed"?"Confirmed by "+r.by+", "+r.date:"Definition of Ready verdict in spec.md"}
   const box=$("#extra"),f=d.fixes,t=d.testrun;let h="";
+  if(d.tok)h+='<div class="fx"><b>Tokens:</b> '+esc(tokTxt(d.tok,d.cost))+"</div>";
   if(f)h+='<div class="fx"><b>Fixes:</b> '+esc(fxText(f))+" · MUST open "+f.must_open+" · SHOULD "+f.should_open+"</div>";
   if(t)h+='<div class="trun"><h3>Test run '+esc(t.run)+(t.done?" · done":" · running")+'</h3><table><tr><th>Ticket</th><th>Verdict</th><th>MUST open</th><th>SHOULD</th><th>Blocked</th><th>Data</th><th>Smoke</th><th>Fixes</th></tr>'+
     t.tickets.map(x=>"<tr><td>"+esc(x.id)+(x.stale?' <span class="chip warn" title="Files changed since the run started">stale</span>':"")+'</td><td><span class="chip '+
@@ -734,7 +741,7 @@ function seen1(key,v){const go=LAST[key]!==v;LAST[key]=v;return go}
 const keyed=(key,sig,cls,c,inner)=>'<div class="'+cls+'" data-key="'+esc(key)+'" data-sig="'+esc(JSON.stringify(sig))+'" style="--a:'+c+'">'+inner+"</div>";
 function runCard(r){const c=col(r),L=r.steps||[],P=planOf(r),nx=nextItem(P),go=seen1(r.id,L.length+":"+r.n);
   return keyed(r.id,[L.length,r.n,psig(P),nx,r.goal||"",(r.generic||[]).length],"acard"+(go?" go":""),c,'<div class="ah">'+pres(r.expert,true,"",c)+planBtn(r.id,P,c)+calls(r.n||0,r.b||(D.calls||{})[r.agent]||0)+"</div>"+
-    (r.goal||r.job?'<div class="job">'+esc(r.goal||r.job)+"</div>":"")+roll(L[L.length-2],L[L.length-1],r.start,nx,go)+genChip(r))}
+    (r.goal||r.job||r.rl?'<div class="job">'+(r.rl?'<span class="rd">'+esc(uc(r.rl))+":</span> ":"")+esc(r.goal||r.job||"")+"</div>":"")+roll(L[L.length-2],L[L.length-1],r.start,nx,go)+genChip(r))}
 /* a plan with no Goal or Output line, or items that name nothing in the task (live_status.plan_issues) */
 function genChip(r){return r.generic&&r.generic.length?'<div class="chips"><span class="chip quiet" title="'+esc("Plan too generic: "+r.generic.join("; "))+'">plan too generic</span></div>':""}
 /* a working row the hook saw no run for (started by hand, or a task from before 1.5.0): its latest action */
@@ -767,9 +774,9 @@ function planCard(w){const c=acol(w.expert),id="row:"+w.stage+":"+w.expert,P=pha
    output file and its steps in past tense (a command shows behind its step) */
 function sumHtml(r){const key="s:"+r.id,o=OPEN.has(key),ox=OPEN.has(key+"x"),c=col(r),st=r.state==="done"?"":r.state,S=(r.summary||[]).map(DN),first=r.why?uc(r.why):S[0]||"Finished",rest=r.why?S:S.slice(1),L=r.steps||[],P=planOf(r);
   return keyed(key,[r.state,S,o,ox,psig(P),L.length,r.file||""],"sum"+(o?" open":"")+(st?" "+st:""),c,'<div class="sum-top"><button type="button" class="sum-h" data-o="'+key+'" aria-expanded="'+o+'">'+pres(r.expert,false,st,c)+
-    '<span class="first'+(r.why?" why":"")+'">'+esc(first)+'</span><span class="num">'+(r.end?fmt(ms(r.start,r.end)):"")+"</span></button>"+planBtn(r.id,P,c)+"</div>"+
+    '<span class="first'+(r.why?" why":"")+'">'+esc(first)+'</span><span class="num">'+(r.rl?esc(r.rl)+", ":"")+(r.end?fmt(ms(r.start,r.end)):"")+"</span></button>"+planBtn(r.id,P,c)+"</div>"+
     "<ul>"+rest.map(x=>"<li>"+esc(x)+"</li>").join("")+'</ul><div class="ft">'+(r.file?"<span>Output: "+(r.href?'<button type="button" class="lnk" data-p="'+esc(r.href)+'">'+esc(r.file)+"</button>":esc(r.file))+"</span>":"")+
-    "<span>"+(r.n||0)+" step"+(r.n===1?"":"s")+(r.b?", about "+r.b+" planned":"")+"</span>"+(L.length?'<button type="button" class="lnk" data-o="'+key+'x">'+(ox?"Hide":"Show")+" the steps</button>":"")+"</div>"+
+    "<span>"+(r.n||0)+" step"+(r.n===1?"":"s")+(r.b?", about "+r.b+" planned":"")+"</span>"+(r.tok?'<span title="Token numbers come from the agent transcript; the cost is an estimate from list prices">'+esc(tokTxt(r.tok,r.cost!=null?{usd:r.cost,cur:((D&&D.cost)||{}).cur}:null))+"</span>":"")+(L.length?'<button type="button" class="lnk" data-o="'+key+'x">'+(ox?"Hide":"Show")+" the steps</button>":"")+"</div>"+
     (ox?'<ol class="steps">'+L.map(x=>"<li><span>"+hm(x[0])+"</span><span>"+(x[2]?"<details><summary>"+esc(past(x[1]))+"</summary><code>"+esc(x[2])+"</code></details>":esc(past(x[1])))+"</span></li>").join("")+"</ol>":""))}
 function rowSum(w){const c=acol(w.expert);return keyed("rs:"+w.stage+":"+w.expert,[w.out,w.why,w.end],"sum",c,'<div class="sum-h">'+pres(w.expert,false,"",c)+'<span class="first">'+esc(DN(w.out||w.why||"Finished"))+
   '</span><span class="num">'+(w.start&&w.end?fmt(ms(w.start,w.end)):"")+"</span></div>")}

@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Build a clickable single-file HTML prototype with 2-4 lettered design variants before any real UI code, so the developer can pick one. Use for any new screen, widget, card, dialog or redesign (Design stage of the sdlc flow, or SP in product mode for a new screen), and when asked for a "proto", mockup or options.
+description: (repo copy - with the plugin on use /product-factory:prototype) Build a clickable single-file HTML prototype with 2-4 lettered design variants before any real UI code, so the developer can pick one. Use for any new screen, widget, card, dialog or redesign (Design stage of the sdlc flow, or SP in product mode for a new screen), and when asked for a "proto", mockup or options.
 ---
 # Prototype first
 

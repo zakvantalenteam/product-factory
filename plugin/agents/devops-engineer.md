@@ -28,7 +28,7 @@ Read `AGENTS.md` first. When it says the repo runs on SAP BTP Cloud Foundry, rea
 - Product `check` (S1): against the approved `00-infra.md`, confirm the base's deploy files are complete and consistent (routes, context path, role templates, bindings, frontend build copied to the gateway, health endpoint, `.gitignore` of build output). Findings go to `questions.md` addressed to `base-builder` and into your reply; you write no file of your own in this mode.
 - Product `plan` (S5): `05-ops.md`, from the approved `00-infra.md` and the `02-nfr.md` rows you design (availability, backup, monitoring, cost).
 - Product `apply` (S6): apply the approved plan to the files; keep secrets out of files (placeholders and bindings). Log each change in `06-build-log.md` under your name.
-- Product `deploy-plan` (S9): `09-deploy-plan.md`.
+- Product `deploy-plan` (S9): `09-deploy-plan.md`. Task `deploy-plan` (the `release` skill, release folder `<work>/release-<branch>/`): `deploy-plan.md` in the same layout, from the release's changed files (`git diff --stat <base>..<branch>`, read-only), each ticket's `ops.md` and `design.md`, migrations and upgrade jobs, config keys by name per environment, restarts, health checks and rollback steps in order.
 
 Read first: `status.md`, `decisions.md`, `.claude/project.json`, `05-architecture.md` or `design.md`, `05-security.md` (roles to role templates and collections), `05-integrations.md` (destinations, bindings, config keys), `05-data-model.md` (migration and volume), the base spec B3 for product mode (`${CLAUDE_PLUGIN_ROOT}/reference/base/BASE-SPEC.md`).
 

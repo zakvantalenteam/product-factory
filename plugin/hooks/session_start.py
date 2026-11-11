@@ -36,7 +36,9 @@ try:
                 "(core %s) for teammates without the plugin. Use the plugin's agents `product-factory:<name>` (for "
                 "example product-factory:explorer) and skills `/product-factory:<name>`, never the bare-named copies "
                 "of the same agents and skills in `.claude/agents/` and `.claude/skills/`; the repo's own agents and "
-                "skills with other names stay in use. The repo copy's hooks step aside while the plugin is on and the "
+                "skills with other names stay in use. Type /product-factory:<name> (for example "
+                "/product-factory:develop); the bare /develop and the other skills marked (repo copy) are for "
+                "teammates without the plugin. The repo copy's hooks step aside while the plugin is on and the "
                 "plugin's hooks enforce the flow. The `.claude/core/` paths in AGENTS.md still work." % (version, mine))
         if mine != version:
             text += (" The versions differ: update the plugin (/plugin) or reinstall the repo copy, so both run the "

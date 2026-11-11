@@ -1,6 +1,6 @@
 ---
 name: commit-msg
-description: Prepare a copy-ready git commit message for the uncommitted changes; the developer commits and pushes. Use when asked for a commit message, "good to commit?", or at the end of the sdlc flow.
+description: (repo copy - with the plugin on use /product-factory:commit-msg) Prepare a copy-ready git commit message for the uncommitted changes; the developer commits and pushes. Use when asked for a commit message, "good to commit?", or at the end of the sdlc flow.
 ---
 # Commit message
 

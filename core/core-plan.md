@@ -724,3 +724,47 @@ the records needed ("Test data recipe") but nobody made them; `.claude/smoke.md`
   `--data-map`, `--smoke`, `data.md`.
 - `.claude/qa/` is product-owned like `.claude/experts/`: the guard does not block it, install.py and cursor_sync
   leave it alone.
+
+## 38. 1.14.1 - each agent's work in its home stage, fix rounds, no stale runs
+Why: on a /fix task the live page showed the builders, n8n-expert and a re-review under Test, two background runs from
+19 hours before as still working, and every stage live at once.
+- Home stages (task mode, `home_stage`): builders Build, code-reviewer Review, the QA agents and test-data-engineer
+  Test (qa-lead plans at Design until Test starts; qa-engineer locks today's behaviour at Design), verifier Verify,
+  domain experts by the first stage word anywhere in their job (else Design), explorer's context pack Spec. It holds
+  with no plan rows and when an agent's rows are finished. A resumed agent (same agent id, SendMessage) goes on in its
+  earlier run's stage; its steps show there too.
+- Rounds: a stage that already ran starts its next round when another stage ran since (`Build (fix round 2)` on the
+  fix skill, `Test (retest)`, else `round 2`), on the stage header, the feed and the run cards. /fix calls
+  `stage build start|done` and `stage review start|done`; /test retest calls `stage test start`.
+- One live stage: a stage start (by `stage start` or an agent's run) closes the earlier live stages with no run at
+  work; the QA sign-off stage stays open until SIGNED OFF.
+- Stale runs: each run keeps `lim` (2 minutes per maxTurns, 30-180) and its session; a live run with no tool call for
+  longer is `stopped (no finish signal)` on every save, leaves the background list flow_check waits on and holds no
+  stage open; the new SessionEnd hook stops the ending session's runs; the page applies the same limit.
+- `live_status.py repair <id> [--dry-run]` re-attributes a task from before 1.14.1 (backup `status.json.bak`).
+
+## 39. 1.15.0 - a release lane, hotfixes, a shareable snapshot and token costs
+Why: product owners got sent to `factory` for a ticket on an existing product, teammates with the plugin saw every
+skill twice, and releases, production fixes and status for managers had no lane.
+- Prompt hook (`flow_check.py prompt_lane`): a new product goes to `factory`; a requirement, PRD or user stories for
+  an existing product go to `/review-spec`. Side-session, system and tool-event wrappers, code blocks and paths are
+  ignored, so pasted logs do not trigger it.
+- Repo copies: `install.py` starts each installed skill's description with "(repo copy - with the plugin on use
+  /product-factory:<name>)"; the SessionStart text says which to type. The core and the plugin keep the plain text.
+  The final fix is plugin-only (no repo copy of the skills where the plugin is on); that is later, not in 1.15.0.
+- `/release <branch or tickets>` (new `release` skill): tickets from read-only git log against the last release and
+  the work folders, qa-lead `release` (sign-offs, missing = NO-GO), devops-engineer `deploy-plan` (migrations,
+  upgrade jobs, config keys, labels, restarts), `/test smoke` P1 on the release candidate, release-manager `release`
+  (notes for the business and technical notes, rollback), one gate (D8). Never deploys or pushes.
+  `init --skill release` keeps only Test, Release and Wrap-up.
+- `/fix --hotfix <ticket>`: severity and impact first, evidence with no personal data, bug-investigator `hotfix`
+  (smallest change), the fix on the release branch the developer names, a regression test, a risk-first review,
+  `/test retest` plus the touched areas' P1 smoke, `backport.md`, and `incident.md` feeding lessons and the QA facts.
+- `live_status.py share <id>` writes one offline `share.html` snapshot; `share --all` an overview for a manager.
+  Sending is up to the developer.
+- Tokens per run and task, read from the transcripts (deduped by message id), with a cost estimate from the one price
+  table in `project.py` (`costs`); agents' models and effort are unchanged.
+- `/review-spec` sizes each ticket (story-sizer `estimate`: points, confidence, a split proposal when too big) and
+  works with no `.claude/project.json` (requirements only, `requirements/<id>/`, the code check skipped and said so).
+- Repo root: README "Start here by role" and `ONBOARDING.md` (install, first command per role, where things land,
+  approvals).

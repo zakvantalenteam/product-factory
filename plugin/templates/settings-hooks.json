@@ -69,6 +69,17 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import io,json,os,sys,runpy;sys.excepthook=lambda t,v,b:(sys.stderr.write('agent core hook launcher failed: '+repr(v)+'\\n'),sys.stderr.flush(),os._exit(1));d=sys.stdin.buffer.read();j=json.loads(d or b'{}');r=os.environ.get('CLAUDE_PROJECT_DIR');(r and 'cursor_version' not in j and 'conversation_id' not in j) or sys.exit(0);p=os.path.join(r,sys.argv[1]);os.path.isfile(p) or sys.exit('agent core: '+sys.argv[1]+' is missing, so this hook did not run (reinstall the core, or switch the repo to the plugin)');sys.argv=[p]+sys.argv[2:];sys.path.insert(0,os.path.dirname(p));sys.stdin=io.TextIOWrapper(io.BytesIO(d),encoding='utf-8');sys.excepthook=sys.__excepthook__;runpy.run_path(p,run_name='__main__')\" .claude/core/scripts/live_status.py hook",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

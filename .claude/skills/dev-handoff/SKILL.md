@@ -1,6 +1,6 @@
 ---
 name: dev-handoff
-description: Write the handoff for another developer who owns part of a change (another team's service, workflow, backend or UI) - one self-contained md per developer with every change they must make, plus a copy-ready chat message. Use when work needs changes from another owner (Release/handoff stage of the sdlc flow), or when asked to "prepare specs/message for <developer>".
+description: (repo copy - with the plugin on use /product-factory:dev-handoff) Write the handoff for another developer who owns part of a change (another team's service, workflow, backend or UI) - one self-contained md per developer with every change they must make, plus a copy-ready chat message. Use when work needs changes from another owner (Release/handoff stage of the sdlc flow), or when asked to "prepare specs/message for <developer>".
 ---
 # Developer handoff
 

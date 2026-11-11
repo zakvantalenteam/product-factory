@@ -1,6 +1,6 @@
 ---
 name: live-check
-description: Check a page of the running local app with the built-in browser - load it, act like a user, read what shows, check console and network. Use after a UI change, or when the developer says check it live.
+description: (repo copy - with the plugin on use /product-factory:live-check) Check a page of the running local app with the built-in browser - load it, act like a user, read what shows, check console and network. Use after a UI change, or when the developer says check it live.
 ---
 # Live check in the browser
 

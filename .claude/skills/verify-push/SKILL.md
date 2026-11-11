@@ -1,6 +1,6 @@
 ---
 name: verify-push
-description: After a teammate pushed and you pulled, check what landed against what was asked (handoff, spec, acceptance criteria) and report PASS/FAIL per item with evidence. Use for "<developer> pushed, I pulled, verify" or any "verify the dev's changes" request.
+description: (repo copy - with the plugin on use /product-factory:verify-push) After a teammate pushed and you pulled, check what landed against what was asked (handoff, spec, acceptance criteria) and report PASS/FAIL per item with evidence. Use for "<developer> pushed, I pulled, verify" or any "verify the dev's changes" request.
 ---
 # Verify a teammate's push
 

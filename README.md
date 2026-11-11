@@ -4,6 +4,21 @@ One shared team of AI agents and one delivery flow for Claude Code and Cursor, u
 repo. It is also where new products are made. Change the core here and push to `main`: every product repo gets the
 new version, and Claude users get it as a plugin.
 
+## Start here by role
+
+New here? Read [ONBOARDING.md](ONBOARDING.md) first (your first day, 10 minutes). Type the commands in Claude Code with
+the plugin on. In a repo that carries the core and has no plugin, leave out `product-factory:` (for example
+`/review-spec`).
+
+| You are | Type | You get |
+|---|---|---|
+| Product owner or analyst | `/product-factory:review-spec BLEN-123` (or paste the text, or attach the document) | The requirements in plain words with the Definition of Ready, a size per ticket and a split proposal when it is too big; you approve them at one gate. Works in any folder, even without the code. |
+| Developer | `/product-factory:develop BLEN-123` for a feature or change, `/product-factory:fix BLEN-123` for a bug | The work done by the agent team in the work folder, ready for `/test`; you decide at the gates. |
+| QA | `/product-factory:test BLEN-123`, `/product-factory:test retest BLEN-123`, `/product-factory:test data`, `/product-factory:test smoke` | A QA sign-off or a fix list per ticket; the test data map and the smoke pack. |
+| Release manager | `/product-factory:release OCT2026` | The go or no-go of the release: every ticket's sign-off, the deploy plan, the smoke P1 run, release notes for the business and technical notes, rollback steps. It never deploys. |
+| On call | `/product-factory:fix --hotfix BLEN-123` | Impact first, the smallest proven fix on the release branch, a backport note and an incident note. It never deploys. |
+| Engineering manager | `python .claude/core/scripts/live_status.py open <id>` (the live page), `live_status.py share --all` | Every task at agent level with tokens and an estimated cost; `share` writes one offline HTML snapshot to send to people. |
+
 ## What is in this repo
 
 | Path | What |
@@ -25,9 +40,12 @@ The optional sync bot does this by itself for the repos in `.github/core-sync/ta
 AWS CodeCommit, once AWS is set up): it runs the checks and pushes one commit to `dev`, or opens a pull request
 when a person must look (a first install, a core file edited by hand, a failed check, a protected branch).
 
-**Any other repo (Claude Code only): the plugin.** Each person sets it up once (steps below). Repos that carry the
-core switch the plugin off in their own settings, so nothing runs twice. To give a repo the core for the whole team
-(Cursor too), run `python <plugin or core>/scripts/install.py <repo> --write-settings` once and commit the result.
+**Any other repo (Claude Code only): the plugin.** Each person sets it up once (steps below). Each person's own
+plugin manager decides whether the plugin is on; a repo never switches it on or off for the team. In a repo that also
+carries the core, the repo copy's hooks step aside while the plugin is on, so nothing runs twice, and the repo
+copy's skills say `(repo copy - with the plugin on use /product-factory:<name>)` in the list. To give a repo the core
+for the whole team (Cursor too), run `python <plugin or core>/scripts/install.py <repo> --write-settings` once and
+commit the result.
 
 ### Set up the plugin (each Claude Code user, once)
 
@@ -142,12 +160,24 @@ agent's own `model:` line: Opus for the agents that decide, Sonnet 5.5 for the o
 
 ## How work flows
 
-Every request is triaged first:
+Every request is triaged first (the `sdlc` skill, the router); each skill owns one job and hands over through the
+work folder:
 - **Answer**: a question is answered directly.
-- **Quick fix**: a small, obvious change goes to its area agent with a quick brief (files and lines, the fix, the test) and is recorded.
 - **Setup work**: changes to the AI setup only.
-- **Task**: a change to an existing product. A context pack comes first, the risk is set from evidence, only the agents the work needs join, Build goes to the area agents (parts with no shared files in parallel), and a safety net is scaled by risk. QA signs off every task: `qa-lead` plans the tests at Design and signs off at Test, `ui-qa-expert` and `e2e-qa-expert` test in the running app like manual testers (their own browser tab), `qa-engineer` writes the tests and runs the API checks; a MUST from the UI or API checklist sends the task back to Build. Automated tests always go in the project's test folder, mirroring the package of the code under test.
-- **Product**: a new product runs through intake, base, requirements, product review, prototype, stories, design, build, review, audit and release.
+- **Requirements** (`/review-spec`): plain-words requirements with the Definition of Ready and a size per ticket; one
+  gate with the requester; no code.
+- **Feature or change** (`/develop`): the Definition of Ready check, a context pack, risk from evidence, only the
+  agents the work needs, Build by the area agents, the safety net scaled by risk and one code review. A tiny change
+  takes the small path.
+- **Bug** (`/fix`): a proven root cause first, then the fix with a regression test and a re-review; `/fix --hotfix`
+  for a production incident.
+- **Test** (`/test`): the QA team signs off every ticket (`qa-lead` plans and signs off, `ui-qa-expert` and
+  `e2e-qa-expert` test in the running app in their own browser tab, `qa-engineer` writes the tests and runs the API
+  checks, `test-data-engineer` makes the data) or returns a fix list for `/fix`. Automated tests always go in the
+  project's test folder, mirroring the package of the code under test.
+- **Release** (`/release <branch>`): the go or no-go of a release branch, with release notes and rollback steps.
+- **Product** (`factory`): a new product runs through intake, base, requirements, product review, prototype, stories,
+  design, build, review, audit and release.
 
 The developer decides at fixed gates: gaps, decision cards D1-D8, prototype picks.
 

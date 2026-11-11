@@ -82,7 +82,30 @@ def src_data(src):
     """The bytes a core file lands with in a repo: markdown from the plugin gets its `.claude/core/` paths back."""
     with open(src, "rb") as f:
         data = f.read()
-    return data.replace(*REVERSE) if src.endswith(".md") else data
+    data = data.replace(*REVERSE) if src.endswith(".md") else data
+    if os.path.basename(src) == "SKILL.md" and os.path.basename(os.path.dirname(os.path.dirname(src))) == "skills":
+        data = repo_copy_prefix(data, os.path.basename(os.path.dirname(src)))
+    return data
+
+
+def repo_copy_prefix(data, name):
+    """A core skill's repo copy shows twice beside the plugin (`test` and `product-factory:test`): its front-matter
+    description starts with a pointer to the plugin's. Deterministic, so every repo gets the same bytes; the plugin and
+    Cursor copies are built from the source and carry no prefix."""
+    text = data.decode("utf-8")
+    nl = "\r\n" if "\r\n" in text else "\n"
+    m = re.match(r"---\r?\n(.*?)\r?\n---(?:\r?\n|$)", text, re.S)
+    if not m:
+        return data
+    tag = "(repo copy - with the plugin on use /product-factory:%s) " % name
+    front = m.group(1)
+    dm = re.search(r"^description:[ \t]*(?P<q>[\"']?)", front, re.M)
+    if not dm or tag in front:
+        return data
+    at = m.start(1) + dm.end()
+    if not dm.group("q") and front[dm.end():dm.end() + 1] in ("", ">", "|"):
+        return data  # block scalar: left as is (none in the core today)
+    return (text[:at] + tag + text[at:]).encode("utf-8")
 
 
 def version(core_dir):

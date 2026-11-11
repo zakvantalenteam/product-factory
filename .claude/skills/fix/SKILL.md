@@ -1,6 +1,6 @@
 ---
 name: fix
-description: "Use when the developer types /fix, reports something broken, gives a bug ticket, or after QA names fix-list items (/fix BLEN-1 F1 F3), or the sdlc triage routes a bug here. Owns making something broken work again: reproduction steps and a proven root cause from bug-investigator first (never a fix on a suspicion), then the fix by the area agent with a regression test that fails before and passes after and the regression ring, the safety net, a code re-review of the changed lines, and the fix-list items marked fixed for /test retest. Several bugs run in parallel when their files do not overlap. Never adds features or changes scope (/develop)."
+description: "(repo copy - with the plugin on use /product-factory:fix) Use when the developer types /fix, reports something broken, gives a bug ticket, or after QA names fix-list items (/fix BLEN-1 F1 F3), or the sdlc triage routes a bug here. Owns making something broken work again: reproduction steps and a proven root cause from bug-investigator first (never a fix on a suspicion), then the fix by the area agent with a regression test that fails before and passes after and the regression ring, the safety net, a code re-review of the changed lines, and the fix-list items marked fixed for /test retest. Several bugs run in parallel when their files do not overlap. /fix --hotfix <ticket> handles a production incident: impact first, the smallest proven fix on the release branch, a backport note and an incident note; it never deploys. Never adds features or changes scope (/develop)."
 ---
 # Fix (bugs and fix-list items)
 
@@ -27,6 +27,7 @@ hand over to `/test`. You never write product code and never fix on a suspicion.
 |---|---|
 | `/fix BLEN-1` | a bug ticket or a reported bug; when `<work>/BLEN-1/fix-list.md` exists, every MUST item that is `open` or `reopened` (plus the SHOULD items the developer names) |
 | `/fix BLEN-1 F1 F3` | those fix-list items only |
+| `/fix --hotfix BLEN-1` | a production incident: impact first, the smallest proven fix on the release branch, a backport note and an incident note (below) |
 | `/fix BLEN-1 BLEN-2` | several bugs: the proofs in parallel; the fixes in parallel when their files do not overlap, one after another when they do |
 
 Fixes start only when the developer says so; QA never starts them.
@@ -62,24 +63,49 @@ or high: the spec gate as sdlc section 7 before Build.
 ## 3. The fix
 1. Group the proven blocks by owner (`Owner agent` in the fix list, or the area of the `### Fix plan` files).
    Another team's code goes to the `dev-handoff` skill, one handoff per developer, never into their files.
-2. Before Build: the "before" steps of safety-net.md at the task's risk.
+2. `stage <id> build start` (after a `/test` fix list the page shows `Build (fix round 2)`), then the "before" steps
+   of safety-net.md at the task's risk.
 3. Brief each owner (briefing.md) with its blocks word for word and these steps: write the regression test first
    and see it fail; fix at the cause; see the test pass; fix the ring places marked "fix now"; fix only these blocks.
    Owners whose files do not overlap go in one message; overlapping ones go one after another. Set each item to
    `fixing` (top table and a History line).
-4. After Build: the "after" steps of safety-net.md (compile, the full unit suite, the scope check).
-5. `review_pack.py <id>` (the delta pack), then `code-reviewer` re-reviews the changed lines. A MUST goes back to
-   its owner.
+4. After Build: the "after" steps of safety-net.md (compile, the full unit suite, the scope check), then
+   `stage <id> build done`.
+5. `stage <id> review start`, `review_pack.py <id>` (the delta pack), then `code-reviewer` re-reviews the changed
+   lines. A MUST goes back to its owner (`stage <id> build start` again: the next round).
 
 ## 4. Hand-off
 - Fix-list items: each item `fixed` with a History line (what changed, `path:line`, the regression test), then
-  `live_status.py next <id> "/test retest <id>"`.
+  `stage <id> review done` and `live_status.py next <id> "/test retest <id>"`.
 - A bug ticket: `stage <id> review done`, then `live_status.py next <id> "/test <id>"`.
 - Tell the developer which items are fixed, which stay open and why. The retest turns each item `verified` or
   `reopened`; a reopened item goes round again only on the developer's word.
 - The lessons loop (sdlc section 9): every bug found in a change this flow made adds a line to
   `.claude/review/lessons.md`. A bug that reached a release also adds a line to `.claude/qa/smoke-inbox.md`
   (`- [ ] <date> <id>: smoke: add <area>: <item>`) so the smoke pack catches it next time.
+
+## Hotfix (`/fix --hotfix <ticket>`: something broken in production)
+The same proof-first flow with a smaller blast radius. It never deploys.
+1. Severity and impact first: ask in one message who is affected, since when, how many, and the workaround. Write
+   them to `<work>/<id>/incident.md` (`## What happened`, `## Impact`) and `init <id> --mode task --skill fix
+   --title "hotfix: <what is broken>" --size S|M`, then `live_status.py log <id> "hotfix: <severity>" --kind flag`.
+2. The release branch: ask which one the fix goes on (for example OCT2026). `git branch --show-current` must name
+   it; otherwise ask the developer to switch (you never switch).
+3. Evidence: production logs or the reporter's steps, as the developer pastes them. Keep only what proves the cause;
+   never copy personal data (names, emails, people's ids) or secret values into the work folder.
+4. `bug-investigator` (mode `hotfix`): the proven cause as usual, with the smallest-change rule (no refactor, no
+   extras; the ring goes to LATER unless a ring place hurts the same users now). `Proven: no` stops here as usual.
+5. The owner fixes on that branch and writes the regression test first (section 3, steps 2-4).
+6. `code-reviewer` on the delta pack with `Hotfix: yes` in the brief: risk first (what else the changed lines reach,
+   data written, rollback), then correctness.
+7. `/test retest <id>` plus the smoke pack's P1 items of the areas the change touches (the test skill's retest step
+   2 names them).
+8. `<work>/<id>/backport.md`: the commits or files to bring to the dev branch and any conflict to expect; the
+   developer does the git.
+9. Finish `incident.md`: `## Cause` (plain words and `path:line`), `## Fix`, `## Prevention` (the test or check that
+   would have caught it). Add its lesson to `.claude/review/lessons.md`, one line under "Where testers find bugs" in
+   the QA facts file (`qa.facts`, when the project has one) and a `smoke: add` line to `.claude/qa/smoke-inbox.md`.
+   Then `live_status.py next <id> "deploy <branch> (developer), then backport to dev"`.
 
 ## Small path (an obvious small bug)
 Within `quick_fix` in `.claude/project.json` (about 30 lines in up to 3 files), with a cause you can see in the code

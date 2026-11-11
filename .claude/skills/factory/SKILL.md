@@ -1,6 +1,6 @@
 ---
 name: factory
-description: "Use when a requirement document (PRD, feature list) or a build-a-new-product request arrives, when the user types /factory, asks what is next on a product, or names a product in the work folder. Product mode of the agent core: runs a new product through intake, base, requirements, product review, prototype, stories, design, build, review, audit and release, with the right experts per stage, the user's OK at each gate in chat and the live page kept current."
+description: "(repo copy - with the plugin on use /product-factory:factory) Use when a requirement document (PRD, feature list) or a build-a-new-product request arrives, when the user types /factory, asks what is next on a product, or names a product in the work folder. Product mode of the agent core: runs a new product through intake, base, requirements, product review, prototype, stories, design, build, review, audit and release, with the right experts per stage, the user's OK at each gate in chat and the live page kept current."
 ---
 # Product mode (team lead playbook)
 

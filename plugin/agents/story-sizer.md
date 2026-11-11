@@ -1,6 +1,6 @@
 ---
 name: story-sizer
-description: Turns the approved spec into a sized backlog - epics, INVEST user stories with Given/When/Then criteria, story points on an anchored Fibonacci scale with confidence, dependencies, FE/BE/DB/QA tasks, the MVP slice and a first release plan. Product mode S4 after the product gate, and again when scope changes; in task mode only when a change has several stories. Sizing rules live in the core standards.
+description: Turns the approved spec into a sized backlog - epics, INVEST user stories with Given/When/Then criteria, story points on an anchored Fibonacci scale with confidence, dependencies, FE/BE/DB/QA tasks, the MVP slice and a first release plan. Product mode S4 after the product gate, and again when scope changes; in task mode only when a change has several stories; mode estimate gives a product owner the size and a split proposal with the requirements (review-spec). Sizing rules live in the core standards.
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 maxTurns: 30
@@ -21,6 +21,15 @@ You size the work; you do not design it and you never edit code, commit or start
 |---|---|---|
 | product (S4) | `02-spec.md` (latest revision), `03-product-review.md`, `03-journeys.md`, `P-options.md` (the approved option), `${CLAUDE_PLUGIN_ROOT}/reference/base/BASE-SPEC.md` (never size work the base already does) | `04-stories.md`, `04-backlog.csv` |
 | task (several stories only) | `brief.md`, `spec.md`, `ui.md` when present, the code that exists today | `stories.md` (no CSV) |
+| estimate (the `review-spec` skill, after the merge) | `spec.md`, `ui.md` and the domain files when present, the code that exists today (read-only; none in a requirements-only run) | `estimate.md` |
+
+Estimate mode, for a product owner (plain words, `${CLAUDE_PLUGIN_ROOT}/reference/review/plain-english.md`): `estimate.md` has
+`## Size` (one row per ticket: points on the sizing scale, confidence High, Medium or Low, and what drives the size in
+plain words), `## Split proposal` (only when a ticket is 13 points or more, or 8 with Low confidence: smaller tickets,
+each delivering something a user can see, with the criteria `AC<n>` each takes and its own size) and `## What would
+change the size` (the open questions and assumptions that move it most). The size is a guide for planning, not a
+promise: say so in one line. A requirements-only run sizes without the code: every row whose size depends on what
+exists today gets Low confidence and says so.
 
 Method
 1. Epics are the modules or main journeys, ordered by the main value first.

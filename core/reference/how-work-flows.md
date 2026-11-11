@@ -12,13 +12,15 @@ line, so any session can pick a ticket up.
 
 | Skill | Owns | Ends with |
 |---|---|---|
-| `review-spec` | clear requirements, in plain words, with the Definition of Ready | READY requirements, then `/develop` |
+| `review-spec` | clear requirements, in plain words, with the Definition of Ready and a size per ticket; also with no product repo (requirements only) | READY requirements, then `/develop` |
 | `develop` | new features and changes (feature, ui, data, config, refactor, performance) | ready for `/test` (or "test later") |
-| `fix` | making something broken work again (bugs, fix-list items) | items fixed, then `/test retest` (a bug ticket: `/test`) |
+| `fix` | making something broken work again (bugs, fix-list items; `--hotfix` for a production incident) | items fixed, then `/test retest` (a bug ticket: `/test`; a hotfix: retest, then the backport) |
 | `test` | the quality sign-off | SIGNED OFF, then the commit message; or a fix list, then `/fix` |
+| `release` | the go or no-go of a release branch or ticket list: sign-offs, deploy plan, smoke P1 on the release candidate, release notes, rollback | Go (the developer deploys) or NO-GO items for `/test` and `/fix` |
 | `sdlc` | the router and the shared rules (task start, team, briefing, safety net, live status, gates, stages, lessons) | the right skill |
 
-The chain: `/review-spec` -> `/develop` -> `/test` -> `/fix` -> `/test retest` -> SIGNED OFF -> commit message. Size
+The chain: `/review-spec` -> `/develop` -> `/test` -> `/fix` -> `/test retest` -> SIGNED OFF -> commit message ->
+`/release <branch>`; in production `/fix --hotfix` -> `/test retest` -> backport. Size
 never picks a skill: `develop` and `fix` have a small path for a change within `quick_fix` with nothing to decide.
 
 ## Task mode
@@ -77,6 +79,11 @@ never picks a skill: `develop` and `fix` have a small path for a change within `
 - READY requirements (`Requirements: READY` in `spec.md`, a Jira comment, or a file the developer points to) skip the
   business questions in `/develop`. The technical agents add only the technical part, and any change to a criterion goes
   back to the requester.
+- Each READY ticket carries a size (`story-sizer`, mode `estimate`: points, confidence and a split proposal when it
+  is too big) in `estimate.md`.
+- With no `.claude/project.json` (a product owner's own folder) `/review-spec` runs as requirements only: files in
+  `requirements/<id>/`, no live page, no code read, and the output says the "what exists today" check is left to
+  `/develop`.
 
 ## The Tech Lead and the gates
 - The main session keeps triage, the gates and decision cards, quick live checks in the browser (the UI and E2E QA
@@ -99,7 +106,9 @@ the call instead of letting it through.
 ## Live page
 The live page shows every task at agent level and is the only tracker: each agent's work on its own card, the Tech
 Lead's decisions and routing on its card (with a chip when it edited product code itself), and the Tech Lead's share
-of the work. Open it with `python .claude/core/scripts/live_status.py open <id>`.
+of the work. Open it with `python .claude/core/scripts/live_status.py open <id>`. Each run shows its tokens and an
+estimated cost (the price table is `costs` in project.json). For people without the page: `live_status.py share <id>`
+(one offline HTML snapshot in plain words) and `share --all` (every open task, for an engineering manager).
 
 ## Agents and skills
 - Flow skills: `sdlc` (the router and the shared rules), `review-spec` (requirements team), `develop` (features and

@@ -74,6 +74,10 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | Verification | `verify.md` (the lead copies PASS/FAIL into `status.md`) | `05-design-review.md`, `07-system-review.md` | verifier |
 | Audit | - | `08-audit.md` | audit-expert |
 | Release | `release.md` | `09-release.md` | release-manager |
+| A release's tickets, QA part and deploy plan (`/release`, folder `<work>/release-<branch>/`) | `tickets.md`, `qa-release.md`, `deploy-plan.md` | `09-deploy-plan.md` | main session, qa-lead (`release`), devops-engineer (`deploy-plan`) |
+| Hotfix: impact, cause, fix, prevention; what to bring back to dev | `incident.md`, `backport.md` | - | main session (`/fix --hotfix`) |
+| Size per ticket and split proposal (`/review-spec`) | `estimate.md` | `04-stories.md` | story-sizer (`estimate`) |
+| Snapshot to send (plain words, offline) | `share.html`, `<work>/share-all.html` | same | `live_status.py share` |
 | Docs (only when asked) | - | `docs/` in the product root | release-manager (`docs`) |
 | Questions for another expert or a person | `questions.md` | `questions.md` | anyone: `- [open] Q<n> from <agent> to <agent|developer|PO>: <question> - Recommended: <answer>` |
 | Decisions made | `decisions.md` (written by `live_status.py ok`) | same | main session |

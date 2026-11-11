@@ -67,6 +67,17 @@ DEFAULTS = {
     "ticket_prefix": "",
     "work_dir": ".claude/work",
     "live_port": 8766,
+    # Token cost estimate (live page, share snapshots): USD per million tokens per model family (matched by name in
+    # the model id): in = new input, out = output, cw = cache write, cr = cache read. Override in project.json "costs".
+    # Source: the claude-api skill model table cached 2026-11-03 (in/out, cache read) for claude-opus-5-5,
+    # claude-sonnet-5-5 and claude-haiku-5-5; cache write is NOT in that table and is estimated as 1.25 x input.
+    "costs": {
+        "currency": "USD",
+        "as_of": "2026-11-03",
+        "opus": {"in": 4.0, "out": 20.0, "cw": 5.0, "cr": 0.2},
+        "sonnet": {"in": 2.0, "out": 10.0, "cw": 2.5, "cr": 0.1},
+        "haiku": {"in": 0.1, "out": 0.5, "cw": 0.125, "cr": 0.01},
+    },
     "default_mode": "task",
     "products_root": "",
     "app": {"url": "", "status": "", "strict": False},

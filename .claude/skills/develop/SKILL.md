@@ -1,6 +1,6 @@
 ---
 name: develop
-description: "Use when the developer types /develop, asks to build a feature or change existing behaviour (kind of work feature, ui, data, config, refactor, performance), or the sdlc triage routes a feature or change here. Owns building new behaviour: the Definition of Ready check first, then the context pack, the risk from evidence, the technical spec, Design with only the agents needed (cards, gates, prototype), the test plan, Build by the area agents with the safety net and one code review. Ends ready for /test. Never signs off its own work, never fixes bugs (/fix), never reviews requirements for a requester (/review-spec)."
+description: "(repo copy - with the plugin on use /product-factory:develop) Use when the developer types /develop, asks to build a feature or change existing behaviour (kind of work feature, ui, data, config, refactor, performance), or the sdlc triage routes a feature or change here. Owns building new behaviour: the Definition of Ready check first, then the context pack, the risk from evidence, the technical spec, Design with only the agents needed (cards, gates, prototype), the test plan, Build by the area agents with the safety net and one code review. Ends ready for /test. Never signs off its own work, never fixes bugs (/fix), never reviews requirements for a requester (/review-spec)."
 ---
 # Develop (features and changes)
 

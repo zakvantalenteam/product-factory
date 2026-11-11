@@ -42,18 +42,67 @@ CORE_AGENTS = ("spec-analyst, bug-investigator, performance-engineer, product-cr
                "ui-qa-expert, e2e-qa-expert, test-data-engineer, verifier, "
                "audit-expert, release-manager")
 
-PRD = re.compile(
-    r"\b(prd|product requirements?|requirements? (doc|document|spec|specification)|functional spec"
-    r"|business requirements?|brd|user stories below|build (this|the following|an? (new )?(app|application|product|system))"
-    r"|here (is|are) the (spec|requirements?)|new product)\b|\.(docx|pdf|md)\b.*\b(requirement|prd|spec)", re.I)
+# Turns that are not the user's own words: side-session and system events injected as prompts, slash-command expansions.
+_WRAP = r"side-sessions?-event|system-reminder|task-notification|cross-session-message|ci-monitor-event|command-name|command-message|command-args|local-command-\w+"
+WRAPPED = re.compile(r"<(%s)\b[^>]*>.*?(</\1>|\Z)" % _WRAP, re.I | re.S)
+CODE = re.compile(r"```.*?(```|\Z)|`[^`\n]*`", re.S)
+# file names and paths are not requirement documents; .docx/.pdf stay (an attachment), .md only with an attach cue
+FILEREF = re.compile(r"(?<![\w])(?:[\w.~-]*[\\/])+[\w.-]+|\b[\w-]+\.(?:txt|py|js|ts|tsx|java|json|ya?ml|xml|html|css|sql|csv|log|toml|ini|cfg|sh|gradle|properties|lock)\b"
+                     r"|\b(?:spec|specs|requirements|prd|readme)\.md\b", re.I)
+REQ_DOC = re.compile(
+    r"\b(prd|brd|product requirements?( doc\w*)?|business requirements?|requirements? (doc|document|spec|specification)"
+    r"|functional (spec|specification|requirements?)|(user|use) stor(y|ies)|acceptance criteria"
+    r"|(review|check|refine|complete|assess|here (is|are)|attached|attaching|see)( (this|these|the|my|our|a|an|following))?"
+    r"( \w+){0,2} (requirements?|spec|specification)\b(?! (check|test|file|regex))"
+    r"|requirements?\b.{0,20}\bfor [A-Z][A-Z0-9]+-\d+)", re.I)
+ATTACH_DOC = re.compile(r"\b[\w -]*(requirement|prd|brd|spec|user[ _-]?stor|acceptance)[\w -]*\.(docx?|pdf)\b"
+                        r"|\battach\w*\b.{0,60}\b[\w-]*(requirement|prd|brd|spec)[\w-]*\.md\b", re.I)
+NEW_PRODUCT = re.compile(
+    r"\b(build|create|make|develop|start|need|want)\s+(me\s+|us\s+)?(a\s+|an\s+|the\s+)?new\s+(\w+\s+){0,3}(app|application|product|system|platform)\b"
+    r"|\bnew product\b(?!\s+(page|screen|tab|form|field|filter|catalog|list|card|dialog|view))"
+    r"|\b(app|application|product|system|platform)\b.{0,30}\bfrom scratch\b|\bfrom scratch\b.{0,30}\b(app|application|product|system|platform)\b"
+    r"|\b(prd|brd|requirements?|spec)\b.{0,25}\bfor (a|an) new\b"
+    r"|\bbuild (this|the following|an? (new )?(app|application|product|system))\b", re.I)
+ENGINEERING = re.compile(r"\b(regex|regexp|hooks?|flow_check|pip install|npm|pytest|unit tests?|spec tests?|stack ?trace|lint|compile)\b"
+                         r"|\b(why|how does|what is|what's|where is)\b[^.]{0,80}\?\s*$", re.I)
+
+
+def prompt_lane(prompt):
+    """None, "factory" or "review-spec": which skill a requirement-like message belongs to. Fail-safe: None."""
+    try:
+        text = WRAPPED.sub(" ", prompt or "")
+        text = CODE.sub(" ", text)
+        if not ATTACH_DOC.search(text):
+            text = FILEREF.sub(" ", text)
+        text = text.strip()
+        if len(text) < 8:
+            return None
+        if len(text) < 300 and ENGINEERING.search(text):
+            return None
+        product_repo = (CFG.get("default_mode") or "task") == "product"
+        if NEW_PRODUCT.search(text):
+            return "factory"
+        if REQ_DOC.search(text) or ATTACH_DOC.search(text):
+            return "factory" if product_repo else "review-spec"
+        return None
+    except Exception:
+        return None
+
 
 HOLD_ON = (
-    "PRODUCT LANE CHECK: this message may be a requirement document or a request to build a new product. If it is, "
+    "PRODUCT LANE CHECK: this message may be a request to build a new product (or, in the product factory repo, a "
+    "requirement document). If it is, "
     "do not design or write code from it: follow the `factory` skill, stage intake (S0): say \"Hold on - I won't "
     "start building from this directly\" and why in one line; 3-5 lines of what you understood; the plan (stages, "
     "teams, what the user decides at each gate); at most 5 first questions with recommended answers; then "
     "`live_status.py init <slug> --mode product`, save the document as 00-prd.md, run spec-analyst (prd-review) and "
     "wait for G0. If it is a change to an existing product, a question or setup work, triage it with the sdlc skill.")
+
+REVIEW_SPEC = (
+    "REQUIREMENT LANE CHECK: this looks like a requirement, PRD or spec for an existing product. If it is, route it to "
+    "the `review-spec` skill (`/review-spec`: plain-words requirements with the Definition of Ready, one gate with the "
+    "requester) and do not design or write code from it. If it is a change that is already ready to build, use /develop; "
+    "a bug, /fix; a question, just answer it.")
 
 
 def agents_line():
@@ -87,8 +136,10 @@ def record_git_request(sid, prompt):
 def prompt_context(sid, prompt):
     first = first_prompt(sid)
     tid = ls.session_task(sid)
-    if PRD.search(prompt or "") and not tid:
-        return HOLD_ON
+    if not tid:
+        lane = prompt_lane(prompt)
+        if lane:
+            return HOLD_ON if lane == "factory" else REVIEW_SPEC
     if not first:
         return None
     if tid:
@@ -99,8 +150,8 @@ def prompt_context(sid, prompt):
             ", ".join(left) or "none", "factory" if st.get("mode") == "product" else (st.get("skill") or "sdlc"))
     qf = CFG["quick_fix"]
     return ("Triage each request first (sdlc skill, the router): answer questions directly; requirements go to "
-            "review-spec, a feature or change to develop, a bug or fix-list items to fix, testing to test, a new product "
-            "to factory; changes to the AI setup itself (.claude, .cursor, AGENTS.md) you do with no task. develop and "
+            "review-spec, a feature or change to develop, a bug or fix-list items to fix (a production incident: fix "
+            "--hotfix), testing to test, a release's go or no-go to release, a new product to factory; changes to the AI setup itself (.claude, .cursor, AGENTS.md) you do with no task. develop and "
             "fix have a small path for an obvious small change (up to ~%d lines in up to %d files, nothing to decide: "
             "a quick brief to its area agent, then live_status.py quick \"<what>\"); everything else is a task with "
             "just the agents it needs (%s). You are the Tech Lead: "

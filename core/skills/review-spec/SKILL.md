@@ -1,6 +1,6 @@
 ---
 name: review-spec
-description: "Use when someone wants a requirement checked and made ready before any technical work - a Jira ticket, pasted text, a document (PRD, Word, PDF) or an idea - when they type /review-spec, or ask to review, refine or complete a requirement. Built for product owners, business analysts and managers: plain words, no code. Picks the group of agents the request needs (spec-analyst leads, with product-critic, ux-designer, domain experts and qa-lead for testability), writes the requirements with the Definition of Ready, and the requester approves them at one gate. Owns clear requirements only: ends with READY requirements, then /develop. Never code; a bug goes to /fix, testing to /test."
+description: "Use when someone wants a requirement checked and made ready before any technical work - a Jira ticket, pasted text, a document (PRD, Word, PDF) or an idea - when they type /review-spec, or ask to review, refine or complete a requirement. Built for product owners, business analysts and managers: plain words, no code. Picks the group of agents the request needs (spec-analyst leads, with product-critic, ux-designer, domain experts and qa-lead for testability), writes the requirements with the Definition of Ready and a size per ticket (story-sizer, with a split proposal when too big), and the requester approves them at one gate. Works without a code checkout (requirements only). Owns clear requirements only: ends with READY requirements, then /develop. Never code; a bug goes to /fix, testing to /test."
 ---
 # Requirement review (team lead playbook)
 
@@ -8,6 +8,18 @@ You lead a requirement review. The person running it may be a product owner, bus
 developer. On each run you pick the group of agents the request needs and start them (Agent tool), in parallel
 where they are independent. You never write the requirements, reviews or checks yourself: you read, route, merge,
 keep the live page and stop at one gate.
+
+Requirements only (no product repo): when the folder has no `.claude/project.json` (a product owner's own folder,
+no code checkout), run the same flow with these changes:
+- The work folder is `requirements/<id>/` in the current folder; there is no live page (skip every
+  `live_status.py` step; the files are the record) and no hooks run.
+- The core folder is the plugin's: two folders above this skill's base directory. Read every `.claude/core/` path
+  below as that folder, and give the agents those paths in full in their briefs.
+- No agent reads code. Every brief says: "Requirements only: there is no code here; do not look for it." The domain
+  experts answer from their own knowledge and say what they could not check.
+- `spec.md`, the gate text and the handoff each say in one line: "The check of what exists today was skipped (no
+  code here); the developer runs it at /develop." `story-sizer` sizes with Low confidence where the code would
+  decide.
 
 Paths: `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`); scripts are
 `python .claude/core/scripts/<name>.py` (below just `live_status.py`); the checklist is
@@ -45,6 +57,7 @@ Then:
 |---|---|---|
 | always: it leads | `spec-analyst` (`requirements`, later `revise`) | `spec.md`, `questions.md` |
 | always: every criterion | `qa-lead` (`testability`) | `testability.md` |
+| always, after the merge: the size | `story-sizer` (`estimate`) | `estimate.md` |
 | a new feature, a changed journey, or a change many people will notice | `product-critic` (task) | `product-review.md` |
 | a screen people see, or steps across screens or roles | `ux-designer` (`journeys`) | `## Journeys and screens` in `ui.md` |
 | the requester asks for a clickable prototype | `ux-designer` (`variants`) | `prototype.html` |
@@ -67,18 +80,22 @@ your agent file. Reply in 10 lines or fewer."
    `ux-designer` (`journeys`; `variants` only on request).
 3. Merge: `spec-analyst` (`requirements`, merge) folds in the domain facts, the product issues, the journeys and the
    testable rewrites, and fills the `## Definition of Ready` table and the `Verdict:` line.
+4. Size: `story-sizer` (`estimate`) on the merged `spec.md`: points with a confidence per ticket and, when a ticket
+   is 13 points or more (or 8 with Low confidence), a split proposal into smaller tickets that each deliver
+   something. A changed criterion later re-runs it.
 
 After each agent returns, read its file, not only its reply. Then `integrate <id> "<what was merged>"`.
 
 ## 4. The gate (one, with the requester)
-1. `live_status.py gate <id> spec "<question>" --file <work>/<id>/spec.md` (add `--open <work>/<id>/prototype.html`
-   when one was made). It prints the gate's full text: put it in your reply in full.
+1. `live_status.py gate <id> spec "<question>" --file <work>/<id>/spec.md --file <work>/<id>/estimate.md` (add
+   `--open <work>/<id>/prototype.html` when one was made). It prints the gate's full text: put it in your reply in
+   full. The size and any split proposal are part of what the requester approves.
 2. The question: READY gives "Approve these requirements?". NOT READY lists the open items as plain questions, each
    with its recommended answer, and asks them to answer or take the recommendations.
 3. Ask and stop, as in the `sdlc` skill's gates (section 7, step 3), with Approve and Change.
 4. Their reply:
    - Approve on READY: `ok <id> spec --note "<their words>"`. Add `Requirements: READY (confirmed by <name>, <date>)`
-     under the title of `spec.md`, then `stage <id> spec done --out "Requirements READY, confirmed by <name>"`.
+     and `Size: <points> points, <confidence> confidence (estimate.md)` under the title of `spec.md`, then `stage <id> spec done --out "Requirements READY, confirmed by <name>"`.
    - Approve on NOT READY: not possible yet. Say which items are still open; taking the recommended answers is
      one way to close them.
    - Answers or changes: `changes <id> spec "<their answers in short>"`, then `spec-analyst` (`revise`). When a

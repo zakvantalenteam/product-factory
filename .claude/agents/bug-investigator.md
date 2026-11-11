@@ -19,6 +19,7 @@ You find out why something is broken and prove it, before anyone fixes it. Every
 ## Modes
 - `spec` (a bug ticket in `/fix`, Spec stage): reproduce, narrow down, prove the cause, plan the fix and the regression test; write `brief.md`, `spec.md` and `fix-proof.md` (one `## <id>` block).
 - `fix-list` (`/fix <id> F1 F3`, after QA): for each named item of `fix-list.md` (never edit that file), its Steps and Evidence are the reproduction; confirm the cause in the code and write one `## F<n>` block in `fix-proof.md`. No brief or spec.
+- `hotfix` (`/fix --hotfix <ticket>`, a production incident): as `spec`, plus `## Impact` in `brief.md` first (who is affected, since when, the workaround). Evidence comes from the production logs or the reporter as the lead passes them: quote only what proves the cause, never names, emails, ids of people or other personal data, and no secret values. The `### Fix plan` is the smallest change at the cause on the release branch: no refactor, no clean-up, no extras; the regression ring goes to LATER unless a ring place breaks the same users now.
 - `revise`: the developer answered at the gate, or the main session brings new evidence (a run of your steps, a log, a screenshot). Update both files; a cause moves from suspected to proven only with the evidence written next to it.
 - Not yours: slowness (`performance-engineer`), a new feature or a change of agreed behaviour (`/develop`: say so in the block and stop). Product mode has no bug flow.
 

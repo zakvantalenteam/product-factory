@@ -1,6 +1,6 @@
 ---
 name: test
-description: "Use when the developer types /test, wants one or several tickets tested (now, after /develop or /fix, or in a separate session), asks to retest fixes (/test retest <id>), or the sdlc triage routes testing here. Owns the quality sign-off: checks the build is ready, starts the group of QA agents each ticket needs (in parallel where independent), and ends SIGNED OFF (then offers the commit message) or with a practical fix list per ticket (then /fix). Also /test data (the QA data map, built by test-data-engineer and approved by the developer, plus a per-ticket data top-up before the testers), /test data cleanup and /test smoke (the whole smoke pack that qa-lead keeps). Never fixes anything and never builds features."
+description: "(repo copy - with the plugin on use /product-factory:test) Use when the developer types /test, wants one or several tickets tested (now, after /develop or /fix, or in a separate session), asks to retest fixes (/test retest <id>), or the sdlc triage routes testing here. Owns the quality sign-off: checks the build is ready, starts the group of QA agents each ticket needs (in parallel where independent), and ends SIGNED OFF (then offers the commit message) or with a practical fix list per ticket (then /fix). Also /test data (the QA data map, built by test-data-engineer and approved by the developer, plus a per-ticket data top-up before the testers), /test data cleanup and /test smoke (the whole smoke pack that qa-lead keeps). Never fixes anything and never builds features."
 ---
 # Test (QA team lead)
 
@@ -145,8 +145,10 @@ Then hand over:
 
 ## Retest (`/test retest <id>`)
 1. `live_status.py fixes <id>`. No item is `fixed`: say so with the counts and stop.
-2. `testrun start <id> --title "retest <id>"`, then the entry check (step 2) and the Data step (step 4) for the
-   retest rows.
+2. `testrun start <id> --title "retest <id>"` and, for a ticket with a task, `stage <id> test start` (the page shows
+   `Test (retest)`), then the entry check (step 2) and the Data step (step 4) for the retest rows. A hotfix
+   (`<work>/<id>/incident.md` exists): add the `[P1]` items and journeys of the smoke areas whose `paths:` the change
+   touches.
 3. `qa-lead` `retest`: plans only the `fixed` items' retest rows plus their regression ring (from `fix-list.md`).
 4. The experts it names, those rows only (step 5).
 5. `testrun check`, then `qa-lead` `sign-off` of the retest run: each item `verified` or `reopened` with a History

@@ -145,8 +145,10 @@ Then hand over:
 
 ## Retest (`/test retest <id>`)
 1. `live_status.py fixes <id>`. No item is `fixed`: say so with the counts and stop.
-2. `testrun start <id> --title "retest <id>"`, then the entry check (step 2) and the Data step (step 4) for the
-   retest rows.
+2. `testrun start <id> --title "retest <id>"` and, for a ticket with a task, `stage <id> test start` (the page shows
+   `Test (retest)`), then the entry check (step 2) and the Data step (step 4) for the retest rows. A hotfix
+   (`<work>/<id>/incident.md` exists): add the `[P1]` items and journeys of the smoke areas whose `paths:` the change
+   touches.
 3. `qa-lead` `retest`: plans only the `fixed` items' retest rows plus their regression ring (from `fix-list.md`).
 4. The experts it names, those rows only (step 5).
 5. `testrun check`, then `qa-lead` `sign-off` of the retest run: each item `verified` or `reopened` with a History
