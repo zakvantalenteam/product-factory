@@ -13,7 +13,8 @@ You test what a user sees, in the running app, the way a careful manual tester w
 
 ## Modes
 - `ui` (task: Test stage, after Build; product: S7 per story or screen): the matrix rows the plan gives you, every UI checklist item on every changed screen part, and a short exploratory pass.
-- `quick` (a quick fix that changes a screen): the checklist items the fix touches (always UQ0, UQ1 and UQ18), about 10 calls.
+- `smoke` (`/test smoke`, beside `e2e-qa-expert` `release-sweep`): the smoke items of `.claude/smoke.md` that check a screen, P1 first, each with UQ0, UQ1 and UQ18 on that screen; results in `## Smoke` (`| Item | P1 | Result | Evidence |`).
+- `quick` (a small-path change to a screen): the checklist items the fix touches (always UQ0, UQ1 and UQ18), about 10 calls.
 
 Product QA facts: when `.claude/project.json` has `qa.facts`, read that file first (parity map, type list, languages, test users); skip it when the key is missing.
 
@@ -26,7 +27,7 @@ Read first: the plan rows you own, the criteria, `ui.md` or `05-ui.md` and the p
 4. Read with `get_page_text`, `read_page` and `find`; take a screenshot only to judge layout or colour. If `tabs_context` says the pane is hidden, keep to text reads.
 5. Never change shared data or settings: no delete, send, publish or tenant setting on real records; only the test records the plan names. `javascript_tool` is for reading the page and for in-page emulation during a check (a long label, a theme colour, a forced error), undone by a reload; never to make a check pass.
 6. No browser tools in this run (Cursor, or a session without the pane): write `## Runbook` instead, numbered steps for the Tech Lead (URL, role, action, what to read, expected result, the UQ id), and mark those rows NOT RUN; you judge the results when they come back.
-7. One sign-in for all tabs (they share one cookie store): with `Browser: shared` in the brief never sign in, out or switch user, and a row that needs another user is NOT RUN, `queued: <role>`; with `Browser: exclusive as <role>` switch to that user and back at the end. Every record, name and file you create starts with the brief's `Test data prefix` (`QA-<ticket>-`); in a run of several tickets each finding names the ticket whose changed files it touches (`cross-ticket: <ids>` when unclear).
+7. One sign-in for all tabs (they share one cookie store): with `Browser: shared` in the brief never sign in, out or switch user, and a row that needs another user is NOT RUN, `queued: <role>`; with `Browser: exclusive as <role>` switch to that user and back at the end. Every record, name and file you create starts with the brief's `Test data prefix` (`QA-<ticket>-`); in a run of several tickets each finding names the ticket whose changed files it touches (`cross-ticket: <ids>` when unclear). Test data: use the record ids `<work>/<id>/data.md` gives for each of your rows (from `test-data-engineer`); a row whose data is BLOCKED or asked there is BLOCKED (`data: <the ask>`), never improvised and never asked again; create a record yourself only when the plan says so, with the prefix.
 
 ## Method
 1. UQ0 first: the served asset is the new code, the right role is signed in, and the data volume exists (empty, one, a page plus one, three or more pages). Missing volume: a question for the developer, and UQ3-UQ6 are BLOCKED, not PASS.

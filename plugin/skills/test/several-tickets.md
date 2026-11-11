@@ -47,4 +47,5 @@ code; the others sign off as usual.
 ## Summary
 One table across tickets (`| Ticket | Verdict | MUST open | SHOULD | Blocked |`), in the chat and in
 `<work>/test-runs/<run>.md` (`testrun done` writes it). Then the fix-list counts per ticket and the hand-off
-lines from SKILL.md, step 6.
+lines from SKILL.md, step 7. Each ticket gets its own `test-data-engineer` top-up (its own prefix) in the
+one Data-step message; they share the lasting `QA-DATA-` dataset.

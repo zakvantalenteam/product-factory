@@ -39,7 +39,7 @@ except Exception as _e:  # the turn goes on, with a warning
 CFG = project.config()
 CORE_AGENTS = ("spec-analyst, bug-investigator, performance-engineer, product-critic, story-sizer, ux-designer, "
                "solution-architect, data-architect, security-architect, code-reviewer, qa-lead, qa-engineer, "
-               "ui-qa-expert, e2e-qa-expert, verifier, "
+               "ui-qa-expert, e2e-qa-expert, test-data-engineer, verifier, "
                "audit-expert, release-manager")
 
 PRD = re.compile(

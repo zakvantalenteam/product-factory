@@ -78,7 +78,8 @@ or high: the spec gate as sdlc section 7 before Build.
 - Tell the developer which items are fixed, which stay open and why. The retest turns each item `verified` or
   `reopened`; a reopened item goes round again only on the developer's word.
 - The lessons loop (sdlc section 9): every bug found in a change this flow made adds a line to
-  `.claude/review/lessons.md`.
+  `.claude/review/lessons.md`. A bug that reached a release also adds a line to `.claude/qa/smoke-inbox.md`
+  (`- [ ] <date> <id>: smoke: add <area>: <item>`) so the smoke pack catches it next time.
 
 ## Small path (an obvious small bug)
 Within `quick_fix` in `.claude/project.json` (about 30 lines in up to 3 files), with a cause you can see in the code

@@ -5,7 +5,7 @@ Triage every request first (`sdlc` skill, the router), without asking which lane
 - **Requirements** (`/review-spec`): a ticket or document to make ready - plain words, the Definition of Ready, one gate with the requester; no code. Ends READY, then `/develop`.
 - **Feature or change** (`/develop`): the Definition of Ready check, `explorer`'s context pack, risk from evidence, only the agents needed, the safety net, one code review. Ends ready for `/test`.
 - **Bug** (`/fix`, also `/fix BLEN-1 F1 F3` for fix-list items): a proven root cause first, the fix with a regression test, a re-review. Ends with `/test retest`.
-- **Test** (`/test BLEN-1 BLEN-2`, `/test retest BLEN-1`): the QA team; ends SIGNED OFF (then the commit message) or with a fix list (then `/fix`). Fixes never start by themselves.
+- **Test** (`/test BLEN-1 BLEN-2`, `/test retest BLEN-1`, `/test data`, `/test smoke`): the QA team, with `test-data-engineer` for the data and `qa-lead`'s smoke pack; ends SIGNED OFF (then the commit message) or with a fix list (then `/fix`). Fixes never start by themselves.
 - **Product** (product mode): an idea, a PRD or "build a new product" - the `factory` skill, with a gate at each decision.
 
 Hard rules (in a repo with `.claude/project.json` the hooks enforce most of them, in Claude and Cursor):

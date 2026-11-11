@@ -20,6 +20,14 @@ Two modes, fixed at the first init:
   skill ID NAME                      the ticket's current flow skill (review-spec|develop|fix|test|factory); logged
   next ID "TEXT" | --clear           the hand-off line for the developer, e.g. "/test BLEN-1"; shown on the page and
                                      as `Next:` in status.md
+  data ID ready|partial|missing|blocked [--note TEXT] [--asks N]
+                                     the ticket's test data (test-data-engineer): stored as data in status.json,
+                                     `Data: <state> (<asks> asks)` in status.md, shown on the page
+  smoke ID --pass N --fail N [--blocked N] [--p1-fail N]
+                                     smoke results of a ticket or a test run: `Smoke: ...` in status.md and the page
+  testrun start IDS... | ticket RUN ID --verdict V [--must N --should N --blocked N --note T] [--data STATE]
+          [--smoke-pass N --smoke-fail N] | refresh RUN ID | check RUN | done RUN
+                                     a test run over several tickets; the done table ends with Data and Smoke
   stage ID STAGE start|done|fail [--out TEXT] [--actor NAME]
   gate ID STAGE "QUESTION" [--file F]... [--open prototype.html] [--decision D2] [--skip-check REASON] [--by AGENT]
                                      wait for the developer; repeat --file to review a stage's documents in one
@@ -137,15 +145,15 @@ TEAMS = [("lead", "Lead", ["main session"]),
          ("architecture", "Architecture", ["solution-architect", "data-architect", "security-architect"]),
          ("engineering", "Engineering", ["base-builder", "backend-developer", "frontend-developer", "integration-engineer"]),
          ("domain", "Domain experts", ["sf-expert", "sf-skills-expert", "ai-engineer", "n8n-expert"]),
-         ("quality", "Quality", ["code-reviewer", "qa-lead", "qa-engineer", "ui-qa-expert", "e2e-qa-expert", "verifier",
-                                  "performance-engineer", "bug-investigator"]),
+         ("quality", "Quality", ["code-reviewer", "qa-lead", "qa-engineer", "test-data-engineer", "ui-qa-expert", "e2e-qa-expert",
+                                  "verifier", "performance-engineer", "bug-investigator"]),
          ("audit", "Audit", ["audit-expert"]),
          ("operations", "Operations", ["devops-engineer", "release-manager"]),
          ("helpers", "Helpers", ["explorer"])]
 DOMAIN_CORE = ("sf-expert", "sf-skills-expert", "ai-engineer", "n8n-expert")
 # the bench a task-mode page shows next to the team (product mode shows every core agent)
 TASK_BENCH = {"main session", "spec-analyst", "bug-investigator", "ux-designer", "solution-architect", "data-architect",
-              "security-architect", "code-reviewer", "qa-lead", "qa-engineer", "ui-qa-expert", "e2e-qa-expert",
+              "security-architect", "code-reviewer", "qa-lead", "qa-engineer", "test-data-engineer", "ui-qa-expert", "e2e-qa-expert",
               "verifier", "performance-engineer",
               "release-manager", "explorer"}
 # earlier agent names -> core agents; "<repo>-verifier" and "<repo>-explorer" map by their ending
@@ -157,7 +165,7 @@ RENAMES = {"test-runner": "qa-engineer", "ui-engineer": "ux-designer", "prd-revi
 AGENT_STAGE = {"spec-analyst": "spec", "bug-investigator": "spec", "solution-architect": "design",
                "data-architect": "design", "security-architect": "design", "ux-designer": "design",
                "sf-expert": "design", "sf-skills-expert": "design", "ai-engineer": "design", "n8n-expert": "design", "code-reviewer": "review", "qa-engineer": "test",
-               "ui-qa-expert": "test", "e2e-qa-expert": "test",
+               "ui-qa-expert": "test", "e2e-qa-expert": "test", "test-data-engineer": "test",
                "verifier": "verify", "release-manager": "release"}
 # product mode: the factory's default team (AGENTS.md flow table, core names); domain rows only when configured
 PRODUCT_TEAM = [
@@ -470,6 +478,13 @@ def markdown(st):
         out.append("Skill: " + st["skill"])
     if st.get("next"):
         out.append("Next: " + st["next"])
+    if st.get("data"):
+        d = st["data"]
+        out.append("Data: %s (%d asks)" % (d.get("state", "?"), d.get("asks") or 0))
+    if st.get("smoke"):
+        k = st["smoke"]
+        out.append("Smoke: %d pass, %d fail, %d blocked (P1 fail %d)" % (k.get("pass") or 0, k.get("fail") or 0,
+                                                                         k.get("blocked") or 0, k.get("p1_fail") or 0))
     out.append("Risk: %s%s" % (timing.norm_risk(st.get("risk")) or timing.DEFAULT_RISK,
                               " (" + "; ".join(st["riskWhy"]) + ")" if st.get("riskWhy") else ""))
     out += ["", "| stage | state | evidence |", "|---|---|---|"]
@@ -629,6 +644,7 @@ AUTHORS = [(r"(^|/)(review-sf-skills|sf-skills|02-sf-skills-fit|05-sf-skills-fie
            (r"(^|/)(review(-[\w-]+)?|07-code-review)\.md$", "code-reviewer"),
            (r"(^|/)(test|07-test-report)\.md$", "qa-engineer"),
            (r"(^|/)(test-plan|05-test-plan|qa-signoff|07-qa-signoff)\.md$", "qa-lead"),
+           (r"(^|/)data\.md$", "test-data-engineer"),
            (r"(^|/)(qa-ui|07-qa-ui)\.md$", "ui-qa-expert"), (r"(^|/)(qa-e2e|07-qa-e2e)\.md$", "e2e-qa-expert"),
            (r"(^|/)07-system-review\.md$", "verifier"),
            (r"(^|/)08-audit\.md$", "audit-expert"),
@@ -1394,6 +1410,28 @@ def cmd_skill(a):
         save(st)
     with_lock(run)
     print("%s: skill %s" % (a.id, a.name))
+
+
+def cmd_data(a):
+    def run():
+        st = load(a.id)
+        st["data"] = dict(state=a.state, note=" ".join((a.note or "").split()), asks=a.asks or 0)
+        add(st, current_stage(st), "note", "data: %s (%d asks)%s" % (a.state, a.asks or 0, " - " + st["data"]["note"] if st["data"]["note"] else ""),
+            "test-data-engineer")
+        save(st)
+    with_lock(run)
+    print("%s: data %s (%d asks)" % (a.id, a.state, a.asks or 0))
+
+
+def cmd_smoke(a):
+    def run():
+        st = load(a.id)
+        st["smoke"] = {"pass": a.passed, "fail": a.fail, "blocked": a.blocked or 0, "p1_fail": a.p1_fail or 0}
+        add(st, current_stage(st), "note", "smoke: %d pass, %d fail, %d blocked (P1 fail %d)" % (
+            a.passed, a.fail, a.blocked or 0, a.p1_fail or 0), "main session")
+        save(st)
+    with_lock(run)
+    print("%s: smoke %d pass, %d fail, %d blocked (P1 fail %d)" % (a.id, a.passed, a.fail, a.blocked or 0, a.p1_fail or 0))
 
 
 def cmd_next(a):
@@ -2407,10 +2445,13 @@ def stale_of(t):
 
 
 def run_table(r):
-    rows = ["| Ticket | Verdict | MUST open | SHOULD | Blocked |", "|---|---|---|---|---|"]
+    rows = ["| Ticket | Verdict | MUST open | SHOULD | Blocked | Data | Smoke |", "|---|---|---|---|---|---|---|"]
     for t in r["tickets"]:
         m, s = ticket_counts(t)
-        rows.append("| %s | %s | %d | %d | %d |" % (t["id"], t["verdict"], m, s, t.get("blocked") or 0))
+        sm = t.get("smoke")
+        rows.append("| %s | %s | %d | %d | %d | %s | %s |" % (
+            t["id"], t["verdict"], m, s, t.get("blocked") or 0, t.get("data") or "-",
+            "%d/%d" % (sm.get("pass") or 0, sm.get("fail") or 0) if sm else "-"))
     return rows
 
 
@@ -2436,7 +2477,7 @@ def run_view(name):
     for t in r["tickets"]:
         m, s = ticket_counts(t)
         rows.append(dict(id=t["id"], verdict=t["verdict"], must=m, should=s, blocked=t.get("blocked") or 0,
-                         note=t.get("note") or "", stale=stale_of(t), fp=t.get("fingerprint"),
+                         note=t.get("note") or "", data=t.get("data") or "", smoke=t.get("smoke") or None, stale=stale_of(t), fp=t.get("fingerprint"),
                          files=len(t.get("hashes") or {}), fixes=fix_counts(t["id"])))
     return dict(run=r["run"], started=r["started"], done=r.get("done") or "", tickets=rows)
 
@@ -2550,6 +2591,21 @@ def cmd_testrun(a):
                     t[k] = getattr(a, k)
             if a.note:
                 t["note"] = a.note
+            if a.data:
+                t["data"] = a.data
+            if a.smoke_pass is not None or a.smoke_fail is not None:
+                t["smoke"] = {"pass": a.smoke_pass or 0, "fail": a.smoke_fail or 0}
+            if (a.data or t.get("smoke")) and os.path.isfile(path(a.id, "status.json")):
+                tk = load(a.id)
+                if a.data:
+                    tk["data"] = dict(tk.get("data") or {}, state=a.data)
+                    tk["data"].setdefault("note", "")
+                    tk["data"].setdefault("asks", 0)
+                if a.smoke_pass is not None or a.smoke_fail is not None:
+                    old = tk.get("smoke") or {}
+                    tk["smoke"] = {"pass": a.smoke_pass or 0, "fail": a.smoke_fail or 0, "blocked": old.get("blocked", 0),
+                                   "p1_fail": old.get("p1_fail", 0)}
+                save(tk)
             refresh("%s: %s" % (a.id, a.verdict))
             m, s = ticket_counts(t)
             nxt = {"SIGNED-OFF": "commit message (commit-msg skill)", "FAILED": "/fix %s (MUST open %d)" % (a.id, m),
@@ -2635,6 +2691,19 @@ def main():
     p.add_argument("id")
     p.add_argument("name", choices=SKILLS)
     p.set_defaults(fn=cmd_skill)
+    p = sub.add_parser("data", help="the ticket's test data state (test-data-engineer)")
+    p.add_argument("id")
+    p.add_argument("state", choices=["ready", "partial", "missing", "blocked"])
+    p.add_argument("--note", default="")
+    p.add_argument("--asks", type=int, default=0)
+    p.set_defaults(fn=cmd_data)
+    p = sub.add_parser("smoke", help="the ticket's or test run's smoke counts")
+    p.add_argument("id")
+    p.add_argument("--pass", dest="passed", type=int, required=True)
+    p.add_argument("--fail", type=int, required=True)
+    p.add_argument("--blocked", type=int, default=0)
+    p.add_argument("--p1-fail", dest="p1_fail", type=int, default=0)
+    p.set_defaults(fn=cmd_smoke)
     p = sub.add_parser("next")
     p.add_argument("id")
     p.add_argument("text", nargs="?", default="")
@@ -2738,6 +2807,9 @@ def main():
     q.add_argument("--should", type=int)
     q.add_argument("--blocked", type=int)
     q.add_argument("--note", default="")
+    q.add_argument("--data", default="", choices=["", "ready", "partial", "missing", "blocked"], help="the ticket's test-data state")
+    q.add_argument("--smoke-pass", dest="smoke_pass", type=int)
+    q.add_argument("--smoke-fail", dest="smoke_fail", type=int)
     q = tr.add_parser("refresh")
     q.add_argument("run")
     q.add_argument("id")

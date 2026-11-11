@@ -92,7 +92,9 @@ DEFAULTS = {
     "stack": {},
     # the project's QA facts file (roles, test users, variants, languages, known traps), read by the QA agents,
     # spec-analyst and explorer when set
-    "qa": {"facts": ""},
+    # qa.data: the test data map (test-data-engineer): approved hosts, the read-only query tool, the seed script, cleanup
+    # policy (keep|remove); merged key by key, so an existing qa.facts still works
+    "qa": {"facts": "", "data": {"map": ".claude/qa/data-map.md", "hosts": [], "query": "", "seed": "", "cleanup": "keep"}},
     "setup_paths": [],
     # Product code (outside the AI setup and the work folder) is written by its area agent, never by the main
     # session (the Tech Lead); the guard blocks the main session's edits there. First matching area wins.

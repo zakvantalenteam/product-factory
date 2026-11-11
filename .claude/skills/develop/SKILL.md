@@ -82,7 +82,9 @@ needs a change card, never a silent change.
 2. `live_status.py next <id> "/test <id>"` and tell the developer, with the stage table: "/test <id> now, or test
    later". Test later: the task waits at Test and cannot wrap up until it is SIGNED OFF, or the developer accepts the
    risk in their own words (stages.md).
-3. You never sign off your own work and never run the QA experts from here: `/test` owns that.
+3. A new screen or journey: one line in `.claude/qa/smoke-inbox.md` (`- [ ] <date> <id>: smoke: add <area>: <item>`)
+   so `qa-lead` folds it into the smoke pack.
+4. You never sign off your own work and never run the QA experts from here: `/test` owns that.
 
 ## Small path (a tiny change)
 Up to `quick_fix` in `.claude/project.json` (about 30 lines in up to 3 files), clear, nothing to decide (no table,

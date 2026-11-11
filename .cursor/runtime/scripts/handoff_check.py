@@ -29,6 +29,17 @@ Card layout: .claude/core/reference/review/decision-card.md. Hints are style poi
   python .claude/core/scripts/handoff_check.py ID [FILE ...]   (files relative to <work>/ID; default: all)
   python .claude/core/scripts/handoff_check.py ID --fix [BLOCK ...]   only fix-proof.md, only these blocks (default all);
                  prints OK or the problems per block
+  python .claude/core/scripts/handoff_check.py ID data.md   a ticket's test data (test-data-engineer; also in the default
+                 run when the file exists): `Data: READY|PARTIAL|BLOCKED`, table | Row | Need | Record ids | Source |
+                 Status | (ready, asked, blocked), every asked or blocked row under ## Ask list, created rows with
+                 ids that contain QA-<ID>-, READY with a blocked row is a problem
+  python .claude/core/scripts/handoff_check.py --data-map [PATH]   the test data map (default qa.data.map in
+                 project.json, else .claude/qa/data-map.md): Approved:, Hosts:, Query: lines; ## Needs table
+                 | ID | Need | Volume | Source | How | Cleanup | Status |; find rows read-only, create rows through an
+                 API path, import or seed script with a Cleanup, ask rows listed under ## Ask list
+  python .claude/core/scripts/handoff_check.py --smoke [PATH]   the smoke list (default .claude/smoke.md): each
+                 ## <area> with a paths: line and `- ` items ([P1] allowed), optional ### Journey: <name> [P1] with
+                 Role:, Steps: (numbered), Expected: and optional Data:; HTML comments ignored
 Exit code 1 when there are problems.
 """
 import glob
@@ -662,6 +673,168 @@ def fixproof_report(text, name="fix-proof.md", only=None):
     return problems, lines
 
 
+SQL_WRITE = re.compile(r"\b(INSERT|UPDATE|DELETE|MERGE|UPSERT|TRUNCATE|DROP|ALTER)\b|\bCREATE\s+TABLE\b", re.I)
+NEED_COLS = ["id", "need", "volume", "source", "how", "cleanup", "status"]
+
+
+def nocomments(text):
+    return re.sub(r"<!--.*?-->", "", text, flags=re.S)
+
+
+def header_value(text, key):
+    m = re.search(r"(?im)^[\s>*_-]*%s[\s*_]*:[\s*_]*(.*?)\s*$" % key, text)
+    return None if m is None else m.group(1).strip().strip("*_").strip()
+
+
+def check_datamap(text, name="data-map.md"):
+    """Problems of the test data map (test-data-engineer): headers, the Needs table, read-only find, create through the app."""
+    text = nocomments(text)
+    secs = sections(text)
+    out = []
+    ap = header_value(text, "Approved")
+    if ap is None:
+        out.append("%s: no `Approved:` line (no, or <name>, <date>)" % name)
+    elif ap.lower() != "no" and not re.match(r"^[^,]+,\s*\S+", ap):
+        out.append("%s: `Approved:` is `%s`; write `no` or `<name>, <date>`" % (name, ap))
+    for k in ("Hosts", "Query"):
+        if header_value(text, k) is None:
+            out.append("%s: no `%s:` line" % (name, k))
+    body = find(secs, "needs")
+    rows = table_rows(body) if body is not None else []
+    if body is None:
+        out.append("%s: no `## Needs` section" % name)
+    elif not rows:
+        out.append("%s: `## Needs` has no table" % name)
+    else:
+        cols = [c.lower() for c in rows[0]]
+        if cols != NEED_COLS:
+            out.append("%s: Needs table columns are `%s`; use | ID | Need | Volume | Source | How | Cleanup | Status |" % (
+                name, " | ".join(rows[0])))
+            rows = []
+    ask = find(secs, "ask list") or ""
+    asked = set(m.upper() for m in re.findall(r"(?im)^\s*[-*]\s*(D\d+)\s*:", ask))
+    seen = set()
+    for r in rows[1:]:
+        if len(r) != 7:
+            out.append("%s: row `%s` has %d cells, expected 7" % (name, r[0] if r else "", len(r)))
+            continue
+        rid, need, vol, src, how, clean, stat = r
+        if not re.match(r"^D\d+$", rid):
+            out.append("%s: row ID `%s` is not D1, D2, ..." % (name, rid))
+        if rid in seen:
+            out.append("%s: row %s appears twice" % (name, rid))
+        seen.add(rid)
+        if src.lower() not in ("find", "create", "ask"):
+            out.append("%s: %s Source `%s` must be find, create or ask" % (name, rid, src))
+        if stat.lower() not in ("planned", "ready", "missing", "asked", "blocked"):
+            out.append("%s: %s Status `%s` must be planned, ready, missing, asked or blocked" % (name, rid, stat))
+        w = SQL_WRITE.search(how)
+        if src.lower() == "find" and w:
+            out.append("%s: %s is a find row but How holds %s; find is read-only" % (name, rid, w.group(0).upper()))
+        if src.lower() == "create":
+            if w:
+                out.append("%s: %s is a create row but How holds %s; create only through the app" % (name, rid, w.group(0).upper()))
+            elif not ("/" in how or re.search(r"(?i)\b(import|seed)", how)):
+                out.append("%s: %s create row: How must name an API path, an import or a seed script" % (name, rid))
+            if clean.strip() in ("", "-"):
+                out.append("%s: %s create row: Cleanup is empty" % (name, rid))
+        if src.lower() == "ask" and rid.upper() not in asked:
+            out.append("%s: %s is an ask row with no `- %s: ...` entry under ## Ask list" % (name, rid, rid))
+    return out
+
+
+def check_datamd(text, tid, name="data.md"):
+    """Problems of a ticket's data.md (test-data-engineer): state line, record table, ask list, QA-<ID>- ids."""
+    secs = sections(text)
+    out = []
+    m = re.search(r"(?im)^[\s>*_-]*Data[\s*_]*:[\s*_]*(\w+)", text)
+    state = m.group(1).upper() if m else ""
+    if state not in ("READY", "PARTIAL", "BLOCKED"):
+        out.append("%s: no `Data: READY|PARTIAL|BLOCKED` line" % name)
+    rows = table_rows(text)
+    hdr = next((i for i, r in enumerate(rows) if [c.lower() for c in r] == ["row", "need", "record ids", "source", "status"]), None)
+    if hdr is None:
+        out.append("%s: no table | Row | Need | Record ids | Source | Status |" % name)
+        return out
+    ask = find(secs, "ask list") or ""
+    blocked = False
+    for r in rows[hdr + 1:]:
+        if len(r) != 5:
+            break
+        row, need, rec, src, stat = r
+        if stat.lower() not in ("ready", "asked", "blocked"):
+            out.append("%s: row %s Status `%s` must be ready, asked or blocked" % (name, row, stat))
+        if stat.lower() == "blocked":
+            blocked = True
+        if stat.lower() in ("asked", "blocked") and not re.search(r"(?<![\w-])%s(?![\w-])" % re.escape(row), ask):
+            out.append("%s: row %s is %s but not listed under ## Ask list" % (name, row, stat.lower()))
+        if src.lower().startswith("create") and ("QA-%s-" % tid) not in rec:
+            out.append("%s: row %s is created data; its record ids must contain QA-%s-" % (name, row, tid))
+    if state == "READY" and blocked:
+        out.append("%s: Data is READY but a row is blocked" % name)
+    return out
+
+
+def check_smoke(text, name="smoke.md"):
+    """Problems of the smoke list: areas with paths and items, journeys with Role, Steps and Expected."""
+    text = nocomments(text)
+    out = []
+    parts = re.split(r"(?m)^##[ \t]+(?=\S)", "\n" + text)[1:]
+    if not parts:
+        return ["%s: no `## <area>` sections" % name]
+    for part in parts:
+        head, _, body = part.partition("\n")
+        area = head.strip()
+        top, *subs = re.split(r"(?m)^###[ \t]+", body)
+        pm = re.search(r"(?im)^[\s>*_-]*paths[\s*_]*:[\s*_]*(.*?)\s*$", top)
+        if not pm or not re.search(r"[\w*/.]", pm.group(1)):
+            out.append("%s: ## %s has no `paths:` line with a glob" % (name, area))
+        if not re.search(r"(?m)^\s*- \S", top):
+            out.append("%s: ## %s has no `- ` item" % (name, area))
+        for sub in subs:
+            sh, _, sb = sub.partition("\n")
+            jm = re.match(r"(?i)^Journey:\s*(.*?)\s*(\[P1\])?\s*$", sh.strip())
+            if not jm:
+                continue
+            jn = "## %s / Journey %s" % (area, jm.group(1) or "?")
+            if not jm.group(1):
+                out.append("%s: %s has no name" % (name, jn))
+            for key in ("Role", "Expected"):
+                km = re.search(r"(?im)^[\s>*_-]*%s[\s*_]*:[\s*_]*(.*?)\s*$" % key, sb)
+                if not km or not km.group(1):
+                    out.append("%s: %s has no `%s:` line" % (name, jn, key))
+            if not re.search(r"(?im)^[\s>*_-]*Steps[\s*_]*:[\s*_]*(?:\d+[.)]|.*\n\s*\d+[.)])", sb):
+                out.append("%s: %s has no `Steps:` with numbered steps" % (name, jn))
+    return out
+
+
+def standalone(flag):
+    """--data-map [PATH] and --smoke [PATH]: no ticket id; the default file from the config or the repo."""
+    i = sys.argv.index(flag)
+    given = sys.argv[i + 1] if len(sys.argv) > i + 1 and not sys.argv[i + 1].startswith("--") else None
+    if flag == "--data-map":
+        dflt = (((CFG.get("qa") or {}).get("data") or {}).get("map")) or ".claude/qa/data-map.md"
+        fn = check_datamap
+    else:
+        dflt = ".claude/smoke.md"
+        fn = check_smoke
+    p = given or dflt
+    full = p if os.path.isabs(p) else os.path.join(ROOT, p)
+    text = read(full)
+    if text is None:
+        if given is None:  # the default file is checked only when it exists
+            print("%s: not found, skipped." % p)
+            sys.exit(0)
+        print("PROBLEM %s: not found" % p)
+        sys.exit(1)
+    problems = fn(text, os.path.basename(p))
+    for x in problems:
+        print("PROBLEM " + x)
+    if not problems:
+        print("%s check passed." % os.path.basename(p))
+    sys.exit(1 if problems else 0)
+
+
 def check(folder, files=None):
     """(problems, hints) for the given files of a task folder. Unknown documents get hints only."""
     if not os.path.isdir(folder):
@@ -675,6 +848,8 @@ def check(folder, files=None):
         files = list(files) + ["fix-list.md"]
     if os.path.isfile(os.path.join(folder, "fix-proof.md")) and "fix-proof.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
         files = list(files) + ["fix-proof.md"]
+    if os.path.isfile(os.path.join(folder, "data.md")) and "data.md" not in [os.path.basename(f.replace("\\", "/")) for f in files]:
+        files = list(files) + ["data.md"]
     reviews = review_docs()
     problems, hints = [], []
     for f in files:
@@ -692,6 +867,8 @@ def check(folder, files=None):
             r = check_brief(text, base)
         elif base == "fix-list.md":
             r = check_fixlist(text, name), []
+        elif base == "data.md":
+            r = check_datamd(text, os.path.basename(folder.rstrip("/\\")), name), []
         elif base in SPEC_DOCS:
             dor = base not in PRODUCT_DOCS and find(sections(text), "definition of ready") is not None
             if dor and not re.search(r"(?im)^[\s>*_-]*kind of work[\s*_]*:", text):
@@ -748,6 +925,9 @@ def main():
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(2)
+    for flag in ("--data-map", "--smoke"):
+        if flag in sys.argv[1:]:
+            standalone(flag)
     folder = os.path.join(WORK, sys.argv[1])
     if "--fix" in sys.argv[2:]:
         i = sys.argv.index("--fix")

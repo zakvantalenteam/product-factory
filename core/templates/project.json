@@ -131,7 +131,14 @@
   "experts": [],
   "expert_docs": {},
   "qa": {
-    "facts": ""
+    "facts": "",
+    "data": {
+      "map": ".claude/qa/data-map.md",
+      "hosts": [],
+      "query": "",
+      "seed": "",
+      "cleanup": "keep"
+    }
   },
   "glossary": {
     "code_words": "",

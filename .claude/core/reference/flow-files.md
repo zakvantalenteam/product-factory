@@ -64,6 +64,10 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 | QA brief for a ticket with no task (ticket text, diff or commits, criteria to test, `## Changed files`) | `qa-brief.md` | - | qa-lead (`intake`, `/test`) |
 | Fix list (defects left by QA, their owners and status; format `.claude/core/reference/qa/fix-list.md`) | `fix-list.md` | `07-fix-list.md` | qa-lead (`sign-off`, `retest`); statuses `fixing`, `fixed` by the main session in `/fix` |
 | Testability of each criterion | `testability.md` | - | qa-lead (`testability`, `/review-spec`) |
+| QA data map (per need: volume, find / create / ask, how, cleanup, status; `Approved:` line) | `.claude/qa/data-map.md` (committed, shared) | same | test-data-engineer (`learn`, `/test data`); `Approved:` by the main session on the developer's yes |
+| Seed and cleanup scripts, create log | `.claude/qa/seed/`, `.claude/qa/create-log.jsonl` | same | test-data-engineer |
+| Test data for a ticket (record ids per matrix row, ask list) | `data.md` | same | test-data-engineer (`top-up`, `/test`) |
+| Smoke pack (areas, `paths:`, items, journeys, `[P1]`) | `.claude/smoke.md` | same | qa-lead (`smoke`); `smoke: add` lines in `.claude/qa/smoke-inbox.md` from `/develop` and `/fix` |
 | Requirements for people and the Definition of Ready (`.claude/core/reference/requirements/definition-of-ready.md`) | `spec.md` (with `Requirements: READY (...)` once approved) | `02-spec.md` | spec-analyst (`requirements`, `/review-spec`; `dor`, `/develop`) |
 | Which skill has the ticket and the hand-off line (`skill`, `next`) | `status.json`, `status.md` (`Skill:`, `Next:`) | same | `live_status.py init --skill`, `skill`, `next`, `testrun ticket` |
 | Test run across tickets (one table: ticket, verdict, MUST open, SHOULD, blocked) | `<work>/test-runs/<date>-<n>.md` | same | `live_status.py testrun` |

@@ -703,3 +703,24 @@ refuses another skill's job (it names the right one) and hands over through the 
   stays as the small path's record (the stop hook accepts it).
 - live_status: `init --skill`, `skill ID NAME`, `next ID "TEXT"`; a skill chip and the Next line on the page.
   The stop hook names the task's skill when it sends a turn back.
+
+## 37. 1.14.0 - a test data engineer and a smoke pack with an owner
+Why: `/test` often ended BLOCKED for missing data volumes, variants, roles and long-text records; the QA facts list
+the records needed ("Test data recipe") but nobody made them; `.claude/smoke.md` had no owner.
+- `test-data-engineer` (QA team, Opus at high effort, no browser in v1). Mode `learn` (`/test data`): the data map
+  `.claude/qa/data-map.md` (one row per need: volume, source find / create / ask, how, cleanup, status) and draft seed
+  and cleanup scripts in `.claude/qa/seed/`; runs nothing; one gate, nothing created before `Approved:`. Mode
+  `top-up` (the new Data step of `/test`, after the plan): finds or creates only what is missing, `QA-<ticket>-`
+  prefix, `data.md` with ids per matrix row; what it cannot make is asked and BLOCKED. Mode `cleanup`: only the
+  records its log lists. Safety: `qa.data.hosts` only, never production; synthetic names; writes only through the
+  app; read-only query command for lookups (counts and ids); test sign-ins; a yes for batches over 100; every create
+  logged in `.claude/qa/create-log.jsonl`.
+- `qa-lead` mode `smoke` owns `.claude/smoke.md`: today's format plus `[P1]` items and `### Journey:` blocks (Role,
+  Steps, Expected, Data); every plan adds the smoke items of the areas a ticket touches as `S` rows; the sign-off has
+  `## Smoke` (a P1 FAIL fails). `/develop` and `/fix` add `smoke: add` lines to `.claude/qa/smoke-inbox.md`.
+- `/test data`, `/test data cleanup`, `/test smoke` (`skills/test/data-and-smoke.md`); `qa.data` in project.json
+  (map, hosts, query, seed, cleanup `keep`: one lasting `QA-DATA-` dataset, top-ups per ticket, cleanup on request).
+- live_status: `data ID`, `smoke ID`, `testrun ticket --data --smoke-*`, Data and Smoke columns. handoff_check:
+  `--data-map`, `--smoke`, `data.md`.
+- `.claude/qa/` is product-owned like `.claude/experts/`: the guard does not block it, install.py and cursor_sync
+  leave it alone.

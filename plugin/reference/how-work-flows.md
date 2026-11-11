@@ -52,6 +52,16 @@ never picks a skill: `develop` and `fix` have a small path for a change within `
 - `e2e-qa-expert` runs the journeys across roles. `qa-engineer` writes the tests and runs the API checks
   (`${CLAUDE_PLUGIN_ROOT}/reference/qa/api-checklist.md`).
 - A checklist MUST fails Test, and no task closes without the sign-off.
+- Test data: `test-data-engineer` makes the data a plan needs, so testers stop asking for it. `/test data` builds the
+  QA data map once per product (`.claude/qa/data-map.md`: per need find on dev, create through the app, or ask the
+  developer; seed and cleanup scripts in `.claude/qa/seed/`), approved by the developer at one gate before anything
+  is created. In each `/test` it tops up what the plan misses (`QA-<ticket>-` records, `data.md`); what it cannot
+  make is BLOCKED with an ask. Dev hosts only (`qa.data.hosts`), synthetic names, writes only through the app, a
+  yes for batches over 100, every create logged; cleanup only on request (`/test data cleanup`).
+- Smoke pack: `qa-lead` keeps `.claude/smoke.md` (areas with `paths:`, one-line items, short journeys with role,
+  steps, expected and data, `[P1]` items as the release gate). Every `/test` run adds the items of the areas a ticket
+  touches; `/test smoke` runs the whole pack. `/develop` and `/fix` leave `smoke: add` lines in
+  `.claude/qa/smoke-inbox.md` for a new screen or journey or a release bug.
 - `/test` (the `test` skill) runs the QA team on its own: one ticket, several in one run (`/test BLEN-1 BLEN-2`), or
   `/test retest BLEN-1` for the fixed items. It works in any session, because the state lives in the work folder.
   `develop` and `fix` end ready for it. "Test later" leaves the task waiting at Test.
@@ -99,7 +109,7 @@ of the work. Open it with `python ${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py o
 - Agents: `explorer` (search), `spec-analyst`, `bug-investigator`, `product-critic`, `story-sizer`, `ux-designer`,
   `solution-architect`, `data-architect`, `security-architect`, `base-builder`, `backend-developer`,
   `frontend-developer`, `integration-engineer`, `devops-engineer`, `performance-engineer`, `code-reviewer`, `qa-lead`,
-  `qa-engineer`, `ui-qa-expert`, `e2e-qa-expert`, `verifier`, `audit-expert`, `release-manager`; domain experts
+  `qa-engineer`, `ui-qa-expert`, `e2e-qa-expert`, `test-data-engineer`, `verifier`, `audit-expert`, `release-manager`; domain experts
   `sf-expert`, `sf-skills-expert` (SuccessFactors job profiles and skills), `ai-engineer`, `n8n-expert` (repo facts in
   `.claude/experts/`). The repo's own agents, area skills and path rules sit next to them.
 - Every agent is tagged with verified credentials (frontmatter `certifications:`, general first, then SAP) and works to
@@ -118,10 +128,10 @@ of the work. Open it with `python ${CLAUDE_PLUGIN_ROOT}/scripts/live_status.py o
 - Models (each agent's `model:` line): Opus for the agents that decide (`solution-architect`, `security-architect`,
   `data-architect`, `ai-engineer`, `code-reviewer`, `ux-designer`, `spec-analyst`, `product-critic`,
   `bug-investigator`, `audit-expert`, `performance-engineer`, `sf-expert`, `sf-skills-expert`), Opus at high effort
-  (`effort: high`) for every QA and dev agent (`qa-lead`, `qa-engineer`, `ui-qa-expert`, `e2e-qa-expert`, `verifier`,
+  (`effort: high`) for every QA and dev agent (`qa-lead`, `qa-engineer`, `ui-qa-expert`, `e2e-qa-expert`, `test-data-engineer`, `verifier`,
   `backend-developer`, `frontend-developer`, `integration-engineer`, `devops-engineer`, `base-builder`, `n8n-expert`),
-  Sonnet 5.5 for the rest (`explorer`, `release-manager`, `story-sizer`). `maxTurns` is about 1.5 times the call budget. Cursor runs every agent on the
-  session's model.
+  Sonnet 5.5 for the rest (`explorer`, `release-manager`, `story-sizer`). `maxTurns` is about 1.5 times the call budget. Cursor has no per-agent model
+  or effort control: it runs every agent on the session's model.
 
 ## Git, servers and secrets
 - No git command that changes the repo: commit, push, pull, fetch, merge, rebase, stash, reset, checkout, switch,
