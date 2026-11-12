@@ -798,3 +798,23 @@ data upgrade or browsers, and lessons came only from review MUSTs.
   applies to any product) to each block; `/fix` records a project check as a lesson tagged `[review-spec R<n>]`,
   `[develop review]` or `[test <type>]` (or the checklist, or the QA facts) and a core check in
   `.claude/review/core-escapes.md` for the core owner. The review pack leaves out lessons tagged for other stages.
+
+## 41. 1.16.1 - a plugin copy missing a hook file says which copy and how to fix it
+Why: on 12 Nov the claude.ai copy of the plugin (product-factory@inline) synced 1.16.0 without `hooks/guard.py`;
+its guard entry ran `python <missing file>`, so every Bash, PowerShell, Edit and Write was blocked with only
+"python: can't open file ...guard.py".
+- Launcher: build_plugin.py writes each plugin hook entry as `python -c <launcher> <mode> ${CLAUDE_PLUGIN_ROOT}/<file>`,
+  so the entry depends on no file. With the file there it runs it unchanged (same stdin, output and exit code). With
+  it missing: `block` (the guard) exits 2 naming the copy (marketplace, claude.ai or another folder), its folder,
+  the missing file and the fix; `warn` (session start) prints one warning line; `quiet` (every other hook) is silent.
+  In a folder without `.claude/project.json` the guard does nothing, so the launcher lets the call through there.
+  Guarding stays fail-closed: a launcher error in block mode exits 2.
+- Session start warns when this copy lacks a file its own hooks.json runs, and when two copies are on: each copy
+  records its folder against the session id in the temp folder; another folder within 5 seconds is the other copy,
+  and the first to claim the session's marker prints "on twice" (tested: 20 of 20 two-copy starts warned once, no
+  warning in 30 one-copy starts or with a 6-second gap).
+- `build_plugin.py` (and `--check`) fail when hooks.json or plugin.json names a `${CLAUDE_PLUGIN_ROOT}` path that is not
+  in `plugin/`; session start checks the same two files. The first tests: `tests/core/scripts/test_build_plugin.py`
+  (repo root, never installed; `python tests/core/scripts/test_build_plugin.py -v`).
+- Unchanged: the repo copy's launcher (exit 1 and `onFailure: block`, "missing, reinstall") and Cursor's
+  (`.cursor/runtime` copies; a missing script warns and passes).

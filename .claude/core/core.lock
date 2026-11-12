@@ -28,7 +28,7 @@
   ".claude/agents/ui-qa-expert.md": "4093c0b7576f7e92",
   ".claude/agents/ux-designer.md": "5ebbe7af3fa5e312",
   ".claude/agents/verifier.md": "2d300f6f007cc2ed",
-  ".claude/core/VERSION": "46081fd90571a274",
+  ".claude/core/VERSION": "32575309a6ef3fb5",
   ".claude/core/hooks/flow_check.py": "8016bb36af17cfca",
   ".claude/core/hooks/guard.py": "498d3836099d1585",
   ".claude/core/hooks/rules_check.py": "bf28d3d0475502d3",
@@ -143,5 +143,5 @@
   ".claude/skills/test/several-tickets.md": "d047fbd1242506cf",
   ".claude/skills/verify-push/SKILL.md": "3dfe5c06dd9c6473"
  },
- "version": "1.16.0"
+ "version": "1.16.1"
 }

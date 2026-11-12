@@ -6,7 +6,7 @@
  "mode": "task",
  "root": "",
  "started": "2026-11-04T23:54:52+05:30",
- "seq": 11,
+ "seq": 15,
  "events": [
   {
    "n": 1,
@@ -95,10 +95,42 @@
    "kind": "note",
    "actor": "main session",
    "text": "1.13.0 done: /develop and /fix added, sdlc is the router; installed in 4 repos, all checks clean; report core-1-13-0-report.md"
+  },
+  {
+   "n": 12,
+   "t": "2026-11-11T19:53:22+05:30",
+   "stage": "wrap",
+   "kind": "note",
+   "actor": "main session",
+   "text": "1.14.0 done: test-data-engineer, qa-lead smoke pack, /test data and /test smoke; installed in 4 repos, checks clean; report core-1-14-0-report.md"
+  },
+  {
+   "n": 13,
+   "t": "2026-11-11T20:30:11+05:30",
+   "stage": "wrap",
+   "kind": "note",
+   "actor": "main session",
+   "text": "1.14.1 done: home stages, fix rounds, stale runs stopped, SessionEnd hook, repair command; installed in 4 repos, checks clean; report core-1-14-1-report.md; ready to commit"
+  },
+  {
+   "n": 14,
+   "t": "2026-11-11T20:42:06+05:30",
+   "stage": "wrap",
+   "kind": "note",
+   "actor": "main session",
+   "text": "1.15.0 started: M2 prompt hook, M3 README and ONBOARDING, S4-S10 (repo-copy names, /release, /fix --hotfix, share, cost, sizes, no-repo review-spec); M1 dropped by Zakvan"
+  },
+  {
+   "n": 15,
+   "t": "2026-11-11T20:57:12+05:30",
+   "stage": "wrap",
+   "kind": "note",
+   "actor": "main session",
+   "text": "core 1.15.0 built and installed in 4 repos; checks clean; report core-1-15-0-report.md"
   }
  ],
  "counts": {
-  "note": 5,
+  "note": 9,
   "start": 2,
   "integrate": 1,
   "done": 3
@@ -165,7 +197,7 @@
    "out": "report and commit messages in the shared notes folder (core-1-10-0-report.md)"
   }
  ],
- "updated": "2026-11-10T21:31:17+05:30",
+ "updated": "2026-11-11T20:57:12+05:30",
  "project": "product-factory",
  "teams": [
   {
@@ -218,6 +250,7 @@
     "code-reviewer",
     "qa-lead",
     "qa-engineer",
+    "test-data-engineer",
     "ui-qa-expert",
     "e2e-qa-expert",
     "verifier",
@@ -262,7 +295,7 @@
   "main session": {
    "k": "wrap",
    "n": 0,
-   "last": "1.13.0 done: /develop and /fix added, sdlc is the router; installed in 4 repos, all checks clean; report core-1-13-0-report.md",
+   "last": "core 1.15.0 built and installed in 4 repos; checks clean; report core-1-15-0-report.md",
    "wrote": ""
   }
  }

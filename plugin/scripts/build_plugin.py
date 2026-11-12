@@ -15,6 +15,15 @@ plugin.json version that differs from VERSION, then runs `claude plugin validate
 claude CLI is on PATH (a warning when it is not).
 It also writes the "Certified agents" table of <home>/README.md (between its certified-agents markers) from each
 agent's `role:`, `model:` and `certifications:` frontmatter, with the exam scores in core/exam-scores.json.
+Hook entries: core/hooks/hooks.json names each hook as `python ${CLAUDE_PLUGIN_ROOT}/<file> <args>`; the plugin's
+hooks.json runs it through LAUNCHER (`python -c <launcher> <mode> ${CLAUDE_PLUGIN_ROOT}/<file> <args>`), so the
+entry depends on no file. With the file there the launcher runs it unchanged (same stdin, output and exit code).
+With the file missing (a plugin copy that synced incompletely): mode `block` (the entry with onFailure block, the
+guard) exits 2 with a message naming the copy, its folder, the missing file and the fix; mode `warn` (SessionStart)
+prints a one-line warning; mode `quiet` (every other hook) stays silent, because session start already warns. In a
+folder without .claude/project.json the guard does nothing, so the launcher lets the call through there too.
+The build and --check fail when hooks/hooks.json or .claude-plugin/plugin.json names a ${CLAUDE_PLUGIN_ROOT} path
+that is not in plugin/.
 --check exits 1 when plugin/ or that table is not what a build would write (the sync workflow runs it before
 anything ships).
 """
@@ -39,6 +48,49 @@ MARKS = ("<!-- certified-agents:start (build_plugin.py writes this table from th
          "<!-- certified-agents:end -->")
 SCORES = os.path.join(CORE, "exam-scores.json")  # blind exam scores per agent and core version, for the table
 SKIP = {"__pycache__", "migration", "core-plan.md", "core.lock", "exam-scores.json"}
+ROOT_VAR = "${CLAUDE_PLUGIN_ROOT}/"
+# The hook launcher, one `python -c` line: argv = <mode> <file> <args>. No double quote, $, %, ^, &, |, <, >, !,
+# backquote or backslash in it, so it passes unchanged through Claude Code's argument list and through Git Bash or
+# PowerShell 5.1 when run by hand.
+LAUNCHER = ";".join([
+    "import itertools,json,os,runpy,sys",
+    "m=(sys.argv[1:2] or ['block'])[0]",
+    "p=os.path.abspath(sys.argv[2]) if sys.argv[2:] else ''",
+    # a launcher error blocks in block mode (fail closed) and passes otherwise
+    "sys.excepthook=lambda t,v,b:(sys.stderr.write('product-factory: the hook launcher failed ('+repr(v)+'), so '"
+    "+('this call is blocked' if m=='block' else 'this hook did not run')+chr(10)),sys.stderr.flush(),"
+    "os._exit(2 if m=='block' else 0))",
+    # M(): the file is missing; returns the exit code. c = the project folder as project.repo_root finds it,
+    # o = it opted in to the core, r = the plugin copy's folder, n = which copy, x = the fix, q = the missing file
+    "M=lambda:("
+    "c:=os.environ.get('CLAUDE_PROJECT_DIR') or next((x for x in itertools.accumulate(range(64),"
+    "lambda d,i:os.path.dirname(d),initial=os.getcwd()) if os.path.isdir(os.path.join(x,'.claude'))),os.getcwd()),"
+    "o:=os.path.isfile(os.path.join(c,'.claude','project.json')),"
+    "r:=os.path.dirname(os.path.dirname(p)),"
+    "w:=r.replace(os.sep,'/'),"
+    "k:=(w.split('/plugins/cache/')[1:] or [''])[0].split('/'),"
+    "v:=open(os.path.join(r,'VERSION')).read().strip() if os.path.isfile(os.path.join(r,'VERSION')) else '?',"
+    "n:=('the marketplace copy of the '+k[1]+' plugin ('+k[1]+'@'+k[0]+' '+v+')') if k[2:] else "
+    "('the claude.ai copy of the product-factory plugin (product-factory@inline '+v+', synced from claude.ai)') "
+    "if '/rpm/' in w else ('a copy of the product-factory plugin ('+v+')'),"
+    "x:='turn it off or update it in the plugin manager (/plugin)' if k[2:] else "
+    "'turn it off on claude.ai or in the plugin manager, or update it on claude.ai' if '/rpm/' in w else "
+    "'turn it off in the plugin manager, or reinstall or update it',"
+    "q:=os.path.relpath(p,r).replace(os.sep,'/'),"
+    "t:=n+' is missing '+q+' (folder '+r+')',"
+    "o and m=='block' and sys.stderr.write('Blocked: '+t+', so its safety guard cannot check this call. Fix: '+x+'.'"
+    "+chr(10)),"
+    "o and m=='warn' and print(json.dumps({'systemMessage':'Warning: '+t+'; this copy is incomplete. Fix: '+x+'.',"
+    "'hookSpecificOutput':{'hookEventName':'SessionStart','additionalContext':'Warning: '+t+'; this copy is "
+    "incomplete. Tell the developer to '+x+'.'}})),"
+    "2 if o and m=='block' else 0)[-1]",
+    "os.path.isfile(p) or sys.exit(M())",
+    # the file is there: run it as `python <file> <args>` would (its folder first on sys.path, not the working folder)
+    "sys.argv=[p]+sys.argv[3:]",
+    "sys.path[0]=os.path.dirname(p)",
+    "sys.excepthook=sys.__excepthook__",
+    "runpy.run_path(p,run_name='__main__')",
+])
 
 
 def certified_table():
@@ -134,6 +186,52 @@ def readme(write):
     return new == text
 
 
+def plugin_hooks(src):
+    """The plugin's hooks.json text: each `python ${CLAUDE_PLUGIN_ROOT}/<file>` entry of the core's runs through
+    LAUNCHER, mode block for the onFailure-block entry (the guard), warn for SessionStart, quiet for the rest."""
+    with open(src, encoding="utf-8") as fh:
+        cfg = json.load(fh)
+    for event, entries in cfg.get("hooks", {}).items():
+        for entry in entries:
+            for h in entry.get("hooks", []):
+                args = h.get("args") or []
+                if h.get("command") != "python" or not args or not args[0].startswith(ROOT_VAR):
+                    sys.exit("core/hooks/hooks.json: every hook must be `python` with args starting "
+                             "${CLAUDE_PLUGIN_ROOT}/<file> (%s)" % event)
+                mode = "block" if h.get("onFailure") == "block" else "warn" if event == "SessionStart" else "quiet"
+                h["args"] = ["-c", LAUNCHER, mode] + args
+    return json.dumps(cfg, indent=1, ensure_ascii=False) + "\n"
+
+
+ROOT_FILES = ("hooks/hooks.json", ".claude-plugin/plugin.json")  # the plugin files that name ${CLAUDE_PLUGIN_ROOT} paths
+
+
+def root_paths(value):
+    """Every `${CLAUDE_PLUGIN_ROOT}/<path>` in a JSON value's strings, as <path>."""
+    if isinstance(value, dict):
+        return [p for v in value.values() for p in root_paths(v)]
+    if isinstance(value, list):
+        return [p for v in value for p in root_paths(v)]
+    return re.findall(r"\$\{CLAUDE_PLUGIN_ROOT\}/([^\s\"']+)", value) if isinstance(value, str) else []
+
+
+def plugin_files_missing(folder):
+    """[(path, named in)]: paths that hooks/hooks.json or .claude-plugin/plugin.json name as ${CLAUDE_PLUGIN_ROOT}/<path>
+    but <folder> does not have (a missing hooks.json counts too)."""
+    out = set()
+    for src in ROOT_FILES:
+        path = os.path.join(folder, src)
+        if not os.path.isfile(path):
+            if src == "hooks/hooks.json":
+                out.add((src, "the build"))
+            continue
+        with open(path, encoding="utf-8") as fh:
+            for rel in root_paths(json.load(fh)):
+                if not os.path.exists(os.path.join(folder, rel)):
+                    out.add((rel, src))
+    return sorted(out)
+
+
 def build(dest):
     if os.path.isdir(dest):
         shutil.rmtree(dest)
@@ -145,7 +243,10 @@ def build(dest):
                 continue
             src, dst = os.path.join(top, f), os.path.join(dest, rel, f)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            if f.endswith(".md"):
+            if rel == "hooks" and f == "hooks.json":
+                with open(dst, "w", encoding="utf-8", newline="\n") as fh:
+                    fh.write(plugin_hooks(src))
+            elif f.endswith(".md"):
                 with open(src, encoding="utf-8", newline="") as fh:
                     text = fh.read()
                 with open(dst, "w", encoding="utf-8", newline="") as fh:
@@ -187,10 +288,17 @@ def main():
         same = readme(write=False)
         if not same:
             print("stale  README.md: its Certified agents table differs from the agent files")
-        print("plugin up to date" if not diff and same else "plugin/ is stale: run python core/scripts/build_plugin.py")
-        sys.exit(1 if diff or not same else 0)
+        gone = plugin_files_missing(OUT) if os.path.isdir(OUT) else []
+        for rel, src in gone:
+            print("missing  plugin/%s: %s names it" % (rel, src))
+        print("plugin up to date" if not diff and same and not gone
+              else "plugin/ is stale: run python core/scripts/build_plugin.py")
+        sys.exit(1 if diff or not same or gone else 0)
     build(OUT)
     readme(write=True)
+    gone = plugin_files_missing(OUT)
+    if gone:
+        sys.exit("plugin built but incomplete, not in %s: %s" % (OUT, ", ".join("%s (named in %s)" % g for g in gone)))
     ok, text = validate(OUT)
     print(text)
     if not ok:
