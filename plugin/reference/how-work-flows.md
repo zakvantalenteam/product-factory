@@ -175,9 +175,16 @@ estimated cost (the price table is `costs` in project.json). For people without 
 - All projects stay in sync: every project with the core (product-factory, Blend, TalentBox, SkillsOS and any
   product made since) and the product-factory plugin run the same core version.
 - A change to the shared setup (an agent, skill, hook, script, rule or the flow) is made once in the core source
-  (product-factory `core/`) and installed in every project in the same change: `python core/scripts/install.py <repo>
-  --write-settings` from product-factory for each, then `install.py . --check` and `cursor_sync.py --check` clean in
-  each.
+  (product-factory `core/`) and released to every project in the same change with one command from product-factory:
+  `python core/scripts/release.py <version> --summary "<one line>"` (`--dry-run` first). It bumps the version,
+  builds and validates the plugin, installs into every repo in the machine-local `release.local.json`, runs both
+  checks in each, the tests and a hash compare, and prints the commit commands (exact files only; other uncommitted
+  files are listed as left out; `commit_prefix` in a repo's project.json goes in front of its subject). It never
+  runs git; the developer commits and pushes.
+- When a session reports plugin trouble (a hook file missing, the plugin on twice, an old plugin, tools blocked by
+  the guard), run `python ${CLAUDE_PLUGIN_ROOT}/scripts/doctor.py` (or `scripts/doctor.py` in the plugin folder): it lists
+  every copy of the core on this machine with version, on or off, complete and stale, and one fix line per problem.
+  It only reads.
 - Only when the developer asks for a change in one project does it go in that project's own files (its
   `.claude/project.json`, its own agents, skills and rules, AGENTS.md outside the core block), never in a core file,
   and the reply says which projects now differ. In a repo without the core source, say the change belongs in

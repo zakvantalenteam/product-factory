@@ -818,3 +818,33 @@ its guard entry ran `python <missing file>`, so every Bash, PowerShell, Edit and
   (repo root, never installed; `python tests/core/scripts/test_build_plugin.py -v`).
 - Unchanged: the repo copy's launcher (exit 1 and `onFailure: block`, "missing, reinstall") and Cursor's
   (`.cursor/runtime` copies; a missing script warns and passes).
+
+## 42. 1.16.2 - findings closed as won't fix, by design, are never raised again
+Why: on 12 Nov the developer closed three Blend findings (an auth-skip substring match, access tokens written to the
+logs, a permissive security filter chain) as won't fix because they are by design, and asked that later reviews in
+every project stop raising them, the keys and secrets in the logs included.
+- New project file `.claude/review/accepted.md` (starter from `templates/accepted.md`, written by install.py when
+  missing): one line per accepted item with its id, what is accepted, where, and the developer's words and date.
+- `review_pack.py` puts every accepted line in the review pack ("Accepted by the developer") and the design pack.
+- code-reviewer drops a match as `accepted <id>`; `common.md` makes every agent that reviews, audits or tests read the
+  file and never raise those items again. Only what a change adds (a new place, caller, or kind of secret or personal
+  data) is a finding. The register is per item: it never switches off a whole check such as secret detection.
+- The sdlc lessons loop and the fix-list `wont-fix` state add the line when the reason is "by design".
+
+## 43. 1.17.0 - one command to release the core, and a doctor that finds every copy
+Why: 1.16.2 reached only 3 of 4 repos until it was installed into SkillsOS by hand, the plugin kept lagging behind
+the repos, a claude.ai-synced copy without `hooks/guard.py` blocked every session on 12 Nov, and each release was
+about 10 manual steps.
+- `scripts/release.py <version> --summary "..."` (home repo only; not installed in products or the plugin): refuses
+  a version not above the last committed one, bumps the three version spots, builds, checks and validates the
+  plugin, installs into every repo of the machine-local `release.local.json`, runs both checks in each, the tests and
+  a hash compare, then prints the commit commands and runs doctor. It stops at the first failure; a rerun is safe.
+  It never runs git that changes a repo: `git add` names the exact files the core owns (core.lock files, the Cursor
+  copies, the AGENTS.md core block, the core settings entries and ignore lines, untouched starters, and in the home
+  repo core/, plugin/, tests/); every other uncommitted file is listed as left out. `commit_prefix` in a repo's
+  project.json goes in front of its subject. Report and state in `.release/` (gitignored).
+- `scripts/doctor.py` (everywhere): lists the marketplace install, its clone, claude.ai-synced copies and each repo's
+  core with version, on or off, complete and stale; one fix line per problem (on twice, plugin older than the
+  repos, repos that differ or lag the source, a copy missing files). Read only; exit 0 when clean. Session start
+  names it when it warns.
+- install.py adds `release.local.json` and `.release/` to the home repo's .gitignore (`ignore_lines`).

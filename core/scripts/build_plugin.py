@@ -47,7 +47,7 @@ README = os.path.join(HOME, "README.md")
 MARKS = ("<!-- certified-agents:start (build_plugin.py writes this table from the agent files) -->",
          "<!-- certified-agents:end -->")
 SCORES = os.path.join(CORE, "exam-scores.json")  # blind exam scores per agent and core version, for the table
-SKIP = {"__pycache__", "migration", "core-plan.md", "core.lock", "exam-scores.json"}
+SKIP = {"__pycache__", "migration", "core-plan.md", "core.lock", "exam-scores.json", "release.py"}  # release.py: home only
 ROOT_VAR = "${CLAUDE_PLUGIN_ROOT}/"
 # The hook launcher, one `python -c` line: argv = <mode> <file> <args>. No double quote, $, %, ^, &, |, <, >, !,
 # backquote or backslash in it, so it passes unchanged through Claude Code's argument list and through Git Bash or

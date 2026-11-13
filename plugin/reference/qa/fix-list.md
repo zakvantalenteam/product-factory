@@ -45,7 +45,8 @@ Fingerprint: <short hash of the ticket's changed files when the run started>
   - `fixed`: changed and reviewed, waiting for retest.
   - `verified`: the retest rows and the regression ring passed.
   - `reopened`: the retest failed; the block says why in History.
-  - `wont-fix`: the developer decided not to fix; History quotes their words and the date.
+  - `wont-fix`: the developer decided not to fix; History quotes their words and the date. When the reason is "by
+    design", the item also gets one line in `.claude/review/accepted.md`, so no later review or audit raises it again.
   - `later`: moved to the backlog by the developer; History says where.
 - **Every block** has: ticket and criterion, found by (agent and row id), where (role, page, environment), numbered
   steps, expected, actual, evidence, suspected area (`path:line`, marked `(suspected)` until proven), fix owner, and

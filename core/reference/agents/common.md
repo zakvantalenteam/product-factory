@@ -15,6 +15,11 @@ two levels above this file.
 - Next message, next to your first code reads: the stack packs `stack.packs` names that match the files you touch
   (`.claude/core/reference/stacks/<pack>.md`), and the lines of `.claude/review/lessons.md` for your area
   (mistakes this repo has already made).
+- Every agent that reviews, audits or tests also reads `.claude/review/accepted.md` (findings the developer closed
+  as won't fix, by design). Never raise one of those again, as MUST, SHOULD or LATER, in any later round or audit;
+  list a match as `accepted <id>` among dropped findings. Raise only what a change adds to it (a new place, a new
+  caller, a new kind of secret or personal data) and name the id. The register is per item: it never switches off a
+  whole check such as secret detection.
 
 ## Output file (the live page reads it)
 The output file you write first starts, under its title, with `## Summary for people` (3-5 plain lines: what you

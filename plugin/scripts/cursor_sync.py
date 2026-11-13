@@ -59,7 +59,7 @@ CORE = project.CORE_DIR
 RUNTIME = ["VERSION", "hooks/guard.py", "hooks/rules_check.py", "hooks/flow_check.py", "scripts/project.py",
            "scripts/live_status.py", "scripts/live_status.html", "scripts/timing.py", "scripts/scope_check.py",
            "scripts/handoff_check.py"]
-FULL_SKIP = {"__pycache__", "hooks.json", "session_start.py", "build_plugin.py", "core-plan.md", "core.lock",
+FULL_SKIP = {"__pycache__", "hooks.json", "session_start.py", "build_plugin.py", "release.py", "core-plan.md", "core.lock",
              "exam-scores.json", "migration", ".claude-plugin"}
 MANIFEST = RT + "manifest.json"  # the generated .cursor/skills/ files, so a dropped one is removed
 EDIT_TOOLS = "Write|Edit|StrReplace|MultiEdit"

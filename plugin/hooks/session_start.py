@@ -14,6 +14,7 @@ Two checks add a one-line warning (shown to the developer and added to the sessi
   - two copies of the plugin are on (for example the marketplace copy and the claude.ai copy): each copy records its
     folder against the session id in the temp folder; a different folder recorded within 5 seconds of this one is
     the other copy starting the same session, and the first copy to claim the session's warning prints it.
+Either warning ends with the doctor command (scripts/doctor.py), which lists every copy on the machine.
 An internal error prints a one-line warning on stderr and adds nothing.
 """
 import hashlib
@@ -129,6 +130,8 @@ def warnings(data):
     if other:
         out.append("Warning: the product-factory plugin is on twice, the %s and the %s, so every hook runs twice. Fix: turn "
                    "one off in the plugin manager or on claude.ai." % (name, copy_name(other)[0]))
+    if out and os.path.isfile(os.path.join(ROOT, "scripts", "doctor.py")):
+        out[-1] += " Every copy on this machine and what to fix: python %s/scripts/doctor.py" % ROOT
     return out
 
 

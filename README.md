@@ -195,24 +195,31 @@ See the flow without real work: `python .claude/core/scripts/simulate.py --list`
 ## Releasing a change to the core
 
 1. Change files in `core/` only.
-2. Raise the version in `core/VERSION` and `core/.claude-plugin/plugin.json` (the same number). Plugin users are
-   updated only when it changes.
-3. `python core/scripts/install.py . --write-settings`: installs it here and rebuilds `plugin/`. Then
-   `python .claude/core/scripts/install.py . --check` must print `ok`.
-4. Commit and push to `main`. The workflow stops a push whose versions differ or whose `plugin/` is stale. Plugin
-   users get the new version by themselves.
-5. All projects stay on the same version: every release goes to every project in the same change, unless a change
-   is meant for one project only (then it goes in that project's own files). Port it to each product repo the bot does not cover (Blend and TalentBox until AWS is set up), from this repo;
-   SkillsOS uses the plugin only and gets no repo install:
+2. Once per machine: copy `release.local.example.json` to `release.local.json` (gitignored) and set the folder of
+   every repo that carries the core (this repo and each product repo).
+3. Run one command (try it with `--dry-run` first; it writes nothing):
 
    ```bash
-   python core/scripts/install.py <product repo> --write-settings
+   python core/scripts/release.py 1.17.0 --summary "one line on what changed"
    ```
 
-   then, in that repo, `python .claude/core/scripts/cursor_sync.py` and both checks
-   (`python .claude/core/scripts/cursor_sync.py --check`, `python .claude/core/scripts/install.py . --check`) must
-   be clean. Files a repo edited by hand are kept and listed; review them. Commit the setup files there
-   (`.claude/`, `.cursor/`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`) and push to `dev`.
+   It refuses a version that is not higher than the last committed one, bumps the three version spots, builds and
+   checks `plugin/` (and runs `claude plugin validate --strict` when it finds the CLI), installs the core into every
+   repo in `release.local.json`, runs `install.py --check` and `cursor_sync.py --check` in each, runs `tests/`,
+   compares the core files of every repo, then prints the commit commands per repo and runs `doctor.py`. It stops at
+   the first failure with a plain message; fix it and rerun the same command. `--repos a,b` limits the product
+   repos; `--include README.md` adds a file you edited by hand to the commit (`<repo name>:<path>` for a product
+   repo).
+4. It never runs git. Run the commands it prints (PowerShell, one per line): `git add` names only the release's
+   files, and every other uncommitted file is listed as "left out". A repo whose commits need a ticket first gets
+   it from `commit_prefix` in its `.claude/project.json`. The report is in `.release/core-<version>.md`.
+5. Push product-factory to `main` (the workflow stops a push whose versions differ or whose `plugin/` is stale),
+   then `claude plugin marketplace update talenteam` and `claude plugin update product-factory@talenteam`, and
+   restart Claude Code. Push the product repos as usual.
+6. Check with `python core/scripts/doctor.py`: it lists every product-factory copy on this machine (the marketplace
+   install, its clone, claude.ai-synced copies, each repo's core) with version, on or off, complete and stale, and
+   one fix line per problem (on twice, plugin older than the repos, repos that differ, a copy missing files).
+   Read only; exit 0 when clean.
 
 ## One-time setup of the sync bot
 

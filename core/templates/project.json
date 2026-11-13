@@ -1,6 +1,7 @@
 {
   "name": "",
   "ticket_prefix": "",
+  "commit_prefix": "",
   "work_dir": ".claude/work",
   "live_port": 8766,
   "default_mode": "task",

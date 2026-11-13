@@ -1,0 +1,9 @@
+{
+  "_comment": "Copy to release.local.json (gitignored) and set each repo's folder on this machine. core/scripts/release.py installs the core into every repo listed here; the home repo (this one) is always included. report_dir: where release.py writes core-<version>.md (gitignored).",
+  "repos": [
+    {"name": "product-factory", "path": "C:/code/product-factory"},
+    {"name": "product-a", "path": "C:/code/product-a"},
+    {"name": "product-b", "path": "C:/code/product-b"}
+  ],
+  "report_dir": ".release"
+}

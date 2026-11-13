@@ -11,3 +11,5 @@ work/*/events.jsonl
 .claude/core-backup/
 work/simulate.html
 work/demo-*/
+release.local.json
+.release/

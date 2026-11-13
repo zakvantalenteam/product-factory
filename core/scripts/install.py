@@ -14,7 +14,7 @@ version dropped (when unchanged). A repo file with a core name that the core doe
 code-reviewer.md) is left alone unless --adopt is given; adopted and replaced files are first copied to
 <repo>/.claude/core-backup/<date>/.
 
-It also: writes a starter .claude/project.json, .claude/smoke.md and .claude/review/lessons.md when there are none; adds or refreshes the core block in AGENTS.md
+It also: writes a starter .claude/project.json, .claude/smoke.md, .claude/review/lessons.md and .claude/review/accepted.md when there are none; adds or refreshes the core block in AGENTS.md
 (between <!-- core:start --> and <!-- core:end -->) and creates CLAUDE.md (@AGENTS.md) when missing; adds the work
 folder to .gitignore; shows the core hook entries for .claude/settings.json and the live-status entry for
 .claude/launch.json, and writes them with --write-settings (old copies of the core hooks are replaced, and the
@@ -60,7 +60,8 @@ INSTALLED = (os.path.basename(CORE), os.path.basename(os.path.dirname(CORE))) in
                                                                                  ("runtime", ".cursor"))
 RUNTIME = ".cursor/runtime/"  # the generated core copy in a repo switched to the plugin (cursor_sync.py)
 REVERSE = (b"${CLAUDE_PLUGIN_ROOT}/", b".claude/core/")  # installing from the plugin: its paths back to the repo's
-SKIP_NAMES = {"__pycache__", "core-plan.md", "exam-scores.json", ".claude-plugin", "hooks.json", "session_start.py", "build_plugin.py"}
+SKIP_NAMES = {"__pycache__", "core-plan.md", "exam-scores.json", ".claude-plugin", "hooks.json", "session_start.py",
+              "build_plugin.py", "release.py"}
 PLUGIN_ID = "product-factory@talenteam"  # plugin@marketplace, as in the home repo's .claude-plugin/marketplace.json
 OLD_PLUGIN_IDS = ("agent-core@talenteam",)  # the plugin's name before 1.4.0: its settings entry is removed
 BLOCK_START, BLOCK_END = "<!-- core:start -->", "<!-- core:end -->"
@@ -376,6 +377,33 @@ def agents_md(current, name, switched=False):
 
 # ---- .gitignore -----------------------------------------------------------------------------------------------
 
+HOME_IGNORES = ["release.local.json", ".release/"]  # the core's home repo: release.py's local targets and reports
+CURSOR_UNIGNORES = ["!/.cursor/runtime/", "!/.cursor/skills/"]  # what cursor_gitignore adds
+
+
+def is_home(repo):
+    """True for the core's home repo (the folder above core/ with .claude-plugin/marketplace.json)."""
+    home = os.path.dirname(CORE)
+    return os.path.normcase(os.path.abspath(repo)) == os.path.normcase(home) and os.path.isfile(
+        os.path.join(home, ".claude-plugin", "marketplace.json"))
+
+
+def ignore_lines(repo):
+    """The .gitignore lines install.py adds to a repo (release.py counts a .gitignore that only gained these, or
+    CURSOR_UNIGNORES, as the core's change)."""
+    try:
+        work = json.loads(read(os.path.join(repo, ".claude", "project.json")) or "{}").get("work_dir", ".claude/work")
+    except ValueError:
+        work = ".claude/work"
+    w = str(work or ".claude/work").strip("/")
+    # a work folder inside .claude/ is local scratch; one outside it (product-factory's work/) holds product records
+    # worth keeping in git, so only its runtime files are ignored
+    ignore = [w + "/"] if w.startswith(".claude/") else [w + "/.sessions/", w + "/live.js", w + "/live.html",
+                                                          w + "/*/status.js", w + "/*/events.jsonl",
+                                                          w + "/simulate.html", w + "/demo-*/"]
+    return ignore + [".claude/core-backup/", "__pycache__/"] + (HOME_IGNORES if is_home(repo) else [])
+
+
 def cursor_gitignore(repo, dry_run):
     """A repo that ignores `/.cursor/*` except named folders must also share the generated Cursor runtime and skills,
     or teammates' Cursor runs hooks whose scripts are missing (no guard)."""
@@ -559,7 +587,8 @@ def install(repo, a):
         print("project.json: starter written (fill in commands, protected paths, decisions, rules)")
         if not a.dry_run:
             write(pj, json.dumps(cfg, indent=2) + "\n", nl)
-    for rel, tpl in ((".claude/smoke.md", "smoke.md"), (".claude/review/lessons.md", "lessons.md")):
+    for rel, tpl in ((".claude/smoke.md", "smoke.md"), (".claude/review/lessons.md", "lessons.md"),
+                     (".claude/review/accepted.md", "accepted.md")):
         dst = os.path.join(repo, *rel.split("/"))
         if not os.path.isfile(dst):
             print("%s: starter written (the project fills it)" % rel)
@@ -581,19 +610,9 @@ def install(repo, a):
 
     # .gitignore
     cursor_gitignore(repo, a.dry_run)
-    try:
-        work = json.loads(read(pj) or "{}").get("work_dir", ".claude/work")
-    except ValueError:
-        work = ".claude/work"
     gi = os.path.join(repo, ".gitignore")
     cur = read(gi) or ""
-    w = work.strip("/")
-    # a work folder inside .claude/ is local scratch; one outside it (product-factory's work/) holds product records
-    # worth keeping in git, so only its runtime files are ignored
-    ignore = [w + "/"] if w.startswith(".claude/") else [w + "/.sessions/", w + "/live.js", w + "/live.html",
-                                                          w + "/*/status.js", w + "/*/events.jsonl",
-                                                          w + "/simulate.html", w + "/demo-*/"]
-    add = [l for l in ignore + [".claude/core-backup/", "__pycache__/"] if l not in cur.splitlines()]
+    add = [l for l in ignore_lines(repo) if l not in cur.splitlines()]
     if add:
         print(".gitignore: + " + ", ".join(add))
         if not a.dry_run:

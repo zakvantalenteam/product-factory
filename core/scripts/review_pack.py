@@ -455,6 +455,14 @@ def lesson_lines(c, files, areas):
     return out[:CAP_ROWS] + (["(+%d more lessons)" % (len(out) - CAP_ROWS)] if len(out) > CAP_ROWS else [])
 
 
+def accepted_lines(c):
+    """Every `- ` line of .claude/review/accepted.md: findings the developer closed as won't fix, by design. They are
+    few and apply to any path, so all of them go in the pack."""
+    text = c.cfg_file(".claude", "review", "accepted.md") or ""
+    out = [clip(ln.strip(), 400) for ln in text.split("\n") if ln.lstrip().startswith("- ")]
+    return out[:60] + (["(+%d more accepted items)" % (len(out) - 60)] if len(out) > 60 else [])
+
+
 def hard_rules(c):
     body = section(c.cfg_file("AGENTS.md") or "", "hard rules")
     return tidy(body, 60) if body else []
@@ -741,6 +749,10 @@ def cmd_review(c):
             L += ["### `%s` (%s)" % (name, ", ".join(globs))] + body + [""]
     L += ["## Lessons for these paths", "", "Each line is a mistake this repo already made: a repeat is a MUST.", ""]
     L += (lessons or ["(none)"]) + [""]
+    L += ["## Accepted by the developer (won't fix, by design)", "",
+          "Never a finding again: list a match under Dropped findings as `accepted <id>`. Raise only what this change "
+          "adds (a new place, caller, or kind of secret or personal data) and name the id.", ""]
+    L += (accepted_lines(c) or ["(none)"]) + [""]
     L += ["## Live checks for Verify", "", "Not findings: copy the lines the change touches into review.md.", ""]
     L += (live or ["(none)"]) + [""]
     L += ["## Diff", "", "New-side line numbers on the left (cite them as `path:line`); `-` lines were removed.", ""]
@@ -855,6 +867,9 @@ def cmd_design(c):
     if ef:
         L += ["## Repo facts for these paths (.claude/experts)", ""] + ef + [""]
     L += ["## Lessons for these paths", ""] + (lessons or ["(none)"]) + [""]
+    acc = accepted_lines(c)
+    if acc:
+        L += ["## Accepted by the developer (won't fix, by design: plan no change for these)", ""] + acc + [""]
     if areas:
         L += ["## Review checklist sections the build will meet", "", ", ".join(areas), ""]
     L += ["## Paths", ""] + ["- `%s`" % p for p in paths] + [""]

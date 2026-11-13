@@ -65,6 +65,7 @@ GIT_RULES = {
 DEFAULTS = {
     "name": "",
     "ticket_prefix": "",
+    "commit_prefix": "",  # put in front of the core release commit subjects (release.py), e.g. a ticket
     "work_dir": ".claude/work",
     "live_port": 8766,
     # Token cost estimate (live page, share snapshots): USD per million tokens per model family (matched by name in

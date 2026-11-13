@@ -7,7 +7,7 @@ Read by every core agent that writes a flow document. Paths in a repo with the c
 |---|---|
 | Task or product folder (the lead gives it in the brief) | `<work>/<id>/`; `<work>` is `work_dir` in `.claude/project.json` (default `.claude/work`; product-factory: `work`) |
 | Project config | `.claude/project.json` (commands, protected paths, decision triggers, rules) |
-| Project facts and hard rules | `AGENTS.md`, `.claude/rules/*.md` (path rules), `.claude/review/checklist.md` (project checklist), `.claude/review/lessons.md` (one line per past mistake, tagged by the stage that must catch it: `[review-spec R<n>]`, `[develop review]`, `[test <type>]`), `.claude/smoke.md` (neighbours to check per area) |
+| Project facts and hard rules | `AGENTS.md`, `.claude/rules/*.md` (path rules), `.claude/review/checklist.md` (project checklist), `.claude/review/lessons.md` (one line per past mistake, tagged by the stage that must catch it: `[review-spec R<n>]`, `[develop review]`, `[test <type>]`), `.claude/review/accepted.md` (findings closed as won't fix, by design: never raised again), `.claude/smoke.md` (neighbours to check per area) |
 | Domain facts for a domain expert | `.claude/experts/<sf|ai|n8n|...>.md` (where this repo uses the domain) |
 | Core reference | `${CLAUDE_PLUGIN_ROOT}/reference/` (`requirements/` (Definition of Ready, vague words, the requirements review and spec layout), `review/`, `qa/` (the UI and API test checklists, test types, acceptance tests), `standards/`, `base/`, `platform-btp.md`) |
 | Core scripts | `python ${CLAUDE_PLUGIN_ROOT}/scripts/<script>.py` |
