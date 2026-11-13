@@ -401,7 +401,8 @@ def ignore_lines(repo):
     ignore = [w + "/"] if w.startswith(".claude/") else [w + "/.sessions/", w + "/live.js", w + "/live.html",
                                                           w + "/*/status.js", w + "/*/events.jsonl",
                                                           w + "/simulate.html", w + "/demo-*/"]
-    return ignore + [".claude/core-backup/", "__pycache__/"] + (HOME_IGNORES if is_home(repo) else [])
+    return ignore + [".claude/core-backup/", "__pycache__/", ".claude/bench/runs/"] + (
+        HOME_IGNORES if is_home(repo) else [])
 
 
 def cursor_gitignore(repo, dry_run):

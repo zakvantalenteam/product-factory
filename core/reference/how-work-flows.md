@@ -185,6 +185,10 @@ estimated cost (the price table is `costs` in project.json). For people without 
   the guard), run `python .claude/core/scripts/doctor.py` (or `scripts/doctor.py` in the plugin folder): it lists
   every copy of the core on this machine with version, on or off, complete and stale, and one fix line per problem.
   It only reads.
+- The bug test bench (`/bench`, `.claude/core/scripts/bench.py`, Claude Code only) measures how many real escaped
+  bugs each stage catches (review-spec, code-reviewer, qa-lead plan), 3 runs per case on `claude plugin eval`, on
+  every core release; each miss becomes a proposed agent or checklist change, applied only on the developer's yes.
+  Cases live in each project (`.claude/bench/cases/`); the format and rules are in `bench.md`.
 - Only when the developer asks for a change in one project does it go in that project's own files (its
   `.claude/project.json`, its own agents, skills and rules, AGENTS.md outside the core block), never in a core file,
   and the reply says which projects now differ. In a repo without the core source, say the change belongs in

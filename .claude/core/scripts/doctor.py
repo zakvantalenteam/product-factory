@@ -26,6 +26,7 @@ import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -42,6 +43,25 @@ def parse(v):
 
 def vkey(v):
     return parse(v) or (0, 0, 0)
+
+
+def find_cli():
+    """The claude CLI: on PATH, else the newest one the desktop app keeps (read only), else None."""
+    c = shutil.which("claude")
+    if c:
+        return c
+    cands = []
+    la = os.environ.get("LOCALAPPDATA")
+    if la:
+        cands += glob.glob(os.path.join(la, "Claude-Data", "*", "claude-code", "*", "*", "claude.exe"))
+    for p in ("~/.local/bin/claude.exe", "~/.local/bin/claude", "~/.claude/local/claude.exe", "~/.claude/local/claude"):
+        if os.path.isfile(os.path.expanduser(p)):
+            cands.append(os.path.expanduser(p))
+
+    def key(p):
+        ver = parse(os.path.basename(os.path.dirname(os.path.dirname(p)))) or (0, 0, 0)
+        return ver, os.path.getmtime(p)
+    return max(cands, key=key) if cands else None
 
 
 def read(path):

@@ -220,6 +220,12 @@ See the flow without real work: `python .claude/core/scripts/simulate.py --list`
    install, its clone, claude.ai-synced copies, each repo's core) with version, on or off, complete and stale, and
    one fix line per problem (on twice, plugin older than the repos, repos that differ, a copy missing files).
    Read only; exit 0 when clean.
+7. Measure the team with the bug test bench (`/bench run`, Claude Code only): it reruns every project's escaped-bug
+   cases (`.claude/bench/cases/` in each product repo) against the released plugin, 3 runs each, and shows the
+   catch rate per stage against the last run. Try it first with
+   `python core/scripts/bench.py run --project all --max-cost-usd 40 --dry-run` (projected cost, runs nothing).
+   `/bench propose` turns each miss into one proposed agent or checklist change for your yes. Format and rules:
+   `core/reference/bench.md`.
 
 ## One-time setup of the sync bot
 

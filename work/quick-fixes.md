@@ -1,1 +1,3 @@
 - 2026-11-03 14:45 README Certified agents table: exam scores per agent from core/exam-scores.json
+- 2026-11-13 22:10 core 1.18.0 setup work: unit tests for bench.py (tests/core/scripts/test_bench.py, by qa-engineer)
+- 2026-11-13 22:31 core 1.18.0 setup work: subscription-only guard tests for bench.py (tests/core/scripts/test_bench.py, 71 tests OK)

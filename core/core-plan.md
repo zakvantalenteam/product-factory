@@ -848,3 +848,22 @@ about 10 manual steps.
   repos, repos that differ or lag the source, a copy missing files). Read only; exit 0 when clean. Session start
   names it when it warns.
 - install.py adds `release.local.json` and `.release/` to the home repo's .gitignore (`ignore_lines`).
+
+## 44. 1.18.0 - the bug test bench
+Why: the team's catch rate was unknown. On 13 Nov the developer asked to measure, on every release, how many real
+escaped bugs each stage catches and to turn each miss into a proposed agent or checklist change.
+- `scripts/bench.py` (everywhere): `cases`, `check`, `run`, `report`. `run` builds one `claude plugin eval` suite
+  in a temp folder (the plugin under test without its hooks, one eval case per case and stage) and runs it with
+  `--scaffold --ablation none --no-publish`, 3 runs, a required `--max-cost-usd`. Each scaffold fills an empty
+  workspace with read-only git: the case files at the introducing commit, the project layer from the commit before
+  the fix, and the stage input (the review pack built by `review_pack.py --base/--head` against the real repo, or
+  the ticket and the diff). Agents run on their own model; the main session and the judge are Sonnet. Caught = 2 of
+  3 runs. Writes `.claude/bench/history/<stamp>.json` (committed) and `.claude/bench/runs/<stamp>/` (ignored).
+- Cases live in each project (`.claude/bench/cases/<id>/`: case.json, ticket.md, rubric-<stage>.md, optional
+  bug-report.md that no agent sees). From the home repo `--project all` uses `release.local.json` as the registry.
+- `skills/bench` (`/bench add | run | report | propose`) and `reference/bench.md`; proposals go to
+  `.claude/bench/proposals.md` and are applied only on the developer's yes.
+- Claude Code only: Cursor has no plugin eval (cases, check and report work there).
+- `find_cli` moved from release.py to doctor.py (shared); install.py ignores `.claude/bench/runs/` everywhere.
+- First set: 11 Blend cases (8 Ask, 3 Pulse); 2 are not catchable (capabilities nobody asked for). None tests
+  review-spec yet: the introducing changes had no written requirement.

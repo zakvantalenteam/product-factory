@@ -21,7 +21,8 @@ copies, the core block of AGENTS.md, the core entries of .claude/settings.json a
 lines install.py adds, untouched starters; in the home repo also core/, plugin/, tests/ and the agents table of
 README.md). A file with other changes is listed as "left out" with every other uncommitted file, so another
 session's work is never swept in; name a file you edited by hand for the release with --include: a bare path
-(README.md, .github/...) is in the home repo, <repo name>:<path> in that repo (blend:.claude/project.json).
+(README.md, .github/...) is in the home repo, <repo name>:<path> in that repo (blend:.claude/project.json); a path
+ending in / names every uncommitted file under that folder (blend:.claude/bench/).
 Commit subjects: the home repo "core <v>: <summary>"; product repos "AI dev setup: agent core <v> - <summary>",
 with the repo's `commit_prefix` from .claude/project.json in front (e.g. a ticket the repo requires).
 Targets: <home>/release.local.json (machine-local, gitignored; see release.local.example.json):
@@ -38,7 +39,6 @@ import glob
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -46,6 +46,7 @@ sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import install  # noqa: E402
+from doctor import find_cli  # noqa: E402
 
 CORE = install.CORE
 HOME = os.path.dirname(CORE)
@@ -247,27 +248,6 @@ def bump(v, dry):
     return out
 
 
-# ---- the claude CLI ---------------------------------------------------------------------------------------------
-
-def find_cli():
-    """The claude CLI: on PATH, else the newest one the desktop app keeps (read only), else None."""
-    c = shutil.which("claude")
-    if c:
-        return c
-    cands = []
-    la = os.environ.get("LOCALAPPDATA")
-    if la:
-        cands += glob.glob(os.path.join(la, "Claude-Data", "*", "claude-code", "*", "*", "claude.exe"))
-    for p in ("~/.local/bin/claude.exe", "~/.local/bin/claude", "~/.claude/local/claude.exe", "~/.claude/local/claude"):
-        if os.path.isfile(os.path.expanduser(p)):
-            cands.append(os.path.expanduser(p))
-
-    def key(p):
-        ver = parse(os.path.basename(os.path.dirname(os.path.dirname(p)))) or (0, 0, 0)
-        return ver, os.path.getmtime(p)
-    return max(cands, key=key) if cands else None
-
-
 # ---- which uncommitted files belong to the release ---------------------------------------------------------------
 
 def lock_files(text):
@@ -291,7 +271,7 @@ def owned_reason(repo, rel, xy, ctx):
 
     def old():  # the committed text (None for a new file), read only when needed
         return norm(ctx["head"](rel))
-    if rel in ctx["include"]:
+    if rel in ctx["include"] or any(i.endswith("/") and rel.startswith(i) for i in ctx["include"]):
         return "named with --include"
     if ctx["home"] and rel.startswith(HOME_SOURCE):
         return {"core/": "core source", "plugin/": "plugin build", "tests/": "core tests"}[rel.split("/")[0] + "/"]
@@ -488,7 +468,7 @@ def main(argv=None):
     ap.add_argument("--summary", required=True, help="one line for the commit subjects and the report")
     ap.add_argument("--repos", nargs="*", default=None, help="product repo names to release to (default: all)")
     ap.add_argument("--include", nargs="*", default=[], help="files edited by hand to commit with the release: a path "
-                    "in the home repo, or <repo name>:<path>")
+                    "in the home repo, or <repo name>:<path>; a path ending in / takes the folder")
     ap.add_argument("--targets", default=os.path.join(HOME, "release.local.json"))
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
